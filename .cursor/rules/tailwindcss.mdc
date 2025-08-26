@@ -1,0 +1,149 @@
+---
+description: Tailwind CSS and UI component best practices for modern web applications
+globs: **/*.css, **/*.tsx, **/*.jsx, tailwind.config.js, tailwind.config.ts
+---
+
+# Tailwind CSS + shadcn/ui Development Rules
+
+## 코딩 스타일 및 구조
+
+### 일반 원칙
+- 항상 반응형 웹 디자인을 우선 고려 (mobile-first approach)
+- 시맨틱 HTML 요소 사용
+- 접근성(a11y) 고려한 마크업 작성
+- 컴포넌트 기반 아키텍처 구축
+- 코드 재사용성과 모듈화 중심
+
+### 파일 구조
+- 컴포넌트는 `components/` 디렉토리에 분류별로 정리
+- shadcn/ui 컴포넌트는 `components/ui/` 디렉토리에 배치
+- 커스텀 훅은 `hooks/` 디렉토리에 배치
+- 유틸리티 함수는 `lib/` 또는 `utils/` 디렉토리에 배치
+
+## Tailwind CSS 규칙
+
+### 반응형 디자인
+- 모든 레이아웃과 스타일링에서 반응형 브레이크포인트 필수 적용
+- 브레이크포인트 우선순위: `sm:` (640px) → `md:` (768px) → `lg:` (1024px) → `xl:` (1280px) → `2xl:` (1536px)
+- 모바일 퍼스트 접근법으로 기본 스타일 작성 후 큰 화면에 대한 스타일 추가
+
+### 클래스 네이밍 및 정리
+- 관련된 유틸리티 클래스들을 그룹화하여 작성
+- 순서: 레이아웃 → 플렉스박스/그리드 → 간격 → 크기 → 색상 → 타이포그래피 → 효과
+- 긴 클래스명은 여러 줄로 분할하여 가독성 향상
+- `clsx` 또는 `cn` 유틸리티 함수 사용으로 조건부 클래스 적용
+
+### 색상 및 테마
+- 커스텀 색상은 `tailwind.config.js`에서 정의
+- CSS 변수를 활용한 다크모드 지원
+- shadcn/ui 색상 시스템 활용 (`primary`, `secondary`, `accent`, `muted` 등)
+
+### 간격 및 크기
+- 일관된 spacing scale 사용 (4px 단위 기준)
+- 상대 단위 활용 (`rem`, `em`, `%`, `vh`, `vw`)
+- 컨테이너 최대 너비 설정으로 가독성 보장
+
+## shadcn/ui 컴포넌트 사용
+
+### 컴포넌트 구조
+- shadcn/ui 기본 컴포넌트를 베이스로 커스터마이징
+- Compound Component 패턴 활용
+- 적절한 props와 variants 정의
+
+### 상태 관리
+- 폼 상태는 React Hook Form과 Zod validation 활용
+- 전역 상태는 Zustand 또는 Context API 사용
+- 로컬 상태는 useState, useReducer 적절히 선택
+
+### 접근성
+- 모든 인터랙티브 요소에 적절한 ARIA 속성 추가
+- 키보드 네비게이션 지원
+- 스크린 리더 호환성 확보
+- 충분한 색상 대비 유지
+
+## 반응형 웹 개발 가이드라인
+
+### 레이아웃
+```html
+<!-- 모바일 우선 그리드 시스템 -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+<!-- 플렉스박스 반응형 정렬 -->
+<div class="flex flex-col md:flex-row items-center justify-between">
+
+<!-- 반응형 패딩/마진 -->
+<div class="p-4 md:p-6 lg:p-8">
+```
+
+### 타이포그래피
+```html
+<!-- 반응형 텍스트 크기 -->
+<h1 class="text-2xl md:text-3xl lg:text-4xl font-bold">
+<p class="text-sm md:text-base lg:text-lg">
+```
+
+### 이미지 및 미디어
+```html
+<!-- 반응형 이미지 -->
+<img class="w-full h-auto object-cover" src="..." alt="...">
+
+<!-- 반응형 비디오 컨테이너 -->
+<div class="aspect-video w-full">
+  <video class="w-full h-full object-cover">
+```
+
+## 코드 품질 및 최적화
+
+### 성능 최적화
+- 사용하지 않는 CSS 제거를 위한 PurgeCSS 설정
+- 이미지 최적화 및 lazy loading 구현
+- 컴포넌트 lazy loading 적용
+- CSS-in-JS 대신 Tailwind 유틸리티 우선 사용
+
+### 개발 도구
+- Prettier와 ESLint 설정으로 일관된 코드 스타일 유지
+- Tailwind CSS IntelliSense 플러그인 활용
+- 브라우저 개발자 도구를 통한 반응형 테스트
+
+### 테스팅
+- 다양한 디바이스와 화면 크기에서 테스트
+- 접근성 테스트 도구 활용 (axe-core, lighthouse)
+- 성능 모니터링 (Core Web Vitals)
+
+## 금지 사항
+
+### 피해야 할 패턴
+- 인라인 스타일 사용 금지
+- `!important` 사용 최소화
+- 하드코딩된 픽셀 값 사용 지양
+- 불필요한 div wrapper 남발 금지
+- 시맨틱하지 않은 HTML 구조 금지
+
+### 반응형 관련 주의사항
+- 고정 너비/높이 값 사용 금지
+- 절대 위치 지정 시 반응형 고려 필수
+- 작은 화면에서 가로 스크롤 발생 방지
+- 터치 인터페이스 고려한 버튼 크기 (최소 44px)
+
+## 권장 라이브러리 조합
+
+### 필수 패키지
+- `tailwindcss` - 유틸리티 CSS 프레임워크
+- `@tailwindcss/typography` - 타이포그래피 플러그인
+- `@tailwindcss/forms` - 폼 스타일링 플러그인
+- `clsx` 또는 `class-variance-authority` - 조건부 클래스
+- `tailwind-merge` - 클래스 충돌 해결
+
+### shadcn/ui 생태계
+- `@radix-ui/*` - headless 컴포넌트
+- `react-hook-form` - 폼 관리
+- `zod` - 스키마 검증
+- `cmdk` - 커맨드 팔레트
+- `lucide-react` - 아이콘
+
+### 개발 도구
+- `prettier-plugin-tailwindcss` - 클래스 정렬
+- `eslint-plugin-tailwindcss` - 린팅
+- `@headlessui/tailwindcss` - HeadlessUI 플러그인
+
+이 규칙들을 준수하여 일관성 있고 유지보수 가능한 반응형 웹 애플리케이션을 개발하세요.

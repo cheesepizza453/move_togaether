@@ -1,0 +1,356 @@
+---
+description: Tailwind CSS and UI component best practices for modern web applications
+globs: **/*.js, **/*.jsx, next.config.js, jsconfig.js
+---
+# Next.js 개발 규칙 가이드
+
+## 개발자 페르소나
+**시니어 풀스택 개발자**로서 코드 품질과 일관성을 최우선으로 하며, 확장 가능하고 유지보수하기 쉬운 코드 작성을 지향합니다. 성능 최적화와 개발자 경험 향상에 중점을 두고, 팀 전체가 따를 수 있는 명확하고 실용적인 규칙을 만듭니다.
+
+---
+
+## 1. 프로젝트 구조 및 네이밍
+
+### 1.1 디렉토리 구조
+```
+src/
+├── app/                    # App Router 사용
+├── components/            # 재사용 가능한 컴포넌트
+│   ├── ui/               # 기본 UI 컴포넌트
+│   └── common/           # 공통 컴포넌트
+├── hooks/                # 커스텀 훅
+├── utils/                # 유틸리티 함수
+├── constants/            # 상수 정의
+└── styles/               # 전역 스타일
+```
+
+### 1.2 파일 및 컴포넌트 네이밍
+- **컴포넌트**: PascalCase (`UserProfile.jsx`)
+- **페이지**: kebab-case (`user-profile/page.jsx`)
+- **훅**: camelCase with use prefix (`useUserData.js`)
+- **유틸리티**: camelCase (`formatDate.js`)
+
+### 1.3 일반적인 규칙
+- **파일명**: 화면 출력용 파일은 *.jsx, 일반적인 js 코드는 *.js로 명명
+- **서버상태**: 개발서버는 항상 작동 중이므로 별도의 경우가 아니면 npm run dev는 실행하지 않음.(로그 확인 필요한 경우 이전 프로세스를 종료시키고 코드 실행)
+
+---
+
+## 2. 라우팅 규칙
+
+### 2.1 App Router 사용 강제
+- **Pages Router 사용 금지**: App Router만 사용
+- **Route Groups 사용법**: 괄호 없이 일반 폴더명 사용
+  ```
+  # 잘못된 예
+  app/(dashboard)/users/page.tsx
+
+  # 올바른 예
+  app/dashboard/users/page.tsx
+  ```
+
+### 2.2 페이지 파일 구조
+```javascript
+// app/users/page.jsx
+export default function UsersPage() {
+  return (
+    <div>
+      {/* 페이지 내용 */}
+    </div>
+  );
+}
+
+export async function generateMetadata() {
+  return {
+    title: 'Users - MyApp'
+  };
+}
+```
+
+---
+
+## 3. 코딩 스타일
+
+### 3.1 들여쓰기 및 포매팅
+- **들여쓰기**: 스페이스 2칸 사용
+- **세미콜론**: 항상 사용
+- **따옴표**: 작은따옴표 사용 (JSX 속성은 큰따옴표)
+
+```javascript
+// 올바른 예
+const UserCard = ({ name, email }) => {
+  const handleClick = () => {
+    console.log('Card clicked');
+  };
+
+  return (
+    <div className="user-card" onClick={handleClick}>
+      <h3>{name}</h3>
+      <p>{email}</p>
+    </div>
+  );
+};
+```
+
+### 3.2 Import 순서
+```javascript
+// 1. React 및 Next.js
+import React from 'react';
+import Link from 'next/link';
+
+// 2. 외부 라이브러리
+import moment from 'moment';
+import axios from 'axios';
+
+// 3. 내부 컴포넌트 및 훅
+import { Button } from '@/components/ui';
+import { useUserData } from '@/hooks';
+
+// 4. 상수
+import { API_ENDPOINTS } from '@/constants';
+```
+
+---
+
+## 4. 날짜 처리
+
+### 4.1 Moment.js 사용 강제
+- **네이티브 Date 객체 사용 금지**: moment 라이브러리만 사용
+- **일관된 날짜 포맷**: ISO 8601 형식 권장
+
+```javascript
+// 잘못된 예
+const now = new Date();
+const formatted = now.toLocaleDateString();
+
+// 올바른 예
+import moment from 'moment';
+
+const now = moment();
+const formatted = moment().format('YYYY-MM-DD HH:mm:ss');
+const relative = moment(date).fromNow();
+```
+
+### 4.2 날짜 유틸리티 함수
+```javascript
+// utils/dateUtils.js
+import moment from 'moment';
+
+export const formatDate = (date) => {
+  return moment(date).format('YYYY-MM-DD');
+};
+
+export const isExpired = (date) => {
+  return moment().isAfter(moment(date));
+};
+```
+
+---
+
+## 5. 컴포넌트 작성 규칙
+
+### 5.1 함수형 컴포넌트 강제
+- **화살표 함수 사용**: `const Component = () => {}`
+- **기본 export 사용**: 페이지 및 주요 컴포넌트
+
+### 5.2 Props 및 컴포넌트 구조
+```javascript
+const UserCard = ({ id, name, email, createdAt, onClick }) => {
+  const formattedDate = moment(createdAt).format('YYYY-MM-DD');
+
+  return (
+    <div onClick={() => onClick?.(id)}>
+      <h3>{name}</h3>
+      <p>{email}</p>
+      <span>{formattedDate}</span>
+    </div>
+  );
+};
+
+// PropTypes를 사용한 타입 검증 (선택사항)
+import PropTypes from 'prop-types';
+
+UserCard.propTypes = {
+  id: PropTypes.string.isRequired,
+  name: PropTypes.string.isRequired,
+  email: PropTypes.string.isRequired,
+  createdAt: PropTypes.string.isRequired,
+  onClick: PropTypes.func
+};
+```
+
+### 5.3 훅 사용 규칙
+```javascript
+// hooks/useUserData.js
+import { useState, useEffect } from 'react';
+import moment from 'moment';
+
+export const useUserData = (userId) => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchUser(userId);
+  }, [userId]);
+
+  const fetchUser = async (id) => {
+    setLoading(true);
+    const data = await api.getUser(id);
+    setUser({
+      ...data,
+      lastLogin: moment(data.lastLogin).fromNow()
+    });
+    setLoading(false);
+  };
+
+  return { user, loading, refetch: () => fetchUser(userId) };
+};
+```
+
+---
+
+## 6. 성능 최적화
+
+### 6.1 이미지 최적화
+```javascript
+import Image from 'next/image';
+
+// 항상 Next.js Image 컴포넌트 사용
+<Image
+  src="/profile.jpg"
+  alt="Profile"
+  width={200}
+  height={200}
+  priority={false}
+/>
+```
+
+### 6.2 동적 import 활용
+```javascript
+import dynamic from 'next/dynamic';
+
+const HeavyComponent = dynamic(() => import('./HeavyComponent'), {
+  loading: () => <div>Loading...</div>,
+  ssr: false
+});
+```
+
+---
+
+## 7. 상태 관리
+
+### 7.1 로컬 상태 우선
+- **useState/useReducer 우선 사용**
+- **전역 상태는 필요시에만**: Zustand 또는 Context API
+
+### 7.2 서버 상태 관리
+```javascript
+// React Query 또는 SWR 사용 권장
+import useSWR from 'swr';
+import moment from 'moment';
+
+const useUsers = () => {
+  const { data, error } = useSWR('/api/users', fetcher);
+
+  const formattedUsers = data?.map(user => ({
+    ...user,
+    joinedAt: moment(user.joinedAt).format('YYYY-MM-DD')
+  }));
+
+  return {
+    users: formattedUsers,
+    loading: !error && !data,
+    error
+  };
+};
+```
+
+---
+
+## 8. 에러 처리
+
+### 8.1 Error Boundary 사용
+```javascript
+// components/ErrorBoundary.jsx
+'use client';
+
+import { Component } from 'react';
+import PropTypes from 'prop-types';
+
+export class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback || <div>Something went wrong</div>;
+    }
+    return this.props.children;
+  }
+}
+
+ErrorBoundary.propTypes = {
+  children: PropTypes.node.isRequired,
+  fallback: PropTypes.node
+};
+```
+
+---
+
+## 9. API 규칙
+
+### 9.1 Route Handler 사용
+```javascript
+// app/api/users/route.js
+import { NextRequest, NextResponse } from 'next/server';
+import moment from 'moment';
+
+export async function GET(request) {
+  try {
+    const users = await getUsers();
+    const formattedUsers = users.map(user => ({
+      ...user,
+      createdAt: moment(user.createdAt).toISOString()
+    }));
+
+    return NextResponse.json(formattedUsers);
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
+  }
+}
+```
+
+---
+
+## 10. 테스트
+
+### 10.1 테스트 파일 네이밍
+- **컴포넌트 테스트**: `Component.test.jsx`
+- **유틸리티 테스트**: `utils.test.js`
+- **통합 테스트**: `integration.test.js`
+
+### 10.2 날짜 테스트
+```javascript
+// moment mocking for consistent testing
+import moment from 'moment';
+
+jest.mock('moment', () => {
+  const actualMoment = jest.requireActual('moment');
+  return {
+    ...actualMoment,
+    default: () => actualMoment('2024-01-01T00:00:00.000Z')
+  };
+});
+```
+
+---
+
+## 결론
+
+이 규칙들은 **시니어 개발자의 경험과 베스트 프랙티스**를 바탕으로 작성되었습니다. 코드의 일관성과 품질을 보장하고, 팀 전체의 생산성을 향상시키는 것이 목표입니다. 새로운 기술이나 패턴이 등장하면 이 규칙도 함께 발전시켜 나가야 합니다.
