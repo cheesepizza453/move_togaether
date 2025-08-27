@@ -72,11 +72,9 @@ export function debounce(func, wait) {
 // 스로틀 유틸리티
 export function throttle(func, limit) {
   let inThrottle;
-  return function() {
-    const args = arguments;
-    const context = this;
+  return (...args) => {
     if (!inThrottle) {
-      func.apply(context, args);
+      func(...args);
       inThrottle = true;
       setTimeout(() => inThrottle = false, limit);
     }
