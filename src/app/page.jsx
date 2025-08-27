@@ -1,7 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import moment from "moment";
 
 export default function Home() {
+  const year = moment().year();
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* 모바일 최적화된 컨테이너 */}
@@ -141,7 +143,7 @@ export default function Home() {
         {/* 푸터 - 모바일에서 더 컴팩트하게 */}
         <footer className="text-center mt-12 sm:mt-16 text-gray-500 dark:text-gray-400">
           <p className="text-xs sm:text-sm">
-            © 2024 Move Togaether. Next.js + Tailwind CSS + shadcn/ui로 구축됨
+            © {year} Move Togaether. Next.js + Tailwind CSS + shadcn/ui로 구축됨
           </p>
         </footer>
       </div>
