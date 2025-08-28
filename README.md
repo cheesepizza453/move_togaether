@@ -1,129 +1,227 @@
-# Move Together
+# 🐕 Move Togaether - 유기견 이동봉사 매칭 플랫폼
 
-함께 움직이는 새로운 경험을 시작해보세요! 🚀
+> 입양 예정인 유기견들이 새로운 가족에게 안전하게 이동할 수 있도록 봉사자와 보호소/개인 구조자를 연결하는 매칭 플랫폼
 
-## 🚀 기술 스택
+## 🚀 프로젝트 상태
 
+**현재 단계**: Phase 1 - MVP (Minimum Viable Product) ✅ 완료
+**최근 업데이트**: 2024년 8월 28일 - 메인 페이지 시안 완성
+
+### ✅ 완료된 작업
+- [x] 기본 페이지 구조 및 라우팅
+- [x] 핵심 UI 컴포넌트 (Header, MainBanner, PostCard 등)
+- [x] 반응형 디자인 (모바일/태블릿/데스크톱)
+- [x] 기본 데이터 구조 및 목업 데이터
+- [x] 사용자 인터랙션 (검색, 필터, 정렬)
+
+### 🔄 진행 중인 작업
+- [ ] 실제 이미지 에셋 준비
+- [ ] API 연동 준비
+- [ ] 테스트 코드 작성
+
+### 📋 다음 단계
+- [ ] 사용자 인증 시스템 (카카오톡 연동)
+- [ ] 게시물 작성 시스템
+- [ ] 위치 기반 기능 (카카오맵 API)
+
+## 🎯 프로젝트 개요
+
+### 목적
+유기견 이동봉사 매칭 플랫폼으로, 입양 예정인 유기견들이 새로운 가족에게 안전하게 이동할 수 있도록 봉사자와 보호소/개인 구조자를 연결합니다.
+
+### 핵심 기능
+1. **봉사 요청 등록**: 이동 정보, 구조견 정보, 추가 정보
+2. **봉사 신청**: 봉사자 정보 입력, 메시지 전달
+3. **위치 기반 검색**: 현재 위치 기준 봉사 요청 검색
+4. **사용자 관리**: 프로필 관리, 게시물 관리, 찜 목록
+
+## 🛠️ 기술 스택
+
+### Frontend
 - **Framework**: Next.js 14 (App Router)
-- **Language**: JavaScript
+- **Language**: TypeScript/JavaScript
 - **Styling**: Tailwind CSS
 - **UI Components**: shadcn/ui
-- **Deployment**: Vercel
-- **Database**: Supabase (향후 연동 예정)
+- **Icons**: Lucide React
 
-## ✨ 주요 특징
+### Backend & Database
+- **Backend**: Next.js API Routes
+- **Database**: Supabase
+- **Authentication**: Supabase Auth (카카오톡 OAuth Provider)
 
-- 📱 **모바일 우선 디자인**: 모든 디바이스에서 완벽한 경험
-- 🎨 **현대적 UI**: shadcn/ui로 아름다운 인터페이스
-- 🚀 **빠른 성능**: Next.js의 최적화된 성능
-- 🔧 **확장 가능**: Vercel과 Supabase로 쉽게 확장
-- 🌙 **다크 모드 지원**: 사용자 선호도에 따른 테마 변경
+### External APIs
+- **Map API**: 카카오맵 API
+- **Address Search**: 카카오 우편번호 서비스
 
-## 🛠️ 설치 및 실행
+### Development & Deployment
+- **Version Control**: GitHub
+- **Deployment**: Vercel (GitHub 연동)
+- **Testing**: Playwright
 
-### 1. 의존성 설치
+## 📱 주요 화면
 
-```bash
-npm install
-```
+### 1. 메인 페이지 (`/`)
+- 현재 위치 기반 봉사 요청 검색
+- 긴급도별 표시 (D-3, D-19, D-80 등)
+- 로그인/회원가입 (카카오톡 연동)
 
-### 2. 개발 서버 실행
+### 2. 게시물 상세 페이지 (`/posts/[id]`)
+- 이동 정보 (출발지/도착지)
+- 구조견 정보 (이름, 크기, 견종, 사진)
+- 봉사 신청 모달
 
-```bash
-npm run dev
-```
+### 3. 게시물 작성 페이지 (`/posts/new`)
+- 이동 봉사 정보 입력
+- 구조견 정보 입력
+- 이미지 업로드 (최대 5장)
 
-브라우저에서 [http://localhost:3000](http://localhost:3000)을 열어 확인하세요.
+### 4. 마이페이지 (`/mypage`)
+- 내 정보 관리
+- 작성한 게시물 관리
+- 지원한 봉사 내역
 
-### 3. 프로덕션 빌드
-
-```bash
-npm run build
-npm start
-```
-
-## 📁 프로젝트 구조
+## 🏗️ 프로젝트 구조
 
 ```
 src/
-├── app/                 # Next.js App Router
-│   ├── globals.css     # 전역 스타일
-│   ├── layout.tsx      # 루트 레이아웃
-│   └── page.tsx        # 메인 페이지
-├── components/          # 재사용 가능한 컴포넌트
-│   └── ui/             # shadcn/ui 컴포넌트
-└── lib/                 # 유틸리티 및 설정
-    ├── constants.js     # 상수 정의
-    └── utils.js         # 유틸리티 함수
+├── app/                    # Next.js App Router
+│   ├── layout.jsx         # 루트 레이아웃
+│   └── page.jsx           # 메인 페이지
+├── components/            # 재사용 가능한 컴포넌트
+│   ├── ui/               # shadcn/ui 기본 컴포넌트
+│   ├── Header.jsx        # 헤더 네비게이션
+│   ├── MainBanner.jsx    # 메인 배너 슬라이더
+│   ├── LocationSelector.jsx # 위치 선택 컴포넌트
+│   ├── SortOptions.jsx   # 정렬 옵션
+│   ├── PostCard.jsx      # 게시물 카드
+│   └── Footer.jsx        # 푸터
+├── lib/                  # 유틸리티 함수
+└── styles/               # 전역 스타일
 ```
 
-## 🎯 사용된 shadcn/ui 컴포넌트
+## 🚀 시작하기
 
-- `Button` - 버튼 컴포넌트
-- `Card` - 카드 레이아웃
-- `Input` - 입력 필드
-- `Label` - 라벨
-- `Form` - 폼 컴포넌트
-- `Sheet` - 사이드 패널
-- `Dialog` - 모달 다이얼로그
-- `DropdownMenu` - 드롭다운 메뉴
-- `Select` - 선택 컴포넌트
-- `Textarea` - 텍스트 영역
+### 필수 요구사항
+- Node.js 18.0.0 이상
+- npm 또는 yarn
 
-## 🔧 환경 변수 설정
+### 설치 및 실행
 
-프로젝트 루트에 `.env.local` 파일을 생성하고 다음 변수들을 설정하세요:
-
+1. **저장소 클론**
 ```bash
-# API 설정
-NEXT_PUBLIC_API_URL=http://localhost:3000/api
+git clone https://github.com/your-username/move_togaether.git
+cd move_togaether
+```
 
-# Supabase 설정 (향후 사용)
+2. **의존성 설치**
+```bash
+npm install
+# 또는
+yarn install
+```
+
+3. **개발 서버 실행**
+```bash
+npm run dev
+# 또는
+yarn dev
+```
+
+4. **브라우저에서 확인**
+```
+http://localhost:3000
+```
+
+### 환경 변수 설정
+
+`.env.local` 파일을 생성하고 다음 변수들을 설정하세요:
+
+```env
+# Supabase
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
-# 기타 설정
-NEXT_PUBLIC_APP_ENV=development
-NEXT_PUBLIC_APP_VERSION=1.0.0
+# Kakao Map API
+NEXT_PUBLIC_KAKAO_MAP_API_KEY=your_kakao_map_api_key
 ```
 
-## 📱 모바일 최적화
+## 🎨 디자인 시스템
 
-- 반응형 디자인으로 모든 화면 크기 지원
-- 터치 친화적인 UI 컴포넌트
-- PWA 지원을 위한 manifest.json 포함
-- 모바일 전용 메타 태그 설정
+### 색상 팔레트
+- **Primary**: #2563eb (파란색)
+- **Secondary**: #6b7280 (회색)
+- **Accent**: #dc2626 (빨간색 - D-day)
+- **Success**: #16a34a (초록색)
+- **Warning**: #ca8a04 (노란색)
 
-## 🚀 배포
+### 반응형 브레이크포인트
+- **Mobile**: < 768px (기본 디자인)
+- **Tablet**: 768px - 1024px
+- **Desktop**: > 1024px
 
-### Vercel 배포
+### 타이포그래피
+- **Font Family**: Geist Sans
+- **Heading**: 2xl, 3xl, 4xl
+- **Body**: sm, base, lg
+- **Caption**: xs
 
-1. [Vercel](https://vercel.com)에 계정 생성
-2. GitHub 저장소 연결
-3. 자동 배포 설정
+## 📊 데이터베이스 스키마
 
-### Supabase 연동 (향후)
+### 주요 테이블
+- **user_profiles**: 사용자 프로필 정보
+- **posts**: 봉사 요청 게시물
+- **applications**: 봉사 신청
+- **shelters**: 보호소 정보
+- **favorites**: 찜 목록
 
-1. [Supabase](https://supabase.com)에서 프로젝트 생성
-2. 환경 변수에 Supabase 설정 추가
-3. 데이터베이스 스키마 설정
+자세한 스키마는 `docs/prd_document.md`를 참조하세요.
+
+## 🧪 테스트
+
+### 테스트 실행
+```bash
+# 단위 테스트
+npm run test
+
+# E2E 테스트
+npm run test:e2e
+
+# 테스트 커버리지
+npm run test:coverage
+```
+
+## 📚 문서
+
+- **PRD 문서**: `docs/prd_document.md`
+- **작업 로그**: `docs/20250828_메인페이지_시안_작업/`
+- **컴포넌트 구조도**: `docs/20250828_메인페이지_시안_작업/컴포넌트_구조도.md`
 
 ## 🤝 기여하기
 
-1. 이 저장소를 포크하세요
-2. 새로운 기능 브랜치를 생성하세요 (`git checkout -b feature/amazing-feature`)
-3. 변경사항을 커밋하세요 (`git commit -m 'Add some amazing feature'`)
-4. 브랜치에 푸시하세요 (`git push origin feature/amazing-feature`)
-5. Pull Request를 생성하세요
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ## 📄 라이선스
 
-이 프로젝트는 MIT 라이선스 하에 배포됩니다.
+이 프로젝트는 MIT 라이선스 하에 배포됩니다. 자세한 내용은 `LICENSE` 파일을 참조하세요.
 
-## 📞 문의
+## 📞 연락처
 
-프로젝트에 대한 문의사항이 있으시면 이슈를 생성해 주세요.
+- **프로젝트 링크**: [https://github.com/your-username/move_togaether](https://github.com/your-username/move_togaether)
+- **이메일**: support@movetogaether.com
+- **고객센터**: 1588-0000
+
+## 🙏 감사의 말
+
+- [Next.js](https://nextjs.org/) - React 프레임워크
+- [Tailwind CSS](https://tailwindcss.com/) - CSS 프레임워크
+- [shadcn/ui](https://ui.shadcn.com/) - UI 컴포넌트
+- [Supabase](https://supabase.com/) - 백엔드 서비스
+- [Vercel](https://vercel.com/) - 배포 플랫폼
 
 ---
 
-**Move Together** - 함께 움직이는 새로운 경험을 시작해보세요! 🎉
+⭐ 이 프로젝트가 도움이 되었다면 스타를 눌러주세요!

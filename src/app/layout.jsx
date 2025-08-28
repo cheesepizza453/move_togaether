@@ -12,12 +12,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Move Together - 함께 움직이는 새로운 경험",
-  description: "Next.js, Tailwind CSS, shadcn/ui로 구축된 모바일 우선 웹 애플리케이션",
-  keywords: ["Next.js", "Tailwind CSS", "shadcn/ui", "모바일", "웹앱"],
-  authors: [{ name: "Move Together Team" }],
+  title: "Move Togaether - 유기견 이동봉사 매칭 플랫폼",
+  description: "입양 예정인 유기견들이 새로운 가족에게 안전하게 이동할 수 있도록 봉사자와 보호소/개인 구조자를 연결하는 매칭 플랫폼",
+  keywords: ["유기견", "이동봉사", "매칭", "보호소", "입양", "봉사자", "Move Togaether"],
+  authors: [{ name: "Move Togaether Team" }],
   viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
-  themeColor: "#3b82f6",
+  themeColor: "#2563eb",
   manifest: "/manifest.json",
 };
 
@@ -27,7 +27,7 @@ export default function RootLayout({ children }) {
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Move Together" />
+        <meta name="apple-mobile-web-app-title" content="Move Togaether" />
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
