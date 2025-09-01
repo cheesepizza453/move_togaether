@@ -9,38 +9,24 @@ const MainBanner = () => {
   const banners = [
     {
       id: 1,
-      title: "전국에서 진행 중인 봉사",
-      subtitle: "유기견들이 새로운 가족을 찾고 있습니다",
-      image: "/images/banner1.jpg",
-      description: "전국의 보호소와 개인 구조자들이 등록한 이동봉사 요청을 확인하세요"
+      label: "보호자 모집",
+      title: "오늘은 특별한 날이에요, 새 가족을 만나러 가요!",
+      subtitle: "같이 드라이브해주실래요? 🚗🐾",
+      image: "/images/banner1.jpg"
     },
     {
       id: 2,
-      title: "안전한 이동을 위한 봉사",
-      subtitle: "당신의 도움이 필요합니다",
-      image: "/images/banner2.jpg",
-      description: "유기견들이 새로운 가족에게 안전하게 이동할 수 있도록 도와주세요"
+      label: "봉사자 모집",
+      title: "두 번째 배너 제목",
+      subtitle: "두 번째 배너 부제목",
+      image: "/images/banner2.jpg"
     },
     {
       id: 3,
-      title: "따뜻한 마음으로",
-      subtitle: "작은 도움이 큰 변화를 만듭니다",
-      image: "/images/banner3.jpg",
-      description: "봉사자들의 따뜻한 마음이 유기견들에게 희망을 줍니다"
-    },
-    {
-      id: 4,
-      title: "함께 만들어가는",
-      subtitle: "더 나은 세상",
-      image: "/images/banner4.jpg",
-      description: "Move Togaether와 함께 유기견들의 행복한 미래를 만들어가세요"
-    },
-    {
-      id: 5,
-      title: "지금 시작하세요",
-      subtitle: "봉사 신청하기",
-      image: "/images/banner5.jpg",
-      description: "지금 바로 봉사 신청을 통해 유기견들을 도와주세요"
+      label: "봉사자 모집",
+      title: "세 번째 배너 제목",
+      subtitle: "세 번째 배너 부제목",
+      image: "/images/banner3.jpg"
     }
   ];
 
@@ -60,12 +46,8 @@ const MainBanner = () => {
     setCurrentSlide((prev) => (prev - 1 + banners.length) % banners.length);
   };
 
-  const goToSlide = (index) => {
-    setCurrentSlide(index);
-  };
-
   return (
-    <div className="relative w-full h-48 sm:h-56 md:h-64 lg:h-80 bg-gradient-to-r from-blue-50 to-indigo-100 rounded-lg overflow-hidden">
+    <div className="relative w-full h-48 bg-yellow-400 rounded-lg overflow-hidden">
       {/* 배너 슬라이드 */}
       <div className="relative w-full h-full">
         {banners.map((banner, index) => (
@@ -75,23 +57,32 @@ const MainBanner = () => {
               index === currentSlide ? 'opacity-100' : 'opacity-0'
             }`}
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent z-10" />
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/40 z-10" />
-
-            {/* 배경 이미지 (실제 이미지가 없으므로 그라데이션으로 대체) */}
-            <div className="w-full h-full bg-gradient-to-br from-blue-400 via-indigo-500 to-purple-600" />
-
             {/* 배너 내용 */}
-            <div className="absolute inset-0 z-20 flex flex-col justify-center items-start px-4 sm:px-6 lg:px-8 text-white">
-              <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold mb-2 leading-tight">
-                {banner.title}
-              </h1>
-              <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl mb-2 sm:mb-3 text-blue-100 leading-tight">
-                {banner.subtitle}
-              </p>
-              <p className="text-xs sm:text-sm md:text-base text-gray-200 max-w-xs sm:max-w-sm md:max-w-md leading-relaxed">
-                {banner.description}
-              </p>
+            <div className="relative h-full flex items-center px-4">
+              {/* 왼쪽 텍스트 영역 */}
+              <div className="flex-1 text-left">
+                {/* 라벨 */}
+                <div className="mb-3">
+                  <span className="inline-block px-3 py-1 bg-yellow-300 text-yellow-800 text-xs font-medium rounded-full">
+                    {banner.label}
+                  </span>
+                </div>
+
+                {/* 제목 */}
+                <h1 className="text-banner-1 text-white font-bold mb-2 leading-tight">
+                  {banner.title}
+                </h1>
+
+                {/* 부제목 */}
+                <p className="text-banner-2 text-white opacity-90">
+                  {banner.subtitle}
+                </p>
+              </div>
+
+              {/* 오른쪽 강아지 일러스트 */}
+              <div className="flex-shrink-0 w-24 h-24 bg-pink-300 rounded-full flex items-center justify-center mr-4">
+                <div className="text-4xl">🐕</div>
+              </div>
             </div>
           </div>
         ))}
@@ -100,31 +91,23 @@ const MainBanner = () => {
       {/* 네비게이션 버튼 */}
       <button
         onClick={prevSlide}
-        className="absolute left-2 sm:left-4 top-1/2 transform -translate-y-1/2 z-30 p-1.5 sm:p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+        className="absolute left-2 top-1/2 transform -translate-y-1/2 w-8 h-8 bg-white/20 hover:bg-white/30 text-white rounded-full flex items-center justify-center transition-colors"
       >
-        <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white" />
+        <ChevronLeft className="w-4 h-4" />
       </button>
 
       <button
         onClick={nextSlide}
-        className="absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 z-30 p-1.5 sm:p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+        className="absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 bg-white/20 hover:bg-white/30 text-white rounded-full flex items-center justify-center transition-colors"
       >
-        <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white" />
+        <ChevronRight className="w-4 h-4" />
       </button>
 
-      {/* 페이지 인디케이터 */}
-      <div className="absolute bottom-2 sm:bottom-4 right-2 sm:right-4 flex space-x-1.5 sm:space-x-2">
-        {banners.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => goToSlide(index)}
-            className={`w-1 h-1 rounded-full transition-all duration-200 ${
-              index === currentSlide
-                ? 'bg-white scale-125'
-                : 'bg-white bg-opacity-50 hover:bg-opacity-75'
-            }`}
-          />
-        ))}
+      {/* 슬라이드 인디케이터 */}
+      <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex items-center space-x-2">
+        <span className="text-white text-xs font-medium">
+          {currentSlide + 1}/{banners.length}
+        </span>
       </div>
     </div>
   );

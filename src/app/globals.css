@@ -1,4 +1,88 @@
+@import url(//spoqa.github.io/spoqa-han-sans/css/SpoqaHanSansNeo.css);
+
 @import "tailwindcss";
+
+/* 타이포그래피 시스템 - 피그마 디자인 시안 기준 */
+:root {
+  --font-spoqa-han-sans-neo: 'Spoqa Han Sans Neo', 'sans-serif';
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+}
+
+/* 기본 폰트 설정 */
+body {
+  font-family: var(--font-spoqa-han-sans-neo);
+  font-weight: var(--font-weight-regular);
+  font-size: 16px;
+}
+
+/* --- 텍스트 클래스 정의 (피그마 디자인 시안 기준) --- */
+
+/* 1. 일반 굵은 텍스트 */
+.text-bold-default {
+  font-family: var(--font-spoqa-han-sans-neo);
+  font-size: 12px; /* 12pt */
+  font-weight: var(--font-weight-bold);
+  line-height: 1.4;
+}
+
+/* 2. 베너 텍스트 1 */
+.text-banner-1 {
+  font-family: var(--font-spoqa-han-sans-neo) !important;
+  font-size: 20px !important; /* 20pt */
+  font-weight: var(--font-weight-medium) !important;
+  line-height: 1.3 !important;
+  color: #FFD044 !important;
+}
+
+/* 3. 버튼, 안내 문구, 차트, 위치 텍스트 */
+.text-button-guide-chart-location {
+  font-family: var(--font-spoqa-han-sans-neo);
+  font-size: 16px; /* 16pt */
+  font-weight: var(--font-weight-medium);
+  line-height: 1.4;
+}
+
+/* 4. 리스트 텍스트 1 */
+.text-list-1 {
+  font-family: var(--font-spoqa-han-sans-neo);
+  font-size: 14px; /* 14pt */
+  font-weight: var(--font-weight-medium);
+  line-height: 1.4;
+}
+
+/* 5. 베너 라벨 텍스트 */
+.text-banner-label {
+  font-family: var(--font-spoqa-han-sans-neo);
+  font-size: 12px; /* 12pt */
+  font-weight: var(--font-weight-medium);
+  line-height: 1.4;
+}
+
+/* 6. 베너 텍스트 2 */
+.text-banner-2 {
+  font-family: var(--font-spoqa-han-sans-neo);
+  font-size: 14px; /* 14pt */
+  font-weight: var(--font-weight-regular);
+  line-height: 1.4;
+}
+
+/* 7. 이름/품종 */
+.text-name-breed {
+  font-family: var(--font-spoqa-han-sans-neo);
+  font-size: 12px; /* 12pt */
+  font-weight: var(--font-weight-regular);
+  line-height: 1.4;
+}
+
+/* 8. 게시글 올린 날짜 */
+.text-post-date {
+  font-family: var(--font-spoqa-han-sans-neo);
+  font-size: 9px; /* 9pt */
+  font-weight: var(--font-weight-regular);
+  line-height: 1.3;
+}
 
 /* 모바일 최적화를 위한 전역 스타일 */
 html {
