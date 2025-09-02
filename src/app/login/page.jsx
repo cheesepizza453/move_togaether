@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,8 +10,18 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const router = useRouter();
   const { login } = useAuth();
+
+  // URL 파라미터에서 메시지 확인
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const message = urlParams.get('message');
+    if (message === 'signup_success') {
+      setSuccessMessage('회원가입이 완료되었습니다. 로그인해주세요.');
+    }
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -50,6 +60,13 @@ const LoginPage = () => {
           />
         </div>
       </div>
+
+      {/* 성공 메시지 */}
+      {successMessage && (
+        <div className="w-full max-w-sm mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+          {successMessage}
+        </div>
+      )}
 
       {/* 에러 메시지 */}
       {error && (

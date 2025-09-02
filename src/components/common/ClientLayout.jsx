@@ -8,7 +8,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 
 const ClientLayout = ({ children }) => {
   const pathname = usePathname();
-  const isLoginPage = pathname === '/login';
+  const isLoginPage = ['/login', '/signup', '/signup/additional-info'].includes(pathname);
 
   return (
     <AuthProvider>
