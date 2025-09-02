@@ -85,10 +85,6 @@ export default function Home() {
         </section>
       </main>
 
-      {/* 푸터 */}
-      <div className="block">
-        <Footer />
-      </div>
     </div>
   );
 }
