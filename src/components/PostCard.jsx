@@ -35,7 +35,7 @@ const PostCard = ({ post }) => {
   const getDdayColor = (dday) => {
     if (dday <= 7) return 'bg-brand-point text-white';
     if (dday <= 30) return 'bg-[#efbc40] text-white';
-    return 'bg-blue-500';
+    return 'bg-brand-sub text-brand-yellow-dark';
   };
 
   return (
@@ -47,7 +47,7 @@ const PostCard = ({ post }) => {
       <div className="flex justify-end items-start mb-1">
         {/* D-day 배지 - border 위에 겹쳐서 표시 */}
         <div className="absolute -top-3 left-[-5px] z-10">
-          <span className={`flex items-center justify-center px-[13px] h-[24px] rounded-[7px] text-white text-xs font-bold ${getDdayColor(dday)}`}>
+          <span className={`flex items-center justify-center px-[13px] h-[24px] rounded-[7px] text-12-b font-bold ${getDdayColor(dday)}`}>
             D-{dday}
           </span>
         </div>
