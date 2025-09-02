@@ -47,7 +47,7 @@ const MainBanner = () => {
   };
 
   return (
-    <div className="relative w-full h-48 bg-yellow-400 rounded-lg overflow-hidden">
+    <div className="relative w-full h-48 bg-yellow-400 rounded-2xl overflow-hidden">
       {/* 배너 슬라이드 */}
       <div className="relative w-full h-full">
         {banners.map((banner, index) => (
@@ -88,26 +88,43 @@ const MainBanner = () => {
         ))}
       </div>
 
-      {/* 네비게이션 버튼 */}
-      <button
-        onClick={prevSlide}
-        className="absolute left-2 top-1/2 transform -translate-y-1/2 w-8 h-8 bg-white/20 hover:bg-white/30 text-white rounded-full flex items-center justify-center transition-colors"
-      >
-        <ChevronLeft className="w-4 h-4" />
-      </button>
 
-      <button
-        onClick={nextSlide}
-        className="absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 bg-white/20 hover:bg-white/30 text-white rounded-full flex items-center justify-center transition-colors"
-      >
-        <ChevronRight className="w-4 h-4" />
-      </button>
 
-      {/* 슬라이드 인디케이터 */}
-      <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex items-center space-x-2">
-        <span className="text-white text-xs font-medium">
-          {currentSlide + 1}/{banners.length}
-        </span>
+      {/* 우측 하단 네비게이션 컨트롤 */}
+      <div className="absolute bottom-2 right-2 flex items-center space-x-2">
+        {/* 페이지 표시 */}
+        <div className="px-3 py-1.5">
+          <span className="text-yellow-600 text-xs font-medium">
+            {currentSlide + 1}/{banners.length}
+          </span>
+        </div>
+
+        {/* 좌우 이동 버튼 */}
+        <button
+          onClick={prevSlide}
+          className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200 shadow-sm backdrop-blur-sm ${
+            currentSlide === 0
+              ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              : 'bg-white/90 hover:bg-white text-yellow-500 hover:shadow-md'
+          }`}
+          disabled={currentSlide === 0}
+          aria-label="이전 배너"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+
+        <button
+          className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200 shadow-sm backdrop-blur-sm ${
+            currentSlide === banners.length - 1
+              ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              : 'bg-white/90 hover:bg-white text-yellow-500 hover:shadow-md'
+          }`}
+          onClick={nextSlide}
+          disabled={currentSlide === banners.length - 1}
+          aria-label="다음 배너"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
       </div>
     </div>
   );

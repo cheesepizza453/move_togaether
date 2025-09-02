@@ -22,7 +22,7 @@ const LocationSelector = () => {
       {/* 위치 선택 버튼 - 노란색 배경 */}
       <button
         onClick={() => setIsModalOpen(true)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-[#fff6d1] border border-[#fff6d1] rounded-lg hover:bg-[#f0e8c0] transition-colors text-left"
+        className="w-full flex items-center justify-between px-4 py-3 bg-[#fff6d1] border border-[#fff6d1] rounded-2xl hover:bg-[#f0e8c0] transition-colors text-left"
       >
         <div className="flex items-center space-x-2">
           {/* <MapPin className="w-5 h-5 text-yellow-800" /> */}

@@ -26,7 +26,7 @@ const SortOptions = ({ onSortChange }) => {
           onClick={() => handleSortClick(option.id)}
           className={`text-button-guide-chart-location transition-colors ${
             activeSort === option.id
-              ? 'text-yellow-500 border-b-2 border-yellow-500 pb-1'
+              ? 'text-yellow-500 border-b-2 border-yellow-500 -pb-2'
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >
