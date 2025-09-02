@@ -43,7 +43,7 @@ export default function RootLayout({ children }) {
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white dark:bg-gray-950`}
+        className={`mx-auto max-w-[550px] w-full ${geistSans.variable} ${geistMono.variable} antialiased dark:bg-gray-950 bg-[rgba(0,0,0,0.8)]`}
       >
         <SplashProvider>
           {children}

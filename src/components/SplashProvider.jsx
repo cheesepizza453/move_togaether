@@ -33,7 +33,7 @@ const SplashProvider = ({ children }) => {
 
   return (
     <SplashContext.Provider value={value}>
-      {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
+      {/*{showSplash && <SplashScreen onComplete={handleSplashComplete} />}*/}
       {children}
     </SplashContext.Provider>
   );

@@ -21,7 +21,7 @@ export default function Home() {
       dogBreed: "믹스",
       departureAddress: "서울",
       arrivalAddress: "대구",
-      deadline: "2024-01-01",
+      deadline: "25/01/01",
       images: ["/images/dog1.jpg"],
       status: "active",
       dday: 3
@@ -34,7 +34,7 @@ export default function Home() {
       dogBreed: "믹스",
       departureAddress: "서울",
       arrivalAddress: "대구",
-      deadline: "2024-01-01",
+      deadline: "25/01/01",
       images: ["/images/dog2.jpg"],
       status: "active",
       dday: 19,
@@ -48,7 +48,7 @@ export default function Home() {
       dogBreed: "믹스",
       departureAddress: "시흥",
       arrivalAddress: "남양주",
-      deadline: "2024-01-01",
+      deadline: "25/01/01",
       images: ["/images/dog3.jpg"],
       status: "active",
       dday: 80
@@ -61,14 +61,14 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#FBFBF7]">
       {/* 헤더 */}
       <Header />
 
       {/* 메인 콘텐츠 */}
-      <main className="w-full px-4 py-4 pb-24">
+      <main className="w-full bg-brand-bg px-[23px] pt-[15px]">
         {/* 메인 배너 */}
-        <section className="mb-6">
+        <section className="mb-[27px]">
           <MainBanner />
         </section>
 
@@ -79,7 +79,7 @@ export default function Home() {
 
         {/* 게시물 목록 */}
         <section>
-          <div className="space-y-4">
+          <div className="space-y-[18px]">
             {mockPosts.map((post) => (
               <PostCard key={post.id} post={post} />
             ))}

@@ -19,18 +19,20 @@ const SortOptions = ({ onSortChange }) => {
   };
 
   return (
-    <div className="flex space-x-6">
+    <div className="flex space-x-[10px]">
       {sortOptions.map((option) => (
         <button
           key={option.id}
           onClick={() => handleSortClick(option.id)}
-          className={`text-button-guide-chart-location transition-colors ${
+          className={`text-button-guide-chart-location transition-colors relative ${
             activeSort === option.id
-              ? 'text-yellow-500 border-b-2 border-yellow-500 -pb-2'
-              : 'text-gray-500 hover:text-gray-700'
+              ? 'text-black'
+              : 'text-text-800 hover:text-gray-700'
           }`}
         >
           {option.label}
+          {activeSort === option.id &&
+              <span className={'absolute block bottom-[-3px] left-0 w-full h-[3px] bg-brand-point rounded-full'}></span>}
         </button>
       ))}
     </div>
