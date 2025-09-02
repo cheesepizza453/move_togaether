@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { MapPin, ChevronRight, X } from 'lucide-react';
-import IconRightArrow from "../../public/img/icon/IconRightArrow";
+import { X } from 'lucide-react';
+import IconRightArrow from "../../../public/img/icon/IconRightArrow";
 
 const LocationSelector = () => {
   const [currentLocation, setCurrentLocation] = useState('전국');

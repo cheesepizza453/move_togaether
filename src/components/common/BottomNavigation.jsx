@@ -2,12 +2,13 @@
 
 import { useState } from 'react';
 import { Home, Plus, Heart, User } from 'lucide-react';
-import { useSplash } from './SplashProvider';
-import MenuBar from "../../public/img/MenuBar";
+import { useRouter } from 'next/navigation';
+// import { useSplash } from './SplashProvider';
 
 const BottomNavigation = () => {
   const [activeTab, setActiveTab] = useState('home');
-  const { showSplash } = useSplash();
+  // const { showSplash } = useSplash();
+  const router = useRouter();
 
   // Splash가 표시되는 동안 하단 네비게이션 숨김
   // if (showSplash) {
@@ -87,8 +88,12 @@ const BottomNavigation = () => {
 
   const handleTabClick = (tabId) => {
     setActiveTab(tabId);
-    // 실제로는 라우팅 처리
-    console.log('탭 클릭:', tabId);
+
+    // 해당 탭의 href로 이동
+    const selectedTab = tabs.find(tab => tab.id === tabId);
+    if (selectedTab && selectedTab.href) {
+      router.push(selectedTab.href);
+    }
   };
 
   return (
