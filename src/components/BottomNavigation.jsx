@@ -2,9 +2,16 @@
 
 import { useState } from 'react';
 import { Home, Plus, Heart, User } from 'lucide-react';
+import { useSplash } from './SplashProvider';
 
 const BottomNavigation = () => {
   const [activeTab, setActiveTab] = useState('home');
+  const { showSplash } = useSplash();
+
+  // Splash가 표시되는 동안 하단 네비게이션 숨김
+  if (showSplash) {
+    return null;
+  }
 
   const tabs = [
     {

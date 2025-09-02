@@ -1,5 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import SplashProvider from "../components/SplashProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,8 +18,18 @@ export const metadata = {
   keywords: ["유기견", "이동봉사", "매칭", "보호소", "입양", "봉사자", "Move Togaether"],
   authors: [{ name: "Move Togaether Team" }],
   viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
-  themeColor: "#2563eb",
+  themeColor: "#FFD700",
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: '/favicon.png', type: 'image/png' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: 'any' }
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }
+    ]
+  }
 };
 
 export default function RootLayout({ children }) {
@@ -34,7 +45,9 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white dark:bg-gray-950`}
       >
-        {children}
+        <SplashProvider>
+          {children}
+        </SplashProvider>
       </body>
     </html>
   );
