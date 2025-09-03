@@ -53,9 +53,64 @@ const LoginPage = () => {
     }
   };
 
-  const handleKakaoLogin = () => {
-    // TODO: 카카오톡 로그인 로직 구현
-    console.log('카카오톡 로그인 시도');
+    const handleKakaoSignup = () => {
+    const kakaoJsKey = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
+
+    if (!kakaoJsKey) {
+      toast.error('카카오톡 설정이 필요합니다.');
+      return;
+    }
+
+    // 카카오톡 SDK 초기화
+    if (!window.Kakao.isInitialized()) {
+      window.Kakao.init(kakaoJsKey);
+    }
+
+    // 카카오톡 로그인
+    window.Kakao.Auth.login({
+      success: (authObj) => {
+        console.log('카카오톡 로그인 성공:', authObj);
+
+        // 사용자 정보 가져오기
+        window.Kakao.API.request({
+          url: '/v2/user/me',
+          success: (res) => {
+            console.log('사용자 정보:', res);
+
+            // 이메일이 없는 경우
+            if (!res.kakao_account?.email) {
+              toast.error('이메일 정보가 필요합니다. 카카오톡 계정 설정에서 이메일을 공개해주세요.');
+              return;
+            }
+
+            // 카카오톡 가입 페이지로 이동 (사용자 정보와 함께)
+            const userInfo = {
+              id: res.id,
+              email: res.kakao_account.email,
+              nickname: res.kakao_account.profile?.nickname,
+              name: res.kakao_account.name,
+              profile_image: res.kakao_account.profile?.profile_image_url,
+              thumbnail_image: res.kakao_account.profile?.thumbnail_image_url,
+              access_token: authObj.access_token
+            };
+
+            // 사용자 정보를 sessionStorage에 저장
+            sessionStorage.setItem('kakaoUserInfo', JSON.stringify(userInfo));
+
+            // 카카오톡 가입 페이지로 이동
+            window.location.href = '/signup/kakao';
+          },
+          fail: (error) => {
+            console.error('사용자 정보 가져오기 실패:', error);
+            toast.error('사용자 정보를 가져올 수 없습니다.');
+          }
+        });
+      },
+      fail: (error) => {
+        console.error('카카오톡 로그인 실패:', error);
+        toast.error('카카오톡 로그인에 실패했습니다.');
+      }
+    });
   };
 
   const handleTestConnection = async () => {
@@ -170,9 +225,9 @@ const LoginPage = () => {
       <div className="w-full max-w-sm space-y-2">
         <p className="text-center text-gray-400 text-xs">간편 로그인</p>
 
-        {/* 카카오톡 로그인 버튼 */}
+        {/* 카카오톡 간편 가입 버튼 */}
         <button
-          onClick={handleKakaoLogin}
+          onClick={handleKakaoSignup}
           disabled={loading}
           className={`w-full font-[500] py-3 rounded-lg transition-colors relative ${
             loading
@@ -189,7 +244,7 @@ const LoginPage = () => {
           </div>
 
           {/* 텍스트 - 버튼 가운데에 위치 */}
-          <span className="block text-center font-[400] text-base">카카오톡으로 로그인</span>
+          <span className="block text-center font-[400] text-base">카카오톡 간편 가입</span>
         </button>
       </div>
 

@@ -470,6 +470,63 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // 카카오톡 회원가입 함수
+  const signUpWithKakao = async ({ userInfo, display_name, phone, phone_visible, bio, instagram, naver_cafe, kakao_openchat }) => {
+    try {
+      setLoading(true);
+
+      console.log('카카오톡 회원가입 요청 시작...');
+      const response = await fetch('/api/auth/kakao/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userInfo,
+          display_name,
+          phone,
+          phone_visible,
+          bio,
+          instagram,
+          naver_cafe,
+          kakao_openchat
+        }),
+      });
+
+      const result = await response.json();
+      console.log('카카오톡 회원가입 응답:', result);
+
+      if (result.success) {
+        // 회원가입 성공 시 자동 로그인
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setUser(user);
+          await fetchProfile(user.id);
+        }
+
+        return {
+          success: true,
+          message: '카카오톡 회원가입이 완료되었습니다.',
+          user: result.user
+        };
+      } else {
+        return {
+          success: false,
+          error: result.error || '카카오톡 회원가입에 실패했습니다.'
+        };
+      }
+
+    } catch (error) {
+      console.error('카카오톡 회원가입 중 오류:', error);
+      return {
+        success: false,
+        error: '카카오톡 회원가입 처리 중 오류가 발생했습니다.'
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value = {
     user,
     profile,
@@ -481,7 +538,8 @@ export const AuthProvider = ({ children }) => {
     resendVerification,
     checkNicknameDuplicate,
     testSupabaseConnection,
-    createProfileManually
+    createProfileManually,
+    signUpWithKakao
   };
 
   return (
