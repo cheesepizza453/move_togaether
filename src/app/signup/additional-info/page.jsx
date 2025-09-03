@@ -1,17 +1,17 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Plus, Instagram, MessageCircle, Users } from 'lucide-react';
 import Image from 'next/image';
+import { useAuth } from '@/hooks/useAuth';
 
 const AdditionalInfoPage = () => {
   const [formData, setFormData] = useState({
     nickname: '',
     introduction: '',
-    phone: '010-0000-0000',
-    profileImage: null
+    phone: ''
   });
 
   const [contactChannels, setContactChannels] = useState({
@@ -29,7 +29,25 @@ const AdditionalInfoPage = () => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [nicknameValidation, setNicknameValidation] = useState(null);
+  const [signupData, setSignupData] = useState(null);
+  const [nicknameChecking, setNicknameChecking] = useState(false);
+
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { signUp, checkNicknameDuplicate } = useAuth();
+
+  // 첫 번째 페이지에서 전달받은 정보 확인
+  useEffect(() => {
+    const email = searchParams.get('email');
+    const password = searchParams.get('password');
+
+    if (!email || !password) {
+      router.push('/signup');
+      return;
+    }
+
+    setSignupData({ email, password });
+  }, [searchParams, router]);
 
   // 닉네임 유효성 검사
   const validateNickname = (nickname) => {
@@ -51,16 +69,6 @@ const AdditionalInfoPage = () => {
         isValid: false,
         message: '2-20자로 입력해주세요',
         type: 'length'
-      };
-    }
-
-    // TODO: 실제 API 호출로 중복 확인
-    // 임시로 '뭉치'는 사용 불가로 설정
-    if (nickname === '뭉치') {
-      return {
-        isValid: false,
-        message: '이미 사용 중인 닉네임입니다',
-        type: 'duplicate'
       };
     }
 
@@ -88,6 +96,41 @@ const AdditionalInfoPage = () => {
     }
   };
 
+  // 닉네임 blur 이벤트로 중복 체크
+  const handleNicknameBlur = async (value) => {
+    if (!value.trim() || nicknameValidation?.type !== 'success') {
+      return;
+    }
+
+    setNicknameChecking(true);
+    try {
+      const result = await checkNicknameDuplicate(value);
+
+      if (result.isDuplicate) {
+        setNicknameValidation({
+          isValid: false,
+          message: result.message,
+          type: 'duplicate'
+        });
+        setErrors(prev => ({ ...prev, nickname: result.message }));
+      } else {
+        setNicknameValidation({
+          isValid: true,
+          message: result.message,
+          type: 'success'
+        });
+        // 에러 메시지 제거
+        if (errors.nickname) {
+          setErrors(prev => ({ ...prev, nickname: '' }));
+        }
+      }
+    } catch (error) {
+      console.error('닉네임 중복 체크 오류:', error);
+    } finally {
+      setNicknameChecking(false);
+    }
+  };
+
   // 연락채널 선택 변경
   const handleChannelChange = (channel) => {
     setContactChannels(prev => ({
@@ -112,6 +155,7 @@ const AdditionalInfoPage = () => {
     }));
   };
 
+
   // 폼 유효성 검사
   const validateForm = () => {
     const newErrors = {};
@@ -126,6 +170,17 @@ const AdditionalInfoPage = () => {
       newErrors.phone = '연락처를 입력해주세요.';
     }
 
+    // 선택된 채널에 대한 입력값 검증
+    if (contactChannels.instagram && !channelInputs.instagram.trim()) {
+      newErrors.instagram = '인스타그램 ID를 입력해주세요.';
+    }
+    if (contactChannels.naverCafe && !channelInputs.naverCafe.trim()) {
+      newErrors.naverCafe = '네이버 카페 링크를 입력해주세요.';
+    }
+    if (contactChannels.kakaoOpenChat && !channelInputs.kakaoOpenChat.trim()) {
+      newErrors.kakaoOpenChat = '카카오톡 오픈채팅 링크를 입력해주세요.';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -136,18 +191,35 @@ const AdditionalInfoPage = () => {
       return;
     }
 
+    if (!signupData) {
+      setErrors({ general: '회원가입 정보가 누락되었습니다.' });
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // TODO: 실제 회원가입 API 호출
-      setTimeout(() => {
-        setLoading(false);
-        router.push('/login?message=signup_success');
-      }, 1000);
+      const result = await signUp({
+        email: signupData.email,
+        password: signupData.password,
+        nickname: formData.nickname,
+        introduction: formData.introduction,
+        phone: formData.phone,
+        contactChannels,
+        channelInputs
+      });
 
+      if (result.success) {
+        // 회원가입 성공 - 이메일 인증 안내 페이지로 이동
+        router.push('/signup/success');
+      } else {
+        setErrors({ general: result.error || '회원가입 중 오류가 발생했습니다.' });
+      }
     } catch (error) {
-      setLoading(false);
+      console.error('회원가입 오류:', error);
       setErrors({ general: '회원가입 중 오류가 발생했습니다.' });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -187,9 +259,18 @@ const AdditionalInfoPage = () => {
                   priority
                 />
               </div>
-              <button className="absolute -bottom-1 -right-1 w-6 h-6 bg-pink-200 rounded-full flex items-center justify-center">
-                <Plus size={16} className="text-pink-600" />
+              <button
+                className="absolute -bottom-1 -right-1 w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center cursor-not-allowed"
+                title="인증 후에 등록이 가능합니다"
+                disabled
+              >
+                <Plus size={16} className="text-gray-500" />
               </button>
+            </div>
+            <div className="ml-3 flex items-center">
+              <p className="text-xs text-gray-500">
+                인증 후에 등록이 가능합니다
+              </p>
             </div>
           </div>
 
@@ -203,6 +284,7 @@ const AdditionalInfoPage = () => {
                 type="text"
                 value={formData.nickname}
                 onChange={(e) => handleNicknameChange(e.target.value)}
+                onBlur={(e) => handleNicknameBlur(e.target.value)}
                 placeholder="닉네임 또는 보호소명을 입력해 주세요."
                 maxLength={20}
                 className={`w-full px-4 py-3 pr-16 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-colors ${
@@ -216,6 +298,11 @@ const AdditionalInfoPage = () => {
               <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-400">
                 {formData.nickname.length}/20
               </div>
+              {nicknameChecking && (
+                <div className="absolute right-12 top-1/2 transform -translate-y-1/2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-500"></div>
+                </div>
+              )}
             </div>
 
             {/* 닉네임 안내 및 유효성 메시지 */}
@@ -267,6 +354,7 @@ const AdditionalInfoPage = () => {
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+              placeholder="010-0000-0000"
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-colors focus:bg-[#FFDD44] focus:bg-opacity-20"
             />
             {errors.phone && (
@@ -332,6 +420,9 @@ const AdditionalInfoPage = () => {
                   placeholder="인스타그램 ID를 입력해 주세요."
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-colors focus:bg-[#FFDD44] focus:bg-opacity-20"
                 />
+                {errors.instagram && (
+                  <p className="mt-1 text-sm text-red-500">{errors.instagram}</p>
+                )}
               </div>
             )}
 
@@ -348,6 +439,9 @@ const AdditionalInfoPage = () => {
                   placeholder="네이버 카페 링크를 입력해 주세요."
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-colors focus:bg-[#FFDD44] focus:bg-opacity-20"
                 />
+                {errors.naverCafe && (
+                  <p className="mt-1 text-sm text-red-500">{errors.naverCafe}</p>
+                )}
               </div>
             )}
 
@@ -364,9 +458,12 @@ const AdditionalInfoPage = () => {
                   placeholder="오픈채팅 링크를 입력해 주세요."
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-colors focus:bg-[#FFDD44] focus:bg-opacity-20"
                 />
-                                 <p className="text-xs text-gray-500 mt-1">
-                   채팅방 우상단 세줄 메뉴 버튼 &gt; 공유 &gt; 링크 복사
-                 </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  채팅방 우상단 세줄 메뉴 버튼 &gt; 공유 &gt; 링크 복사
+                </p>
+                {errors.kakaoOpenChat && (
+                  <p className="mt-1 text-sm text-red-500">{errors.kakaoOpenChat}</p>
+                )}
               </div>
             )}
           </div>

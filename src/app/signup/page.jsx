@@ -71,8 +71,12 @@ const SignupPage = () => {
       return;
     }
 
-    // 다음 단계로 이동 (추가 정보 입력 페이지)
-    router.push('/signup/additional-info');
+    // 다음 단계로 이동 (추가 정보 입력 페이지) - 이메일과 비밀번호 전달
+    const params = new URLSearchParams({
+      email: email,
+      password: password
+    });
+    router.push(`/signup/additional-info?${params.toString()}`);
   };
 
   const passwordValidation = validatePassword(password);

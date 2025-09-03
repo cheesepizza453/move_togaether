@@ -10,7 +10,7 @@ const Header = () => {
         <div className="flex justify-left items-left mb-[17px]">
           <h1 className="text-banner-1 flex space-x-2">
             <figure className={'w-[137px]'}>
-              <img className={'w-full'} src={'img/header_logo.png'} alt={'무브투개더'}/>
+              <img className={'w-full'} src={'/img/header_logo.png'} alt={'무브투개더'}/>
             </figure>
           </h1>
         </div>

@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
+import { ArrowLeft } from 'lucide-react';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -12,7 +13,7 @@ const LoginPage = () => {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const router = useRouter();
-  const { login } = useAuth();
+  const { signIn, testSupabaseConnection } = useAuth();
 
   // URL 파라미터에서 메시지 확인
   useEffect(() => {
@@ -29,14 +30,19 @@ const LoginPage = () => {
     setError('');
 
     try {
-      const result = await login(email, password);
+      console.log('로그인 시도:', { email, password: '***' });
+      const result = await signIn({ email, password });
+      console.log('로그인 결과:', result);
 
       if (result.success) {
+        console.log('로그인 성공, 마이페이지로 이동');
         router.push('/mypage');
       } else {
+        console.log('로그인 실패:', result.error);
         setError(result.error || '로그인에 실패했습니다.');
       }
     } catch (error) {
+      console.error('로그인 중 예외 발생:', error);
       setError('로그인 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
@@ -48,8 +54,33 @@ const LoginPage = () => {
     console.log('카카오톡 로그인 시도');
   };
 
+  const handleTestConnection = async () => {
+    console.log('Supabase 연결 테스트 시작...');
+    const result = await testSupabaseConnection();
+    console.log('연결 테스트 결과:', result);
+    if (result.success) {
+      setSuccessMessage('Supabase 연결 성공!');
+    } else {
+      setError('Supabase 연결 실패: ' + (result.error?.message || '알 수 없는 오류'));
+    }
+  };
+
+  const handleGoBack = () => {
+    router.push('/');
+  };
+
   return (
     <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4">
+      {/* 뒤로 가기 버튼 */}
+      <div className="absolute top-6 left-6">
+        <button
+          onClick={handleGoBack}
+          className="flex items-center justify-center w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
+        >
+          <ArrowLeft size={20} className="text-gray-600" />
+        </button>
+      </div>
+
       {/* 로고 및 브랜드명 */}
       <div className="text-center mb-8">
         <div className="mb-4">
