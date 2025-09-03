@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Plus, Instagram, MessageCircle, Users } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/hooks/useAuth';
 
-const AdditionalInfoPage = () => {
+// useSearchParams를 사용하는 컴포넌트를 별도로 분리
+const AdditionalInfoContent = () => {
   const [formData, setFormData] = useState({
     nickname: '',
     introduction: '',
@@ -490,6 +491,25 @@ const AdditionalInfoPage = () => {
         </button>
       </div>
     </div>
+  );
+};
+
+// 로딩 컴포넌트
+const LoadingFallback = () => (
+  <div className="min-h-screen bg-white flex items-center justify-center">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mx-auto mb-4"></div>
+      <p className="text-gray-600">로딩 중...</p>
+    </div>
+  </div>
+);
+
+// 메인 컴포넌트 - Suspense로 감싸기
+const AdditionalInfoPage = () => {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <AdditionalInfoContent />
+    </Suspense>
   );
 };
 

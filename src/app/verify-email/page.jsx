@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
-const VerifyEmailPage = () => {
+// useSearchParams를 사용하는 컴포넌트를 별도로 분리
+const VerifyEmailContent = () => {
   const [verificationStatus, setVerificationStatus] = useState('verifying'); // verifying, success, error
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(true);
@@ -167,6 +168,25 @@ const VerifyEmailPage = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+// 로딩 컴포넌트
+const LoadingFallback = () => (
+  <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mx-auto mb-4"></div>
+      <p className="text-gray-600">이메일 인증 중...</p>
+    </div>
+  </div>
+);
+
+// 메인 컴포넌트 - Suspense로 감싸기
+const VerifyEmailPage = () => {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <VerifyEmailContent />
+    </Suspense>
   );
 };
 
