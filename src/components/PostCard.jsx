@@ -40,11 +40,11 @@ const PostCard = ({ post }) => {
 
   return (
     <div
-      className="bg-white rounded-[15px] px-[18px] py-[16px] mb-6 cursor-pointer relative shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]"
+      className="bg-white rounded-[15px] px-[18px] py-[16px] cursor-pointer relative shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]"
       onClick={handleCardClick}
     >
       {/* 상단 영역: D-day 배지와 찜 버튼 */}
-      <div className="flex justify-end items-start mb-1">
+      <div className="flex justify-end items-start">
         {/* D-day 배지 - border 위에 겹쳐서 표시 */}
         <div className="absolute -top-3 left-[-5px] z-10">
           <span className={`flex items-center justify-center px-[13px] h-[24px] rounded-[7px] text-12-b font-bold ${getDdayColor(dday)}`}>
@@ -71,7 +71,7 @@ const PostCard = ({ post }) => {
               className="p-0 rounded-full"
             >
               <figure className={'w-[16px] h-[14px]'}>
-                <IconHeart fill={isFavorite ? 'brand-main' : '#D2D2D2'}/>
+                <IconHeart fill={isFavorite ? '#F36C5E' : '#D2D2D2'}/>
               </figure>
             </button>
           </div>
@@ -82,7 +82,7 @@ const PostCard = ({ post }) => {
           </h3>
 
           {/* 강아지 정보와 날짜 */}
-          <div className="flex justify-between items-end text-text-800 mb-1">
+          <div className="flex justify-between items-end text-text-800 mb-[6px]">
             <div className="text-name-breed text-12-r">
               {dogName} / {dogSize}
             </div>

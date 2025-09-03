@@ -48,7 +48,7 @@ const LocationSelector = () => {
                 fill="#333333"/>
           </svg>
 
-          <span className="text-button-guide-chart-location text-brand-yellow-dark font-medium">
+          <span className="text-button-guide-chart-location text-brand-yellow-dark font-medium text-16-m">
             {currentLocation}
           </span>
         </div>

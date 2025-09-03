@@ -19,12 +19,12 @@ const SortOptions = ({ onSortChange }) => {
   };
 
   return (
-    <div className="flex space-x-[10px]">
+    <div className="flex space-x-[10px] ml-[7px]">
       {sortOptions.map((option) => (
         <button
           key={option.id}
           onClick={() => handleSortClick(option.id)}
-          className={`text-button-guide-chart-location transition-colors relative ${
+          className={`text-button-guide-chart-location transition-colors relative text-16-m ${
             activeSort === option.id
               ? 'text-black'
               : 'text-text-800 hover:text-gray-700'

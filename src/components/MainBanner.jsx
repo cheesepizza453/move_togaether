@@ -62,7 +62,7 @@ const MainBanner = () => {
         {/* 페이지 표시 */}
         {banners.length > 1 &&
         <div className="mr-[4px]">
-          <span className="text-yellow-600 text-xs font-medium">
+          <span className="text-yellow-600 text-[10px] font-bold shadow-sm">
             {currentSlide + 1}/{banners.length}
           </span>
         </div>
@@ -75,7 +75,7 @@ const MainBanner = () => {
             onClick={prevSlide}
             className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200 shadow-sm backdrop-blur-sm ${
               currentSlide === 0
-                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                ? 'bg-[#cfcfcf] text-[#8E8E8E] cursor-not-allowed'
                 : 'bg-white/90 hover:bg-white text-yellow-500 hover:shadow-md'
             }`}
             disabled={currentSlide === 0}
