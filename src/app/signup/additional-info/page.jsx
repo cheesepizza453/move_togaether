@@ -114,17 +114,12 @@ const AdditionalInfoContent = () => {
           message: result.message,
           type: 'duplicate'
         });
-        setErrors(prev => ({ ...prev, nickname: result.message }));
       } else {
         setNicknameValidation({
           isValid: true,
           message: result.message,
           type: 'success'
         });
-        // 에러 메시지 제거
-        if (errors.nickname) {
-          setErrors(prev => ({ ...prev, nickname: '' }));
-        }
       }
     } catch (error) {
       console.error('닉네임 중복 체크 오류:', error);
@@ -329,9 +324,7 @@ const AdditionalInfoContent = () => {
               )}
             </div>
 
-            {errors.nickname && (
-              <p className="mt-1 text-sm text-red-500">{errors.nickname}</p>
-            )}
+
           </div>
 
           {/* 소개 입력 */}

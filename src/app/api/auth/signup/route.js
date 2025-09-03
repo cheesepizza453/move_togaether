@@ -3,8 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 
 // Supabase 클라이언트 생성 (서버 사이드)
 const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
 export async function POST(request) {
@@ -66,6 +66,9 @@ export async function POST(request) {
 
     // 회원가입 성공
     console.log('서버 회원가입 성공:', data.user.id);
+
+    // user_metadata에 프로필 정보가 이미 저장됨 (signUp 시 options.data로 전달)
+    console.log('프로필 정보가 user_metadata에 저장됨');
 
     // 응답 데이터 구성 (민감한 정보 제거)
     const userData = {

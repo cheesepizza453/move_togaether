@@ -15,6 +15,7 @@ const SignupPage = () => {
   const [errors, setErrors] = useState({});
   const [emailValidation, setEmailValidation] = useState(null);
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+
   const emailTimeoutRef = useRef(null);
   const router = useRouter();
 
@@ -37,14 +38,33 @@ const SignupPage = () => {
     return password === confirmPassword;
   };
 
-    // 이메일 중복 체크
+    // 이메일 중복 체크 함수
   const checkEmailDuplicate = async (email) => {
-    if (!email || !email.includes('@')) return null;
+    if (!email || email.length < 5) {
+      const result = {
+        isValid: false,
+        message: '이메일을 입력해주세요',
+        type: 'empty'
+      };
+      setEmailValidation(result);
+      return result;
+    }
+
+    // 이메일 형식 검증
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      const result = {
+        isValid: false,
+        message: '올바른 이메일 형식을 입력해주세요',
+        type: 'invalid'
+      };
+      setEmailValidation(result);
+      return result;
+    }
 
     setIsCheckingEmail(true);
-
+    
     try {
-      // 실제 API 호출로 중복 확인
       const response = await fetch('/api/auth/check-email', {
         method: 'POST',
         headers: {
@@ -67,14 +87,14 @@ const SignupPage = () => {
       };
 
       setEmailValidation(result);
-
+      
       // Toast 메시지 표시
       if (data.isDuplicate) {
         toast.error(data.message);
       } else {
         toast.success(data.message);
       }
-
+      
       return result;
     } catch (error) {
       console.error('이메일 중복 확인 오류:', error);
@@ -108,12 +128,12 @@ const SignupPage = () => {
       clearTimeout(emailTimeoutRef.current);
     }
 
-    // 이메일 형식이 올바르면 중복 체크 실행
-    if (value && value.includes('@')) {
-      // 디바운스 적용 (1초 후 중복 체크)
+    // 이메일 중복 체크 실행
+    if (value) {
+      // 디바운스 적용 (500ms 후 중복 체크)
       emailTimeoutRef.current = setTimeout(() => {
         checkEmailDuplicate(value);
-      }, 1000);
+      }, 500);
     }
   };
 
@@ -388,14 +408,14 @@ const SignupPage = () => {
         {/* 다음 버튼 */}
         <button
           onClick={handleNext}
-          disabled={!email || !emailValidation?.isValid || !passwordValidation.isValid || !confirmPasswordValidation || isCheckingEmail}
+          disabled={!email || !emailValidation?.isValid || !passwordValidation.isValid || !confirmPasswordValidation}
           className={`w-full mt-8 py-3 rounded-lg font-semibold transition-colors ${
-            email && emailValidation?.isValid && passwordValidation.isValid && confirmPasswordValidation && !isCheckingEmail
+            email && emailValidation?.isValid && passwordValidation.isValid && confirmPasswordValidation
               ? 'bg-[#FFDD44] text-black hover:bg-yellow-500'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
         >
-          {isCheckingEmail ? '이메일 확인 중...' : '다음'}
+          다음
         </button>
       </div>
     </div>

@@ -79,6 +79,7 @@ graph TB
 CREATE TABLE user_profiles (
   id SERIAL PRIMARY KEY,
   auth_user_id UUID REFERENCES auth.users(id) NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
   display_name VARCHAR(100),
   phone VARCHAR(20),
   phone_visible BOOLEAN DEFAULT false,
@@ -86,6 +87,7 @@ CREATE TABLE user_profiles (
   instagram VARCHAR(100),
   naver_cafe VARCHAR(200),
   kakao_openchat VARCHAR(200),
+  is_deleted BOOLEAN DEFAULT false,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW(),
 
@@ -98,6 +100,7 @@ COMMENT ON TABLE user_profiles IS '사용자 프로필 정보 테이블 - Supaba
 -- 컬럼 주석
 COMMENT ON COLUMN user_profiles.id IS '사용자 프로필 고유 식별자 (자동 증가)';
 COMMENT ON COLUMN user_profiles.auth_user_id IS 'Supabase 인증 사용자 ID (외래키)';
+COMMENT ON COLUMN user_profiles.email IS '사용자 이메일 주소 (중복 체크용, UNIQUE 제약)';
 COMMENT ON COLUMN user_profiles.display_name IS '사용자 표시명 (최대 100자)';
 COMMENT ON COLUMN user_profiles.phone IS '전화번호 (010-0000-0000 형식)';
 COMMENT ON COLUMN user_profiles.phone_visible IS '전화번호 공개 여부 (기본값: 비공개)';
@@ -105,11 +108,13 @@ COMMENT ON COLUMN user_profiles.bio IS '사용자 자기소개 (제한 없음)';
 COMMENT ON COLUMN user_profiles.instagram IS '인스타그램 계정명 (최대 100자)';
 COMMENT ON COLUMN user_profiles.naver_cafe IS '네이버 카페 링크 (최대 200자)';
 COMMENT ON COLUMN user_profiles.kakao_openchat IS '카카오톡 오픈채팅 링크 (최대 200자)';
+COMMENT ON COLUMN user_profiles.is_deleted IS '계정 삭제 여부 (기본값: false)';
 COMMENT ON COLUMN user_profiles.created_at IS '생성일시 (자동 설정)';
 COMMENT ON COLUMN user_profiles.updated_at IS '수정일시 (자동 설정)';
 
 -- 인덱스 생성
 CREATE INDEX idx_user_profiles_auth_user_id ON user_profiles(auth_user_id);
+CREATE INDEX idx_user_profiles_email ON user_profiles(email) WHERE is_deleted = false;
 
 -- RLS (Row Level Security) 정책 설정
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
@@ -119,6 +124,9 @@ CREATE POLICY "사용자는 자신의 프로필만 조회 가능" ON user_profil
 
 CREATE POLICY "사용자는 자신의 프로필만 수정 가능" ON user_profiles
   FOR ALL USING (auth.uid() = auth_user_id);
+
+CREATE POLICY "닉네임 중복 체크 정책" ON user_profiles
+  FOR SELECT TO public USING (true);
 ```
 
 ### Posts Table (봉사 요청)
@@ -755,17 +763,29 @@ flowchart TD
     H --> I[지원자 목록에 추가]
 ```
 
-### 사용자 인증 플로우
+### 사용자 인증 플로우 (개선된 버전)
 ```mermaid
 flowchart TD
     A[카카오톡 로그인] --> B[권한 승인]
     B --> C[기본 정보 동기화]
     C --> D[추가 정보 입력]
-    D --> E[표시명 설정]
-    E --> F[연락처 입력]
-    F --> G[공개 여부 선택]
-    G --> H[시작하기]
-    H --> I[메인 페이지로 이동]
+    D --> E[이메일 중복 체크]
+    E --> F{이메일 중복?}
+    F -->|Yes| G[중복 오류 표시]
+    F -->|No| H[표시명 설정]
+    H --> I[연락처 입력]
+    I --> J[공개 여부 선택]
+    J --> K[시작하기]
+    K --> L[user_metadata에 저장]
+    L --> M[이메일 인증 발송]
+    M --> N[이메일 인증 완료]
+    N --> O[user_profiles 생성 + email 동기화]
+    O --> P[메인 페이지로 이동]
+
+    style E fill:#e1f5fe
+    style F fill:#fff3e0
+    style L fill:#e8f5e8
+    style O fill:#e8f5e8
 ```
 
 ### 게시물 관리 플로우
@@ -790,27 +810,68 @@ graph TD
     A --> C["/posts/new - 게시물 작성"]
     A --> D["/mypage - 마이페이지"]
     A --> E["/favorites - 찜 목록"]
+    A --> F["/login - 로그인/회원가입"]
+    A --> G["/signup - 이메일 회원가입"]
 
-    B --> F["봉사 신청 모달"]
-    B --> G{"작성자?"}
-    G -->|Yes| H["지원자 관리 모드"]
-    G -->|No| F
+    B --> H["봉사 신청 모달"]
+    B --> I{"작성자?"}
+    I -->|Yes| J["지원자 관리 모드"]
+    I -->|No| H
 
-    C --> I["작성 완료"] --> A
+    C --> K["작성 완료"] --> A
 
-    D --> J["/mypage/edit - 정보 수정"]
-    D --> K["지원 작성 탭"]
-    D --> L["봉사 신청 탭"]
+    D --> L["/mypage/edit - 정보 수정"]
+    D --> M["지원 작성 탭"]
+    D --> N["봉사 신청 탭"]
 
-    K --> M["재업로드 기능"]
-    M --> C
+    G --> O["/signup/additional-info - 추가 정보"]
+    O --> P["/verify-email - 이메일 인증"]
+    P --> F
+
+    M --> Q["재업로드 기능"]
+    Q --> C
 
     subgraph "인증 필요 페이지"
         C
         D
-        J
-        F
+        L
+        H
     end
+```
+
+## 🛠️ API 라우트 구조
+
+### **인증 관련 API**
+```
+/api/auth/
+├── /signup - 회원가입 (이메일/비밀번호)
+├── /login - 로그인
+├── /logout - 로그아웃
+└── /check-email - 이메일 중복 체크 (실시간)
+```
+
+### **게시물 관련 API**
+```
+/api/posts/
+├── / - 게시물 목록 조회 (GET), 새 게시물 생성 (POST)
+├── /[id] - 특정 게시물 조회/수정/삭제
+└── /[id]/applications - 특정 게시물의 봉사 신청 목록
+```
+
+### **사용자 관련 API**
+```
+/api/users/
+├── /profile - 사용자 프로필 조회/수정
+├── /favorites - 찜 목록 관리
+└── /applications - 내 봉사 신청 내역
+```
+
+### **기타 API**
+```
+/api/
+├── /upload - 이미지 업로드 (Supabase Storage)
+├── /geocoding - 주소 → 좌표 변환 (카카오 API)
+└── /shelters - 보호소 정보 관리
 ```
 
 ## 🔧 기능 상세 명세
@@ -821,6 +882,11 @@ graph TD
 - **세션 관리**: Supabase Auth의 JWT 토큰 기반 세션
 - **추가 프로필 정보**: `user_profiles` 테이블로 확장 정보 관리
 - **권한 관리**: Row Level Security (RLS) 정책 적용
+- **이메일 중복 체크**: `user_profiles.email` 컬럼을 통한 실시간 중복 확인
+- **회원가입 플로우**:
+  - 이메일 중복 체크 → Supabase Auth 회원가입 → `user_metadata`에 프로필 정보 저장
+  - 이메일 인증 완료 → `user_profiles`에 데이터 저장 + email 동기화
+- **보안 강화**: 패스워드 리셋 이메일 잘못 발송 방지
 
 ### 2. 위치 기반 서비스
 - **지도 API**: 카카오맵 JavaScript API
@@ -968,15 +1034,18 @@ graph TD
 
 #### **2-1. 사용자 인증 시스템**
 - [ ] 카카오톡 로그인 연동
-- [ ] 회원가입 프로세스
-- [ ] 로그인/로그아웃 기능
+- [x] 이메일 회원가입 프로세스 (완료)
+- [x] 이메일 중복 체크 API (완료)
+- [x] 실시간 이메일 중복 검증 (완료)
+- [x] 로그인/로그아웃 기능 (완료)
 - [ ] 회원탈퇴 기능
 
 #### **2-2. 사용자 프로필 관리**
-- [ ] 사용자 프로필 관리 (이름, 연락처, 소개글)
-- [ ] 연락처 공개/비공개 설정
-- [ ] SNS 링크 관리 (인스타그램, 네이버 카페, 카카오톡)
-- [ ] 프로필 정보 수정
+- [x] 사용자 프로필 관리 (이름, 연락처, 소개글) (완료)
+- [x] 연락처 공개/비공개 설정 (완료)
+- [x] SNS 링크 관리 (인스타그램, 네이버 카페, 카카오톡) (완료)
+- [x] 프로필 정보 수정 (완료)
+- [x] 이메일 인증 후 프로필 생성 자동화 (완료)
 
 ### Phase 3: 이동봉사요청 작성
 **목표**: 사용자가 직접 봉사 요청을 작성할 수 있는 시스템
@@ -1063,6 +1132,13 @@ graph TD
 - **데이터 암호화**: Supabase의 기본 보안 정책 활용
 - **인증**: Supabase Auth의 JWT 토큰 기반 보안 인증
 - **데이터 접근 제어**: Row Level Security (RLS)로 데이터 접근 권한 관리
+- **이메일 보안**:
+  - `user_profiles.email` 컬럼에 UNIQUE 제약으로 중복 방지
+  - 실시간 이메일 중복 체크로 패스워드 리셋 이메일 발송 차단
+  - 이메일 인증 완료 전까지 `user_metadata`에 임시 저장
+- **회원가입 보안**:
+  - 세션스토리지를 통한 임시 데이터 저장으로 URL 노출 방지
+  - 이메일 인증 완료 후 프로필 생성으로 미인증 계정 방지
 
 ### API 보안
 - **Rate Limiting**: API 호출 제한

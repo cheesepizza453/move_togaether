@@ -140,6 +140,7 @@ export const AuthProvider = ({ children }) => {
         .insert([
           {
             auth_user_id: user.id,
+            email: user.email, // 이메일 동기화
             display_name: metadata.nickname,
             bio: metadata.introduction || null,
             phone: metadata.phone || null,
@@ -382,14 +383,19 @@ export const AuthProvider = ({ children }) => {
         return { isDuplicate: false, message: '' };
       }
 
-      // 현재 인증된 사용자의 user_metadata에서 닉네임 체크
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user?.user_metadata?.nickname === nickname.trim()) {
-        return { isDuplicate: false, message: '사용 가능한 닉네임입니다.' };
+      // 닉네임 형식 검증
+      if (nickname.length < 2 || nickname.length > 20) {
+        return { isDuplicate: false, message: '닉네임은 2-20자 사이여야 합니다.', available: false };
+      }
+
+      // 특수문자 검증 (한글, 영문, 숫자만 허용)
+      const nicknameRegex = /^[가-힣a-zA-Z0-9]+$/;
+      if (!nicknameRegex.test(nickname)) {
+        return { isDuplicate: false, message: '닉네임은 한글, 영문, 숫자만 사용할 수 있습니다.', available: false };
       }
 
       // user_profiles 테이블에서 중복 체크
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('user_profiles')
         .select('id')
         .eq('display_name', nickname.trim())
@@ -398,7 +404,7 @@ export const AuthProvider = ({ children }) => {
 
       if (error && error.code === 'PGRST116') {
         // 결과가 없음 = 중복되지 않음
-        return { isDuplicate: false, message: '사용 가능한 닉네임입니다.' };
+        return { isDuplicate: false, message: '사용 가능한 닉네임입니다.', available: true };
       }
 
       if (error) {
@@ -407,7 +413,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       // 결과가 있음 = 중복됨
-      return { isDuplicate: true, message: '이미 사용 중인 닉네임입니다.' };
+      return { isDuplicate: true, message: '이미 사용 중인 닉네임입니다.', available: false };
     } catch (error) {
       console.error('닉네임 중복 체크 중 오류:', error);
       return { isDuplicate: false, message: '중복 체크 중 오류가 발생했습니다.' };
