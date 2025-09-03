@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
+import { toast } from 'sonner';
 
 const SignupPage = () => {
   const [email, setEmail] = useState('');
@@ -12,6 +13,9 @@ const SignupPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
+  const [emailValidation, setEmailValidation] = useState(null);
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  const emailTimeoutRef = useRef(null);
   const router = useRouter();
 
   // 비밀번호 유효성 검사
@@ -33,6 +37,95 @@ const SignupPage = () => {
     return password === confirmPassword;
   };
 
+    // 이메일 중복 체크
+  const checkEmailDuplicate = async (email) => {
+    if (!email || !email.includes('@')) return null;
+
+    setIsCheckingEmail(true);
+
+    try {
+      // 실제 API 호출로 중복 확인
+      const response = await fetch('/api/auth/check-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        throw new Error('API 호출 실패');
+      }
+
+      const data = await response.json();
+
+      const result = {
+        isValid: !data.isDuplicate,
+        message: data.message,
+        type: data.isDuplicate ? 'duplicate' : 'available',
+        duplicateInfo: data.duplicateInfo
+      };
+
+      setEmailValidation(result);
+
+      // Toast 메시지 표시
+      if (data.isDuplicate) {
+        toast.error(data.message);
+      } else {
+        toast.success(data.message);
+      }
+
+      return result;
+    } catch (error) {
+      console.error('이메일 중복 확인 오류:', error);
+      const result = {
+        isValid: false,
+        message: '이메일 확인 중 오류가 발생했습니다',
+        type: 'error'
+      };
+      setEmailValidation(result);
+      toast.error('이메일 확인 중 오류가 발생했습니다');
+      return result;
+    } finally {
+      setIsCheckingEmail(false);
+    }
+  };
+
+  // 이메일 변경 시 중복 체크
+  const handleEmailChange = (value) => {
+    setEmail(value);
+
+    // 이메일 에러 메시지 제거
+    if (errors.email) {
+      setErrors(prev => ({ ...prev, email: '' }));
+    }
+
+    // 이메일 유효성 검사 초기화
+    setEmailValidation(null);
+
+    // 기존 타이머 클리어
+    if (emailTimeoutRef.current) {
+      clearTimeout(emailTimeoutRef.current);
+    }
+
+    // 이메일 형식이 올바르면 중복 체크 실행
+    if (value && value.includes('@')) {
+      // 디바운스 적용 (1초 후 중복 체크)
+      emailTimeoutRef.current = setTimeout(() => {
+        checkEmailDuplicate(value);
+      }, 1000);
+    }
+  };
+
+  // 컴포넌트 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (emailTimeoutRef.current) {
+        clearTimeout(emailTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // 입력값 변경 시 유효성 검사
   const handlePasswordChange = (value) => {
     setPassword(value);
@@ -52,12 +145,24 @@ const SignupPage = () => {
   };
 
   // 다음 단계로 진행
-  const handleNext = () => {
+  const handleNext = async () => {
     const passwordValidation = validatePassword(password);
     const confirmPasswordValidation = validateConfirmPassword();
 
     if (!email) {
       setErrors(prev => ({ ...prev, email: '이메일을 입력해주세요.' }));
+      return;
+    }
+
+    // 이메일 중복 체크가 완료되지 않은 경우
+    if (!emailValidation) {
+      setErrors(prev => ({ ...prev, email: '이메일 중복 확인을 완료해주세요.' }));
+      return;
+    }
+
+    // 이메일이 중복인 경우
+    if (!emailValidation.isValid) {
+      setErrors(prev => ({ ...prev, email: emailValidation.message }));
       return;
     }
 
@@ -71,12 +176,12 @@ const SignupPage = () => {
       return;
     }
 
-    // 다음 단계로 이동 (추가 정보 입력 페이지) - 이메일과 비밀번호 전달
-    const params = new URLSearchParams({
-      email: email,
-      password: password
-    });
-    router.push(`/signup/additional-info?${params.toString()}`);
+    // 브라우저 세션 스토리지에 임시 저장 (보안을 위해 세션 스토리지 사용)
+    sessionStorage.setItem('signup_email', email);
+    sessionStorage.setItem('signup_password', password);
+
+    // 다음 단계로 이동 (추가 정보 입력 페이지)
+    router.push('/signup/additional-info');
   };
 
   const passwordValidation = validatePassword(password);
@@ -110,17 +215,53 @@ const SignupPage = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               이메일
             </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="이메일을 입력해주세요."
-              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-colors ${
-                errors.email ? 'border-red-500 bg-red-50' : 'border-gray-300'
-              } focus:bg-[#FFDD44] focus:bg-opacity-20`}
-            />
+            <div className="relative">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => handleEmailChange(e.target.value)}
+                placeholder="이메일을 입력해주세요."
+                className={`w-full px-4 py-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-colors ${
+                  errors.email
+                    ? 'border-red-500 bg-red-50'
+                    : emailValidation?.isValid
+                    ? 'border-green-500 bg-green-50'
+                    : emailValidation?.isValid === false
+                    ? 'border-red-500 bg-red-50'
+                    : 'border-gray-300'
+                } focus:bg-[#FFDD44] focus:bg-opacity-20`}
+              />
+
+              {/* 이메일 상태 아이콘 */}
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                {isCheckingEmail ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-yellow-500"></div>
+                ) : emailValidation?.isValid ? (
+                  <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                ) : emailValidation?.isValid === false ? (
+                  <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                ) : null}
+              </div>
+            </div>
+
+            {/* 이메일 상태 메시지 */}
             {errors.email && (
               <p className="mt-1 text-sm text-red-500">{errors.email}</p>
+            )}
+
+            {emailValidation && !errors.email && (
+              <p className={`mt-1 text-sm flex items-center ${
+                emailValidation.isValid ? 'text-green-500' : 'text-red-500'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full mr-2 ${
+                  emailValidation.isValid ? 'bg-green-500' : 'bg-red-500'
+                }`}></span>
+                {emailValidation.message}
+              </p>
             )}
           </div>
 
@@ -247,14 +388,14 @@ const SignupPage = () => {
         {/* 다음 버튼 */}
         <button
           onClick={handleNext}
-          disabled={!email || !passwordValidation.isValid || !confirmPasswordValidation}
+          disabled={!email || !emailValidation?.isValid || !passwordValidation.isValid || !confirmPasswordValidation || isCheckingEmail}
           className={`w-full mt-8 py-3 rounded-lg font-semibold transition-colors ${
-            email && passwordValidation.isValid && confirmPasswordValidation
+            email && emailValidation?.isValid && passwordValidation.isValid && confirmPasswordValidation && !isCheckingEmail
               ? 'bg-[#FFDD44] text-black hover:bg-yellow-500'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
         >
-          다음
+          {isCheckingEmail ? '이메일 확인 중...' : '다음'}
         </button>
       </div>
     </div>

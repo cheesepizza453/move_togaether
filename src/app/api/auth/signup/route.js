@@ -43,12 +43,19 @@ export async function POST(request) {
 
       let errorMessage = '회원가입 중 오류가 발생했습니다.';
 
-      if (error.message.includes('already registered')) {
-        errorMessage = '이미 가입된 이메일입니다.';
+      if (error.message.includes('already registered') ||
+          error.message.includes('already been registered') ||
+          error.message.includes('User already registered') ||
+          error.message.includes('already exists')) {
+        errorMessage = '이미 사용 중인 이메일입니다. 다른 이메일을 사용해주세요.';
       } else if (error.message.includes('password')) {
         errorMessage = '비밀번호 형식이 올바르지 않습니다.';
       } else if (error.message.includes('email')) {
         errorMessage = '이메일 형식이 올바르지 않습니다.';
+      } else if (error.message.includes('rate limit')) {
+        errorMessage = '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.';
+      } else if (error.message.includes('network') || error.message.includes('timeout')) {
+        errorMessage = '네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.';
       }
 
       return NextResponse.json(

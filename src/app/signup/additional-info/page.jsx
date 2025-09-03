@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Plus, Instagram, MessageCircle, Users } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 // useSearchParams를 사용하는 컴포넌트를 별도로 분리
 const AdditionalInfoContent = () => {
@@ -37,10 +38,10 @@ const AdditionalInfoContent = () => {
   const searchParams = useSearchParams();
   const { signUp, checkNicknameDuplicate } = useAuth();
 
-  // 첫 번째 페이지에서 전달받은 정보 확인
+  // 첫 번째 페이지에서 전달받은 정보 확인 (세션 스토리지에서)
   useEffect(() => {
-    const email = searchParams.get('email');
-    const password = searchParams.get('password');
+    const email = sessionStorage.getItem('signup_email');
+    const password = sessionStorage.getItem('signup_password');
 
     if (!email || !password) {
       router.push('/signup');
@@ -48,7 +49,7 @@ const AdditionalInfoContent = () => {
     }
 
     setSignupData({ email, password });
-  }, [searchParams, router]);
+  }, [router]);
 
   // 닉네임 유효성 검사
   const validateNickname = (nickname) => {
@@ -211,13 +212,23 @@ const AdditionalInfoContent = () => {
       });
 
       if (result.success) {
+        // 세션 스토리지 정리 (보안을 위해)
+        sessionStorage.removeItem('signup_email');
+        sessionStorage.removeItem('signup_password');
+
+        // 성공 메시지 표시
+        toast.success('회원가입이 완료되었습니다! 이메일을 확인해주세요.');
+
         // 회원가입 성공 - 이메일 인증 안내 페이지로 이동
         router.push('/signup/success');
       } else {
+        // 에러 메시지를 Toast로 표시
+        toast.error(result.error || '회원가입 중 오류가 발생했습니다.');
         setErrors({ general: result.error || '회원가입 중 오류가 발생했습니다.' });
       }
     } catch (error) {
       console.error('회원가입 오류:', error);
+      toast.error('회원가입 중 오류가 발생했습니다.');
       setErrors({ general: '회원가입 중 오류가 발생했습니다.' });
     } finally {
       setLoading(false);

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { ArrowLeft } from 'lucide-react';
+import { toast } from 'sonner';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -36,14 +37,17 @@ const LoginPage = () => {
 
       if (result.success) {
         console.log('로그인 성공, 마이페이지로 이동');
+        toast.success('로그인되었습니다!');
         router.push('/mypage');
       } else {
         console.log('로그인 실패:', result.error);
         setError(result.error || '로그인에 실패했습니다.');
+        toast.error(result.error || '로그인에 실패했습니다.');
       }
     } catch (error) {
       console.error('로그인 중 예외 발생:', error);
       setError('로그인 중 오류가 발생했습니다.');
+      toast.error('로그인 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }

@@ -5,6 +5,7 @@ import Header from '@/components/common/Header';
 import Footer from '@/components/common/Footer';
 import BottomNavigation from '@/components/common/BottomNavigation';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { Toaster } from 'sonner';
 
 const ClientLayout = ({ children }) => {
   const pathname = usePathname();
@@ -16,6 +17,13 @@ const ClientLayout = ({ children }) => {
       <main>{children}</main>
       {!isLoginPage && <Footer />}
       {!isLoginPage && <BottomNavigation />}
+      <Toaster
+        position="top-right"
+        expand={true}
+        richColors={true}
+        closeButton={true}
+        duration={5000}
+      />
     </AuthProvider>
   );
 };
