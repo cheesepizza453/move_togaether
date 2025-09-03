@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Home, Plus, Heart, User } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 // import { useSplash } from './SplashProvider';
-import {IconMenuBarHome, IconMenuBarMap, IconMenuBarHeart, IconMenuBarMy, IconMenuBarPlus} from "../../public/img/icon/IconMenuBar";
+import {IconMenuBarHome, IconMenuBarMap, IconMenuBarHeart, IconMenuBarMy, IconMenuBarPlus} from "@/components/icon/IconMenuBar";
 
 const BottomNavigation = () => {
   const [activeTab, setActiveTab] = useState('home');
