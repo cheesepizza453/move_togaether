@@ -47,16 +47,69 @@
 ### Backend & Database
 - **Backend**: Next.js API Routes
 - **Database**: Supabase
-- **Authentication**: Supabase Auth (카카오톡 OAuth Provider)
+- **Authentication**: Supabase Auth + 이메일 인증 시스템
+- **Password Hashing**: bcryptjs
+- **Security**: Row Level Security (RLS)
 
 ### External APIs
 - **Map API**: 카카오맵 API
 - **Address Search**: 카카오 우편번호 서비스
+- **Email Service**: 향후 SendGrid 또는 AWS SES 연동 예정
 
 ### Development & Deployment
 - **Version Control**: GitHub
 - **Deployment**: Vercel (GitHub 연동)
 - **Testing**: Playwright
+
+## 🔐 환경 변수 설정
+
+프로젝트 실행을 위해 다음 환경 변수를 설정해야 합니다:
+
+### 1. `.env.local` 파일 생성
+```bash
+# Supabase 설정
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
+# 애플리케이션 설정
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# 보안 설정
+JWT_SECRET=your_jwt_secret_key
+```
+
+### 2. Supabase 프로젝트 설정
+1. [Supabase](https://supabase.com)에서 새 프로젝트 생성
+2. SQL 편집기에서 `sql/20250903_users_table_schema.sql` 실행
+3. 프로젝트 설정에서 API 키 복사
+
+## 📧 이메일 회원가입 시스템
+
+### 회원가입 플로우
+1. **기본 정보 입력** (`/signup`)
+   - 이메일, 비밀번호 입력
+   - 실시간 유효성 검사
+
+2. **추가 정보 입력** (`/signup/additional-info`)
+   - 닉네임, 소개, 연락처
+   - 연락채널 선택 (인스타그램, 네이버카페, 카카오톡)
+
+3. **회원가입 완료** (`/signup/success`)
+   - 이메일 인증 안내
+   - 인증 단계별 가이드
+
+4. **이메일 인증** (`/verify-email`)
+   - 인증 토큰 검증
+   - 계정 활성화
+
+### 보안 기능
+- **비밀번호 해시화**: bcryptjs (salt rounds: 12)
+- **이메일 중복 방지**: 고유 제약 조건
+- **닉네임 중복 방지**: 고유 제약 조건
+- **토큰 만료**: 24시간 후 자동 만료
+- **소프트 삭제**: `is_deleted` 플래그 사용
+- **Row Level Security**: 사용자별 데이터 접근 제어
 
 ## 📱 주요 화면
 

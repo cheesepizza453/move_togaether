@@ -1,12 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import Header from '../components/Header';
+import Header from '../components/common/Header';
 import MainBanner from '../components/MainBanner';
 import SortOptions from '../components/SortOptions';
 import PostCard from '../components/PostCard';
-import Footer from '../components/Footer';
-import BottomNavigation from '../components/BottomNavigation';
+import Footer from '../components/common/Footer';
+import BottomNavigation from '../components/common/BottomNavigation';
 
 export default function Home() {
   const [sortOption, setSortOption] = useState('latest');
@@ -62,8 +62,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#FBFBF7]">
-      {/* 헤더 */}
-      <Header />
 
       {/* 메인 콘텐츠 */}
       <main className="w-full bg-brand-bg px-[23px] pt-[15px]">
@@ -87,13 +85,6 @@ export default function Home() {
         </section>
       </main>
 
-      {/* 푸터 */}
-      <div className="block">
-        <Footer />
-      </div>
-
-      {/* 하단 네비게이션 */}
-      <BottomNavigation />
     </div>
   );
 }

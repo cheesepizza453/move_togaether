@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, createContext, useContext } from 'react';
-import SplashScreen from './SplashScreen';
+import SplashScreen from './common/SplashScreen';
 
 // Splash 상태를 전역으로 관리하는 Context
 const SplashContext = createContext();
