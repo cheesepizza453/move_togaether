@@ -1,13 +1,7 @@
 'use client';
 
 import { useState, useEffect, createContext, useContext } from 'react';
-import { createClient } from '@supabase/supabase-js';
-
-// Supabase 클라이언트 생성
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+import { supabase } from '@/lib/supabase';
 
 // Auth Context 생성
 const AuthContext = createContext();
@@ -403,44 +397,29 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // 닉네임 중복 체크 (user_metadata에서 체크)
+  // 닉네임 중복 체크 (API 엔드포인트 호출)
   const checkNicknameDuplicate = async (nickname) => {
     try {
       if (!nickname.trim()) {
         return { isDuplicate: false, message: '' };
       }
 
-      // 닉네임 형식 검증
-      if (nickname.length < 2 || nickname.length > 20) {
-        return { isDuplicate: false, message: '닉네임은 2-20자 사이여야 합니다.', available: false };
-      }
+      const response = await fetch('/api/auth/check-nickname', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ nickname: nickname.trim() }),
+      });
 
-      // 특수문자 검증 (한글, 영문, 숫자만 허용)
-      const nicknameRegex = /^[가-힣a-zA-Z0-9]+$/;
-      if (!nicknameRegex.test(nickname)) {
-        return { isDuplicate: false, message: '닉네임은 한글, 영문, 숫자만 사용할 수 있습니다.', available: false };
-      }
+      const result = await response.json();
 
-      // user_profiles 테이블에서 중복 체크
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('id')
-        .eq('display_name', nickname.trim())
-        .eq('is_deleted', false)
-        .single();
-
-      if (error && error.code === 'PGRST116') {
-        // 결과가 없음 = 중복되지 않음
-        return { isDuplicate: false, message: '사용 가능한 닉네임입니다.', available: true };
-      }
-
-      if (error) {
-        console.error('닉네임 중복 체크 오류:', error);
+      if (!response.ok) {
+        console.error('닉네임 중복 체크 API 오류:', result);
         return { isDuplicate: false, message: '중복 체크 중 오류가 발생했습니다.' };
       }
 
-      // 결과가 있음 = 중복됨
-      return { isDuplicate: true, message: '이미 사용 중인 닉네임입니다.', available: false };
+      return result;
     } catch (error) {
       console.error('닉네임 중복 체크 중 오류:', error);
       return { isDuplicate: false, message: '중복 체크 중 오류가 발생했습니다.' };
@@ -497,6 +476,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+
   // 카카오톡 로그인 함수
   const signInWithKakao = async ({ userInfo }) => {
     try {
@@ -515,18 +495,44 @@ export const AuthProvider = ({ children }) => {
       console.log('카카오톡 로그인 응답:', result);
 
       if (result.success) {
-        // 로그인 성공 시 사용자 정보 업데이트
-        setUser(result.user);
-        if (result.user.profile) {
-          setProfile(result.user.profile);
-        }
+        // 클라이언트에서 세션 생성이 필요한 경우
+        if (result.needsClientAuth) {
+          // Supabase Auth 세션 새로고침
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-        return {
-          success: true,
-          message: '카카오톡 로그인이 완료되었습니다.',
-          user: result.user,
-          isExistingUser: true
-        };
+          if (sessionError) {
+            console.error('세션 새로고침 오류:', sessionError);
+            return {
+              success: false,
+              error: '세션 생성에 실패했습니다.'
+            };
+          }
+
+          if (session?.user) {
+            setUser(session.user);
+            await fetchProfile(session.user.id);
+
+            return {
+              success: true,
+              message: '카카오톡 로그인이 완료되었습니다.',
+              user: session.user,
+              isExistingUser: true
+            };
+          }
+        } else {
+          // 직접 사용자 정보 설정
+          setUser(result.user);
+          if (result.profile) {
+            setProfile(result.profile);
+          }
+
+          return {
+            success: true,
+            message: '카카오톡 로그인이 완료되었습니다.',
+            user: result.user,
+            isExistingUser: true
+          };
+        }
       } else {
         return {
           success: false,

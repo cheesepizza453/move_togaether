@@ -139,89 +139,28 @@ const LoginPage = () => {
     }
   };
 
-    const handleKakaoSignup = async () => {
+      const handleKakaoSignup = () => {
     const kakaoJsKey = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
 
+    console.log('카카오톡 환경변수 확인:', {
+      hasKey: !!kakaoJsKey,
+      keyLength: kakaoJsKey?.length,
+      keyPrefix: kakaoJsKey?.substring(0, 10) + '...'
+    });
+
     if (!kakaoJsKey) {
-      toast.error('카카오톡 설정이 필요합니다.');
+      toast.error('카카오톡 설정이 필요합니다. NEXT_PUBLIC_KAKAO_JS_KEY를 확인해주세요.');
       return;
     }
 
-    // 카카오톡 SDK 초기화
-    if (!window.Kakao.isInitialized()) {
-      window.Kakao.init(kakaoJsKey);
-    }
+    // 카카오톡 OAuth URL로 직접 리다이렉트
+    const redirectUri = `${window.location.origin}/signup/kakao`;
+    const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${kakaoJsKey}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=profile_nickname,account_email`;
 
-    // 카카오톡 로그인
-    window.Kakao.Auth.login({
-      success: (authObj) => {
-        console.log('카카오톡 로그인 성공:', authObj);
+    console.log('카카오톡 OAuth URL:', kakaoAuthUrl);
 
-        // 사용자 정보 가져오기
-        window.Kakao.API.request({
-          url: '/v2/user/me',
-          success: async (res) => {
-            console.log('사용자 정보:', res);
-
-            // 이메일이 없는 경우
-            if (!res.kakao_account?.email) {
-              toast.error('이메일 정보가 필요합니다. 카카오톡 계정 설정에서 이메일을 공개해주세요.');
-              return;
-            }
-
-            // 사용자 정보 구성
-            const userInfo = {
-              id: res.id,
-              email: res.kakao_account.email,
-              nickname: res.kakao_account.profile?.nickname,
-              name: res.kakao_account.name,
-              profile_image: res.kakao_account.profile?.profile_image_url,
-              thumbnail_image: res.kakao_account.profile?.thumbnail_image_url,
-              access_token: authObj.access_token
-            };
-
-            // 먼저 기존 사용자인지 확인
-            try {
-              const loginResult = await signInWithKakao({ userInfo });
-
-              if (loginResult.success) {
-                // 기존 사용자 로그인 성공
-                toast.success('카카오톡 로그인이 완료되었습니다!');
-                router.push('/mypage');
-                return;
-              } else if (loginResult.needsSignup) {
-                // 신규 사용자 - 가입 페이지로 이동
-                sessionStorage.setItem('kakaoUserInfo', JSON.stringify(userInfo));
-                window.location.href = '/signup/kakao';
-                return;
-              } else if (loginResult.duplicateInfo) {
-                // 다른 방식으로 가입된 사용자
-                const providerName = loginResult.duplicateInfo.providerName || '이메일';
-                const message = providerName === '카카오톡' ? '이미 카카오톡으로 가입된 이메일입니다.' : '이미 이메일로 가입된 이메일입니다.';
-                toast.error(message);
-                return;
-              } else {
-                // 기타 오류
-                toast.error(loginResult.error || '로그인 처리 중 오류가 발생했습니다.');
-                return;
-              }
-            } catch (error) {
-              console.error('카카오톡 로그인 확인 오류:', error);
-              toast.error('로그인 확인 중 오류가 발생했습니다.');
-              return;
-            }
-          },
-          fail: (error) => {
-            console.error('사용자 정보 가져오기 실패:', error);
-            toast.error('사용자 정보를 가져올 수 없습니다.');
-          }
-        });
-      },
-      fail: (error) => {
-        console.error('카카오톡 로그인 실패:', error);
-        toast.error('카카오톡 로그인에 실패했습니다.');
-      }
-    });
+    // 카카오톡 인증 페이지로 리다이렉트
+    window.location.href = kakaoAuthUrl;
   };
 
   const handleTestConnection = async () => {

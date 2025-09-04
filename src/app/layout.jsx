@@ -34,10 +34,6 @@ export default function RootLayout({ children }) {
     <html lang="ko" className="scroll-smooth">
       <head>
         <meta name="format-detection" content="telephone=no" />
-        <script
-          src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js"
-          crossOrigin="anonymous"
-        ></script>
       </head>
       <body className={`mx-auto max-w-[550px] w-full ${inter.className} antialiased dark:bg-gray-950 bg-[rgba(0,0,0,0.8)]`}>
         <AuthProvider>

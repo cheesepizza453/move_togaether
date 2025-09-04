@@ -2,26 +2,39 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
+import SignupForm from '@/components/signup/SignupForm';
 
 
 const KakaoSignupPage = () => {
   const [loading, setLoading] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
   const [formData, setFormData] = useState({
-    display_name: '',
-    phone: '',
-    phone_visible: false,
-    bio: '',
-    instagram: '',
-    naver_cafe: '',
-    kakao_openchat: ''
+    nickname: '',
+    introduction: '',
+    phone: ''
   });
+
+  const [contactChannels, setContactChannels] = useState({
+    instagram: false,
+    naverCafe: false,
+    kakaoOpenChat: false
+  });
+
+  const [channelInputs, setChannelInputs] = useState({
+    instagram: '',
+    naverCafe: '',
+    kakaoOpenChat: ''
+  });
+
   const [errors, setErrors] = useState({});
+  const [nicknameValidation, setNicknameValidation] = useState(null);
+  const [nicknameChecking, setNicknameChecking] = useState(false);
   const router = useRouter();
-  const { user, loading: authLoading, signUpWithKakao, signInWithKakao } = useAuth();
+  const { user, loading: authLoading, signUpWithKakao, signInWithKakao, checkNicknameDuplicate } = useAuth();
 
   // 로그인 상태 확인 및 리다이렉트
   useEffect(() => {
@@ -52,49 +65,210 @@ const KakaoSignupPage = () => {
   }, [user, authLoading, router]);
 
   useEffect(() => {
-    // sessionStorage에서 카카오톡 사용자 정보 가져오기
-    const kakaoUserInfo = sessionStorage.getItem('kakaoUserInfo');
+    // URL에서 카카오톡 인증 코드 확인
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const error = urlParams.get('error');
 
-    if (kakaoUserInfo) {
-      try {
-        const userInfo = JSON.parse(kakaoUserInfo);
-        setUserInfo(userInfo);
-        setFormData(prev => ({
-          ...prev,
-          display_name: userInfo.nickname || userInfo.name || ''
-        }));
-        toast.success('카카오톡 인증이 완료되었습니다.');
-      } catch (error) {
-        console.error('사용자 정보 파싱 오류:', error);
-        toast.error('사용자 정보를 불러올 수 없습니다.');
+    if (error) {
+      toast.error('카카오톡 인증에 실패했습니다.');
+      router.push('/login');
+      return;
+    }
+
+    if (code) {
+      handleKakaoCallback(code);
+    } else {
+      // sessionStorage에서 카카오톡 사용자 정보 가져오기 (기존 방식)
+      const kakaoUserInfo = sessionStorage.getItem('kakaoUserInfo');
+
+      if (kakaoUserInfo) {
+        try {
+          const userInfo = JSON.parse(kakaoUserInfo);
+          setUserInfo(userInfo);
+          setFormData(prev => ({
+            ...prev,
+            nickname: userInfo.nickname || userInfo.name || ''
+          }));
+          toast.success('카카오톡 인증이 완료되었습니다.');
+        } catch (error) {
+          console.error('사용자 정보 파싱 오류:', error);
+          toast.error('사용자 정보를 불러올 수 없습니다.');
+          router.push('/login');
+        }
+      } else {
+        toast.error('카카오톡 인증 정보가 없습니다.');
         router.push('/login');
       }
-    } else {
-      toast.error('카카오톡 인증 정보가 없습니다.');
-      router.push('/login');
     }
   }, [router]);
 
+  const handleKakaoCallback = async (code) => {
+    try {
+      setLoading(true);
 
+      // 카카오톡 인증 코드로 사용자 정보 가져오기
+      const response = await fetch('/api/auth/kakao/callback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ code }),
+      });
 
-  const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+      const result = await response.json();
+
+      if (result.success) {
+        setUserInfo(result.userInfo);
+        setFormData(prev => ({
+          ...prev,
+          nickname: result.userInfo.nickname || result.userInfo.name || ''
+        }));
+        toast.success('카카오톡 인증이 완료되었습니다.');
+      } else {
+        toast.error(result.error || '카카오톡 인증에 실패했습니다.');
+        router.push('/login');
+      }
+    } catch (error) {
+      console.error('카카오톡 콜백 처리 오류:', error);
+      toast.error('카카오톡 인증 처리 중 오류가 발생했습니다.');
+      router.push('/login');
+    } finally {
+      setLoading(false);
     }
+  };
+
+
+
+  // 닉네임 유효성 검사
+  const validateNickname = (nickname) => {
+    if (!nickname.trim()) return null;
+
+    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(nickname);
+    const isValidLength = nickname.length >= 2 && nickname.length <= 20;
+
+    if (hasSpecialChar) {
+      return {
+        isValid: false,
+        message: '특수문자 사용 불가',
+        type: 'special_char'
+      };
+    }
+
+    if (!isValidLength) {
+      return {
+        isValid: false,
+        message: '2-20자로 입력해주세요',
+        type: 'length'
+      };
+    }
+
+    return {
+      isValid: true,
+      message: '사용 가능한 닉네임입니다',
+      type: 'success'
+    };
+  };
+
+  // 닉네임 변경 시 유효성 검사
+  const handleNicknameChange = (value) => {
+    setFormData(prev => ({ ...prev, nickname: value }));
+
+    if (value.trim()) {
+      const validation = validateNickname(value);
+      setNicknameValidation(validation);
+    } else {
+      setNicknameValidation(null);
+    }
+
+    // 에러 메시지 제거
+    if (errors.nickname) {
+      setErrors(prev => ({ ...prev, nickname: '' }));
+    }
+  };
+
+  // 닉네임 blur 이벤트로 중복 체크
+  const handleNicknameBlur = async (value) => {
+    console.log('닉네임 blur 이벤트 발생:', value);
+    console.log('현재 nicknameValidation:', nicknameValidation);
+
+    if (!value.trim() || nicknameValidation?.type !== 'success') {
+      console.log('닉네임 중복 체크 건너뜀 - 조건 불만족');
+      return;
+    }
+
+    console.log('닉네임 중복 체크 시작');
+    setNicknameChecking(true);
+    try {
+      const result = await checkNicknameDuplicate(value);
+      console.log('닉네임 중복 체크 결과:', result);
+
+      if (result.isDuplicate) {
+        setNicknameValidation({
+          isValid: false,
+          message: result.message,
+          type: 'duplicate'
+        });
+      } else {
+        setNicknameValidation({
+          isValid: true,
+          message: result.message,
+          type: 'success'
+        });
+      }
+    } catch (error) {
+      console.error('닉네임 중복 체크 오류:', error);
+    } finally {
+      setNicknameChecking(false);
+    }
+  };
+
+  // 연락채널 선택 변경
+  const handleChannelChange = (channel) => {
+    setContactChannels(prev => ({
+      ...prev,
+      [channel]: !prev[channel]
+    }));
+
+    // 채널 해제 시 입력값 초기화
+    if (contactChannels[channel]) {
+      setChannelInputs(prev => ({
+        ...prev,
+        [channel]: ''
+      }));
+    }
+  };
+
+  // 채널 입력값 변경
+  const handleChannelInputChange = (channel, value) => {
+    setChannelInputs(prev => ({
+      ...prev,
+      [channel]: value
+    }));
   };
 
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.display_name.trim()) {
-      newErrors.display_name = '표시명을 입력해주세요.';
-    } else if (formData.display_name.length < 2) {
-      newErrors.display_name = '표시명은 2자 이상 입력해주세요.';
+    if (!formData.nickname.trim()) {
+      newErrors.nickname = '닉네임을 입력해주세요.';
+    } else if (nicknameValidation && !nicknameValidation.isValid) {
+      newErrors.nickname = nicknameValidation.message;
     }
 
-    if (formData.phone && !/^010-\d{4}-\d{4}$/.test(formData.phone)) {
-      newErrors.phone = '올바른 전화번호 형식을 입력해주세요. (010-0000-0000)';
+    if (!formData.phone.trim()) {
+      newErrors.phone = '연락처를 입력해주세요.';
+    }
+
+    // 선택된 채널에 대한 입력값 검증
+    if (contactChannels.instagram && !channelInputs.instagram.trim()) {
+      newErrors.instagram = '인스타그램 ID를 입력해주세요.';
+    }
+    if (contactChannels.naverCafe && !channelInputs.naverCafe.trim()) {
+      newErrors.naverCafe = '네이버 카페 링크를 입력해주세요.';
+    }
+    if (contactChannels.kakaoOpenChat && !channelInputs.kakaoOpenChat.trim()) {
+      newErrors.kakaoOpenChat = '카카오톡 오픈채팅 링크를 입력해주세요.';
     }
 
     setErrors(newErrors);
@@ -113,7 +287,11 @@ const KakaoSignupPage = () => {
 
       const result = await signUpWithKakao({
         userInfo,
-        ...formData
+        nickname: formData.nickname,
+        introduction: formData.introduction,
+        phone: formData.phone,
+        contactChannels,
+        channelInputs
       });
 
       if (result.success) {
@@ -208,177 +386,77 @@ const KakaoSignupPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-8">
-        {/* 헤더 */}
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+    <div className="min-h-screen bg-white">
+      {/* 헤더 */}
+      <div className="px-4 py-3 border-b border-gray-200">
+        <div className="flex items-center">
+          <Link href="/login" className="mr-4">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M15 18L9 12L15 6" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">카카오톡 간편 가입</h1>
-          <p className="text-gray-600">추가 정보를 입력해주세요</p>
+          </Link>
+          <h1 className="text-lg font-semibold">카카오톡 간편 가입</h1>
         </div>
 
-        {/* 카카오톡 사용자 정보 */}
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-          <div className="flex items-center space-x-3">
-            <img
-              src={userInfo.profile_image || '/img/default_profile.jpg'}
-              alt="프로필"
-              className="w-12 h-12 rounded-full"
-            />
-            <div>
-              <p className="font-semibold text-gray-800">{userInfo.nickname || userInfo.name}</p>
-              <p className="text-sm text-gray-600">{userInfo.email}</p>
-            </div>
+        {/* 진행 단계 표시 */}
+        <div className="flex justify-center mt-4 space-x-2">
+          <div className="w-2 h-2 rounded-full bg-gray-300"></div>
+          <div className="w-2 h-2 rounded-full bg-red-500"></div>
+        </div>
+      </div>
+
+      {/* 카카오톡 사용자 정보 */}
+      <div className="px-6 py-4 bg-yellow-50 border-b border-yellow-200">
+        <div className="flex items-center space-x-3">
+          <img
+            src={userInfo.profile_image || '/img/default_profile.jpg'}
+            alt="프로필"
+            className="w-12 h-12 rounded-full"
+          />
+          <div>
+            <p className="font-semibold text-gray-800">{userInfo.nickname || userInfo.name}</p>
+            <p className="text-sm text-gray-600">{userInfo.email}</p>
           </div>
         </div>
+      </div>
 
-        {/* 폼 */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* 표시명 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              표시명 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={formData.display_name}
-              onChange={(e) => handleInputChange('display_name', e.target.value)}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent ${
-                errors.display_name ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder="표시명을 입력해주세요"
-              maxLength={20}
-            />
-            {errors.display_name && (
-              <p className="mt-1 text-sm text-red-500">{errors.display_name}</p>
-            )}
-          </div>
+      {/* 메인 컨텐츠 */}
+      <div className="px-6 py-8">
+        <form onSubmit={handleSubmit}>
+          <SignupForm
+            formData={formData}
+            setFormData={setFormData}
+            contactChannels={contactChannels}
+            setContactChannels={setContactChannels}
+            channelInputs={channelInputs}
+            setChannelInputs={setChannelInputs}
+            errors={errors}
+            setErrors={setErrors}
+            nicknameValidation={nicknameValidation}
+            setNicknameValidation={setNicknameValidation}
+            nicknameChecking={nicknameChecking}
+            setNicknameChecking={setNicknameChecking}
+            onNicknameChange={handleNicknameChange}
+            onNicknameBlur={handleNicknameBlur}
+            onChannelChange={handleChannelChange}
+            onChannelInputChange={handleChannelInputChange}
+            showProfileImage={false}
+            showIntroduction={true}
+          />
 
-          {/* 전화번호 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              전화번호
-            </label>
-            <input
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => handleInputChange('phone', e.target.value)}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent ${
-                errors.phone ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder="010-0000-0000"
-              maxLength={13}
-            />
-            {errors.phone && (
-              <p className="mt-1 text-sm text-red-500">{errors.phone}</p>
-            )}
-          </div>
-
-          {/* 전화번호 공개 여부 */}
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-gray-700">
-              전화번호 공개
-            </label>
-            <button
-              type="button"
-              onClick={() => handleInputChange('phone_visible', !formData.phone_visible)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                formData.phone_visible ? 'bg-yellow-500' : 'bg-gray-200'
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  formData.phone_visible ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </div>
-
-          {/* 자기소개 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              자기소개
-            </label>
-            <textarea
-              value={formData.bio}
-              onChange={(e) => handleInputChange('bio', e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-              placeholder="간단한 자기소개를 입력해주세요"
-              rows={3}
-              maxLength={200}
-            />
-          </div>
-
-          {/* SNS 링크 */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-800">연락 채널</h3>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                인스타그램
-              </label>
-              <input
-                type="text"
-                value={formData.instagram}
-                onChange={(e) => handleInputChange('instagram', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                placeholder="@username"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                네이버 카페
-              </label>
-              <input
-                type="url"
-                value={formData.naver_cafe}
-                onChange={(e) => handleInputChange('naver_cafe', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                placeholder="https://cafe.naver.com/..."
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                카카오톡 오픈채팅
-              </label>
-              <input
-                type="url"
-                value={formData.kakao_openchat}
-                onChange={(e) => handleInputChange('kakao_openchat', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                placeholder="https://open.kakao.com/..."
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                채팅방 우상단 ⋮ → 공유 → 링크 복사
-              </p>
-            </div>
-          </div>
-
-          {/* 제출 버튼 */}
+          {/* 회원가입 완료 버튼 */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-yellow-500 text-white py-3 px-6 rounded-lg font-semibold hover:bg-yellow-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`w-full mt-8 py-3 rounded-lg font-semibold transition-colors ${
+              loading
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-[#FFDD44] text-black hover:bg-yellow-500'
+            }`}
           >
-            {loading ? '가입 중...' : '가입 완료'}
+            {loading ? '가입 중...' : '가입하기'}
           </button>
         </form>
-
-        {/* 취소 버튼 */}
-        <div className="mt-6 text-center">
-          <button
-            onClick={() => router.push('/login')}
-            className="text-gray-500 hover:text-gray-700 text-sm"
-          >
-            취소
-          </button>
-        </div>
       </div>
     </div>
   );
