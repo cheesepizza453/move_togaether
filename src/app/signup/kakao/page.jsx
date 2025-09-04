@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/lib/supabase';
+
 
 const KakaoSignupPage = () => {
   const [loading, setLoading] = useState(false);
@@ -19,7 +21,35 @@ const KakaoSignupPage = () => {
   });
   const [errors, setErrors] = useState({});
   const router = useRouter();
-  const { signUpWithKakao } = useAuth();
+  const { user, loading: authLoading, signUpWithKakao, signInWithKakao } = useAuth();
+
+  // 로그인 상태 확인 및 리다이렉트
+  useEffect(() => {
+    const checkAuthAndRedirect = async () => {
+      // useAuth 훅의 로딩이 완료되었고 사용자가 있는 경우
+      if (!authLoading && user) {
+        console.log('로그인된 사용자 감지, 메인 페이지로 리다이렉트:', user.id);
+        router.replace('/');
+        return;
+      }
+
+      // useAuth 훅이 로딩 중이 아닌데도 사용자 정보가 없는 경우
+      // Supabase 세션을 직접 확인하여 추가 검증
+      if (!authLoading && !user) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            console.log('세션에서 사용자 발견, 메인 페이지로 리다이렉트:', session.user.id);
+            router.replace('/');
+          }
+        } catch (error) {
+          console.error('세션 확인 오류:', error);
+        }
+      }
+    };
+
+    checkAuthAndRedirect();
+  }, [user, authLoading, router]);
 
   useEffect(() => {
     // sessionStorage에서 카카오톡 사용자 정보 가져오기
@@ -92,7 +122,27 @@ const KakaoSignupPage = () => {
         toast.success('회원가입이 완료되었습니다!');
         router.push('/mypage');
       } else {
-        toast.error(result.error || '회원가입에 실패했습니다.');
+        // 기존 사용자인 경우 로그인 처리
+        if (result.needsLogin && result.isExistingUser) {
+          toast.info('이미 가입된 계정입니다. 로그인을 진행합니다.');
+
+          // 카카오톡 로그인 시도
+          const loginResult = await signInWithKakao({ userInfo });
+
+          if (loginResult.success) {
+            sessionStorage.removeItem('kakaoUserInfo');
+            toast.success('카카오톡 로그인이 완료되었습니다!');
+            router.push('/mypage');
+            return;
+          } else {
+            toast.error(loginResult.error || '로그인에 실패했습니다.');
+            return;
+          }
+        }
+
+        // 개선된 에러 메시지 표시 (가입 방식 구분 안내)
+        const errorMessage = result.error || '회원가입에 실패했습니다.';
+        toast.error(errorMessage);
       }
     } catch (error) {
       console.error('카카오톡 회원가입 오류:', error);
@@ -101,6 +151,32 @@ const KakaoSignupPage = () => {
       setLoading(false);
     }
   };
+
+  // 인증 상태 로딩 중일 때 로딩 화면 표시
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-yellow-500 mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-700 mb-2">로그인 상태 확인 중...</h2>
+          <p className="text-gray-500">잠시만 기다려주세요.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 이미 로그인된 사용자는 리다이렉트 처리 (useEffect에서 처리되지만 추가 안전장치)
+  if (user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-yellow-500 mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-700 mb-2">메인 페이지로 이동 중...</h2>
+          <p className="text-gray-500">이미 로그인되어 있습니다.</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading && !userInfo) {
     return (

@@ -27,22 +27,28 @@ export async function POST(request) {
     // Supabase 클라이언트 생성 (anon key 사용)
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-    // user_profiles 테이블에서 이메일 중복 확인
+    // user_profiles 테이블에서 이메일 중복 확인 (provider 정보 포함)
     const { data: profileData, error: profileError } = await supabase
       .from('user_profiles')
-      .select('id')
+      .select('id, provider, display_name')
       .eq('email', email.toLowerCase())
       .eq('is_deleted', false)
       .single();
 
     if (profileData) {
+      const provider = profileData.provider || 'email';
+      const providerName = provider === 'kakao' ? '카카오톡' : '이메일';
+      const message = provider === 'kakao' ? '이미 카카오톡으로 가입된 이메일입니다.' : '이미 이메일로 가입된 이메일입니다.';
+
       return NextResponse.json({
         isDuplicate: true,
-        message: '이미 사용 중인 이메일입니다.',
+        message: message,
         available: false,
         duplicateInfo: {
           email: email.toLowerCase(),
-          provider: 'email'
+          provider: provider,
+          providerName: providerName,
+          displayName: profileData.display_name
         }
       });
     }

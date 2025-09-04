@@ -20,17 +20,48 @@ export async function POST(request) {
     // Supabase 클라이언트 생성
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-    // 이메일 중복 체크
+    // 이메일 중복 체크 (provider 정보 포함)
     const { data: existingProfile, error: checkError } = await supabase
       .from('user_profiles')
-      .select('id')
+      .select('id, provider, display_name')
       .eq('email', userInfo.email.toLowerCase())
       .eq('is_deleted', false)
       .single();
 
-    if (existingProfile) {
+        if (existingProfile) {
+      const provider = existingProfile.provider || 'email';
+      const providerName = provider === 'kakao' ? '카카오톡' : '이메일';
+      const message = provider === 'kakao' ? '이미 카카오톡으로 가입된 이메일입니다.' : '이미 이메일로 가입된 이메일입니다.';
+
+      // 카카오톡으로 이미 가입된 사용자인 경우 로그인 처리
+      if (provider === 'kakao') {
+        return NextResponse.json(
+          {
+            success: false,
+            error: '이미 카카오톡으로 가입된 계정입니다. 로그인을 진행합니다.',
+            isExistingUser: true,
+            needsLogin: true,
+            duplicateInfo: {
+              provider: provider,
+              providerName: providerName,
+              displayName: existingProfile.display_name
+            }
+          },
+          { status: 200 } // 200으로 변경하여 프론트엔드에서 로그인 처리 가능하도록
+        );
+      }
+
+      // 다른 방식으로 가입된 사용자인 경우
       return NextResponse.json(
-        { success: false, error: '이미 가입된 이메일입니다.' },
+        {
+          success: false,
+          error: message,
+          duplicateInfo: {
+            provider: provider,
+            providerName: providerName,
+            displayName: existingProfile.display_name
+          }
+        },
         { status: 400 }
       );
     }
@@ -95,6 +126,7 @@ export async function POST(request) {
         instagram: instagram || null,
         naver_cafe: naver_cafe || null,
         kakao_openchat: kakao_openchat || null,
+        provider: 'kakao', // 카카오톡 가입 방식 저장
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/lib/supabase';
 import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -13,8 +14,93 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const router = useRouter();
-  const { signIn, testSupabaseConnection } = useAuth();
+  const { user, loading: authLoading, signIn, signInWithKakao, testSupabaseConnection } = useAuth();
+
+  // 로그인 상태 확인 및 리다이렉트
+  useEffect(() => {
+    const checkAuthAndRedirect = async () => {
+      try {
+        // Supabase 세션을 직접 확인 (가장 확실한 방법)
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session?.user) {
+          console.log('세션에서 사용자 발견, 메인 페이지로 리다이렉트:', session.user.id);
+          router.replace('/');
+          return;
+        }
+
+        // useAuth 훅의 상태도 확인 (추가 검증)
+        if (!authLoading && user) {
+          console.log('useAuth에서 사용자 감지, 메인 페이지로 리다이렉트:', user.id);
+          router.replace('/');
+          return;
+        }
+
+        console.log('로그인되지 않은 사용자, 로그인 페이지 유지');
+      } catch (error) {
+        console.error('인증 상태 확인 오류:', error);
+      }
+    };
+
+    // 즉시 실행
+    checkAuthAndRedirect();
+
+    // useAuth 상태 변경 시에도 재확인
+    if (!authLoading) {
+      checkAuthAndRedirect();
+    }
+  }, [user, authLoading, router]);
+
+  // 페이지 로드 시 즉시 세션 확인 (가장 우선순위)
+  useEffect(() => {
+    const immediateSessionCheck = async () => {
+      try {
+        console.log('로그인 페이지 - 즉시 세션 확인 시작');
+
+        // localStorage에서 Supabase 세션 정보 확인
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const projectId = supabaseUrl?.split('//')[1]?.split('.')[0];
+        const sessionKey = `sb-${projectId}-auth-token`;
+        const supabaseSession = localStorage.getItem(sessionKey);
+
+        console.log('localStorage 세션 정보:', {
+          sessionKey,
+          hasSession: !!supabaseSession,
+          sessionData: supabaseSession ? JSON.parse(supabaseSession) : null
+        });
+
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        if (error) {
+          console.error('세션 확인 오류:', error);
+          setIsCheckingAuth(false);
+          return;
+        }
+
+        console.log('세션 확인 결과:', {
+          hasSession: !!session,
+          hasUser: !!session?.user,
+          userId: session?.user?.id
+        });
+
+        if (session?.user) {
+          console.log('페이지 로드 시 세션 확인 - 로그인된 사용자, 리다이렉트:', session.user.id);
+          router.replace('/');
+          return;
+        }
+
+        console.log('세션에 사용자 없음, 로그인 페이지 유지');
+        setIsCheckingAuth(false);
+      } catch (error) {
+        console.error('즉시 세션 확인 오류:', error);
+        setIsCheckingAuth(false);
+      }
+    };
+
+    immediateSessionCheck();
+  }, [router]);
 
   // URL 파라미터에서 메시지 확인
   useEffect(() => {
@@ -53,7 +139,7 @@ const LoginPage = () => {
     }
   };
 
-    const handleKakaoSignup = () => {
+    const handleKakaoSignup = async () => {
     const kakaoJsKey = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
 
     if (!kakaoJsKey) {
@@ -74,7 +160,7 @@ const LoginPage = () => {
         // 사용자 정보 가져오기
         window.Kakao.API.request({
           url: '/v2/user/me',
-          success: (res) => {
+          success: async (res) => {
             console.log('사용자 정보:', res);
 
             // 이메일이 없는 경우
@@ -83,7 +169,7 @@ const LoginPage = () => {
               return;
             }
 
-            // 카카오톡 가입 페이지로 이동 (사용자 정보와 함께)
+            // 사용자 정보 구성
             const userInfo = {
               id: res.id,
               email: res.kakao_account.email,
@@ -94,11 +180,36 @@ const LoginPage = () => {
               access_token: authObj.access_token
             };
 
-            // 사용자 정보를 sessionStorage에 저장
-            sessionStorage.setItem('kakaoUserInfo', JSON.stringify(userInfo));
+            // 먼저 기존 사용자인지 확인
+            try {
+              const loginResult = await signInWithKakao({ userInfo });
 
-            // 카카오톡 가입 페이지로 이동
-            window.location.href = '/signup/kakao';
+              if (loginResult.success) {
+                // 기존 사용자 로그인 성공
+                toast.success('카카오톡 로그인이 완료되었습니다!');
+                router.push('/mypage');
+                return;
+              } else if (loginResult.needsSignup) {
+                // 신규 사용자 - 가입 페이지로 이동
+                sessionStorage.setItem('kakaoUserInfo', JSON.stringify(userInfo));
+                window.location.href = '/signup/kakao';
+                return;
+              } else if (loginResult.duplicateInfo) {
+                // 다른 방식으로 가입된 사용자
+                const providerName = loginResult.duplicateInfo.providerName || '이메일';
+                const message = providerName === '카카오톡' ? '이미 카카오톡으로 가입된 이메일입니다.' : '이미 이메일로 가입된 이메일입니다.';
+                toast.error(message);
+                return;
+              } else {
+                // 기타 오류
+                toast.error(loginResult.error || '로그인 처리 중 오류가 발생했습니다.');
+                return;
+              }
+            } catch (error) {
+              console.error('카카오톡 로그인 확인 오류:', error);
+              toast.error('로그인 확인 중 오류가 발생했습니다.');
+              return;
+            }
           },
           fail: (error) => {
             console.error('사용자 정보 가져오기 실패:', error);
@@ -127,6 +238,32 @@ const LoginPage = () => {
   const handleGoBack = () => {
     router.push('/');
   };
+
+  // 인증 상태 로딩 중일 때 로딩 화면 표시
+  if (isCheckingAuth || authLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-yellow-500 mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-700 mb-2">로그인 상태 확인 중...</h2>
+          <p className="text-gray-500">잠시만 기다려주세요.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 이미 로그인된 사용자는 리다이렉트 처리 (useEffect에서 처리되지만 추가 안전장치)
+  if (user) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-yellow-500 mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-700 mb-2">메인 페이지로 이동 중...</h2>
+          <p className="text-gray-500">이미 로그인되어 있습니다.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4">

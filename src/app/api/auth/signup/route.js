@@ -32,6 +32,7 @@ export async function POST(request) {
           phone,
           contactChannels,
           channelInputs,
+          provider: 'email',
           profile_created: false
         },
         emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3008'}/verify-email?type=signup`

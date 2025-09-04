@@ -14,8 +14,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     // 세션 지속성 설정
     persistSession: true,
-    // 로컬 스토리지 대신 세션 스토리지 사용 (보안 향상)
-    storage: typeof window !== 'undefined' ? window.sessionStorage : undefined
+    // 로컬 스토리지 사용으로 로그인 상태 유지
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined
   }
 })
 

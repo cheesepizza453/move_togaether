@@ -30,6 +30,16 @@ export const AuthProvider = ({ children }) => {
     // 초기 인증 상태 확인
     const getUser = async () => {
       try {
+        // 먼저 세션을 확인하여 빠른 응답
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          setUser(session.user);
+          await fetchProfile(session.user.id);
+          setLoading(false);
+          return;
+        }
+
+        // 세션에 사용자가 없으면 getUser로 재확인
         const { data: { user } } = await supabase.auth.getUser();
         setUser(user);
 
@@ -59,6 +69,15 @@ export const AuthProvider = ({ children }) => {
           return;
         }
 
+        // INITIAL_SESSION 이벤트에서도 사용자 정보 처리
+        if (event === 'INITIAL_SESSION' && session?.user) {
+          console.log('초기 세션에서 사용자 발견:', session.user.id);
+          setUser(session.user);
+          await fetchProfile(session.user.id);
+          setLoading(false);
+          return;
+        }
+
         setUser(session?.user ?? null);
 
         if (session?.user) {
@@ -68,6 +87,9 @@ export const AuthProvider = ({ children }) => {
             hasMetadata: !!session.user.user_metadata,
             metadata: session.user.user_metadata
           });
+
+          // 프로필 정보 가져오기
+          await fetchProfile(session.user.id);
 
           // 이메일 인증 완료 후 프로필 생성 (SIGNED_IN 이벤트에서만)
           if (event === 'SIGNED_IN' && session.user.email_confirmed_at) {
@@ -147,6 +169,7 @@ export const AuthProvider = ({ children }) => {
             instagram: metadata.contactChannels?.instagram ? metadata.channelInputs?.instagram : null,
             naver_cafe: metadata.contactChannels?.naverCafe ? metadata.channelInputs?.naverCafe : null,
             kakao_openchat: metadata.contactChannels?.kakaoOpenChat ? metadata.channelInputs?.kakaoOpenChat : null,
+            provider: metadata.provider || 'email', // 가입 방식 저장
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           }
@@ -261,40 +284,44 @@ export const AuthProvider = ({ children }) => {
       console.log('useAuth signIn 시작:', { email, password: '***' });
       setLoading(true);
 
-      console.log('서버 로그인 요청 시작...');
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
+      // Supabase 클라이언트에서 직접 로그인 (세션 유지를 위해)
+      console.log('Supabase 직접 로그인 시도...');
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
       });
 
-      const result = await response.json();
-      console.log('서버 로그인 응답:', result);
+      if (error) {
+        console.log('Supabase 로그인 에러:', error);
 
-      if (result.success) {
-        console.log('로그인 성공:', result.user);
-        // 로그인 성공 시 사용자 정보 업데이트
-        setUser(result.user);
-
-        // 프로필 정보도 함께 설정 (서버에서 받은 데이터 사용)
-        if (result.user.profile) {
-          setProfile(result.user.profile);
+        let errorMessage = '로그인에 실패했습니다.';
+        if (error.message.includes('Invalid login credentials')) {
+          errorMessage = '이메일 또는 비밀번호가 올바르지 않습니다.';
+        } else if (error.message.includes('Email not confirmed')) {
+          errorMessage = '이메일 인증이 필요합니다. 가입하신 이메일을 확인해주세요.';
+        } else if (error.message.includes('Too many requests')) {
+          errorMessage = '너무 많은 로그인 시도가 있었습니다. 잠시 후 다시 시도해주세요.';
         }
 
         return {
-          success: true,
-          message: '로그인이 완료되었습니다.',
-          user: result.user
-        };
-      } else {
-        console.log('로그인 실패:', result.error);
-        return {
           success: false,
-          error: result.error || '로그인에 실패했습니다.'
+          error: errorMessage
         };
       }
+
+      console.log('Supabase 로그인 성공:', data.user.id);
+
+      // 사용자 정보 설정
+      setUser(data.user);
+
+      // 프로필 정보 조회
+      await fetchProfile(data.user.id);
+
+      return {
+        success: true,
+        message: '로그인이 완료되었습니다.',
+        user: data.user
+      };
 
     } catch (error) {
       console.error('로그인 중 오류:', error);
@@ -470,6 +497,56 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // 카카오톡 로그인 함수
+  const signInWithKakao = async ({ userInfo }) => {
+    try {
+      setLoading(true);
+
+      console.log('카카오톡 로그인 요청 시작...');
+      const response = await fetch('/api/auth/kakao/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userInfo }),
+      });
+
+      const result = await response.json();
+      console.log('카카오톡 로그인 응답:', result);
+
+      if (result.success) {
+        // 로그인 성공 시 사용자 정보 업데이트
+        setUser(result.user);
+        if (result.user.profile) {
+          setProfile(result.user.profile);
+        }
+
+        return {
+          success: true,
+          message: '카카오톡 로그인이 완료되었습니다.',
+          user: result.user,
+          isExistingUser: true
+        };
+      } else {
+        return {
+          success: false,
+          error: result.error || '카카오톡 로그인에 실패했습니다.',
+          needsSignup: result.needsSignup || false,
+          duplicateInfo: result.duplicateInfo
+        };
+      }
+
+    } catch (error) {
+      console.error('카카오톡 로그인 중 오류:', error);
+      return {
+        success: false,
+        error: '카카오톡 로그인 처리 중 오류가 발생했습니다.'
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 카카오톡 회원가입 함수
   const signUpWithKakao = async ({ userInfo, display_name, phone, phone_visible, bio, instagram, naver_cafe, kakao_openchat }) => {
     try {
@@ -539,7 +616,8 @@ export const AuthProvider = ({ children }) => {
     checkNicknameDuplicate,
     testSupabaseConnection,
     createProfileManually,
-    signUpWithKakao
+    signUpWithKakao,
+    signInWithKakao
   };
 
   return (
