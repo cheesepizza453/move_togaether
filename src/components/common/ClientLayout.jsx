@@ -13,7 +13,7 @@ const ClientLayout = ({ children }) => {
 
   return (
     <AuthProvider>
-      {!isLoginPage && <Header />}
+      {/* {!isLoginPage && <Header />} */}
       <main>{children}</main>
       {!isLoginPage && <Footer />}
       {!isLoginPage && <BottomNavigation />}

@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { Home, Plus, Heart, User } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 // import { useSplash } from './SplashProvider';
 import {IconMenuBarHome, IconMenuBarMap, IconMenuBarHeart, IconMenuBarMy, IconMenuBarPlus} from "@/components/icon/IconMenuBar";
 
@@ -10,6 +12,7 @@ const BottomNavigation = () => {
   const [activeTab, setActiveTab] = useState('home');
   // const { showSplash } = useSplash();
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
 
   // Splash가 표시되는 동안 하단 네비게이션 숨김
   // if (showSplash) {
@@ -56,6 +59,30 @@ const BottomNavigation = () => {
 
   const handleTabClick = (tabId) => {
     setActiveTab(tabId);
+
+    // post 버튼 클릭 시 로그인 상태 확인
+    if (tabId === 'post') {
+      if (authLoading) {
+        // 로딩 중일 때는 아무것도 하지 않음
+        return;
+      }
+
+      if (!user) {
+        // 로그인되지 않은 경우
+        toast.error('로그인이 필요합니다.', {
+          description: '게시글을 작성하려면 로그인해주세요.',
+          action: {
+            label: '로그인하기',
+            onClick: () => {
+              // 로그인 성공 후 다시 작성 페이지로 이동할 수 있도록 현재 경로 저장
+              sessionStorage.setItem('redirectAfterLogin', '/posts/new');
+              router.push('/login');
+            }
+          }
+        });
+        return;
+      }
+    }
 
     // 해당 탭의 href로 이동
     const selectedTab = tabs.find(tab => tab.id === tabId);

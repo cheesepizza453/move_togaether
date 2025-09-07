@@ -1,9 +1,10 @@
-
+import moment from "moment";
 
 const Footer = () => {
+  const currentYear = moment().year();
   return (
     <footer className="block bg-gray-50 border-t border-gray-200">
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      <div className="w-full px-4 sm:px-6 lg:px-8 pt-8 pb-24">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
           {/* 서비스 소개 */}
           <div className="space-y-3 sm:space-y-4">
@@ -90,7 +91,7 @@ const Footer = () => {
           <div className="flex flex-col md:flex-row justify-between items-center space-y-3 sm:space-y-4 md:space-y-0">
             {/* 저작권 */}
             <div className="text-xs sm:text-sm text-gray-500 text-center md:text-left">
-              © 2024 Move Togaether. All rights reserved.
+              © {currentYear} Move Togaether. All rights reserved.
             </div>
 
             {/* 추가 링크 */}

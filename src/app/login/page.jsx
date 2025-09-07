@@ -122,9 +122,19 @@ const LoginPage = () => {
       console.log('로그인 결과:', result);
 
       if (result.success) {
-        console.log('로그인 성공, 마이페이지로 이동');
+        console.log('로그인 성공');
         toast.success('로그인되었습니다!');
-        router.push('/mypage');
+
+        // 로그인 성공 후 리다이렉트 경로 확인
+        const redirectPath = sessionStorage.getItem('redirectAfterLogin');
+        if (redirectPath) {
+          console.log('저장된 리다이렉트 경로로 이동:', redirectPath);
+          sessionStorage.removeItem('redirectAfterLogin');
+          router.push(redirectPath);
+        } else {
+          console.log('기본 경로로 이동: 마이페이지');
+          router.push('/mypage');
+        }
       } else {
         console.log('로그인 실패:', result.error);
         setError(result.error || '로그인에 실패했습니다.');

@@ -298,7 +298,17 @@ const KakaoSignupPage = () => {
         // sessionStorage 정리
         sessionStorage.removeItem('kakaoUserInfo');
         toast.success('회원가입이 완료되었습니다!');
-        router.push('/mypage');
+
+        // 가입 성공 후 리다이렉트 경로 확인
+        const redirectPath = sessionStorage.getItem('redirectAfterLogin');
+        if (redirectPath) {
+          console.log('저장된 리다이렉트 경로로 이동:', redirectPath);
+          sessionStorage.removeItem('redirectAfterLogin');
+          router.push(redirectPath);
+        } else {
+          console.log('기본 경로로 이동: 마이페이지');
+          router.push('/mypage');
+        }
       } else {
         // 기존 사용자인 경우 로그인 처리
         if (result.needsLogin && result.isExistingUser) {
@@ -310,7 +320,17 @@ const KakaoSignupPage = () => {
           if (loginResult.success) {
             sessionStorage.removeItem('kakaoUserInfo');
             toast.success('카카오톡 로그인이 완료되었습니다!');
-            router.push('/mypage');
+
+            // 로그인 성공 후 리다이렉트 경로 확인
+            const redirectPath = sessionStorage.getItem('redirectAfterLogin');
+            if (redirectPath) {
+              console.log('저장된 리다이렉트 경로로 이동:', redirectPath);
+              sessionStorage.removeItem('redirectAfterLogin');
+              router.push(redirectPath);
+            } else {
+              console.log('기본 경로로 이동: 마이페이지');
+              router.push('/mypage');
+            }
             return;
           } else {
             toast.error(loginResult.error || '로그인에 실패했습니다.');

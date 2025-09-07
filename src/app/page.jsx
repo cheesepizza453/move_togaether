@@ -62,7 +62,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#FBFBF7]">
-
+      <Header />
       {/* 메인 콘텐츠 */}
       <main className="w-full bg-brand-bg px-[23px] pt-[15px]">
         {/* 메인 배너 */}
