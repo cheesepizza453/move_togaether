@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Heart } from 'lucide-react';
 import IconHeart from "../../public/img/icon/IconHeart";
 
 const PostCard = ({ post }) => {
@@ -34,8 +33,8 @@ const PostCard = ({ post }) => {
   // D-day 배지 색상 결정
   const getDdayColor = (dday) => {
     if (dday <= 7) return 'bg-brand-point text-white';
-    if (dday <= 30) return 'bg-[#efbc40] text-white';
-    return 'bg-brand-sub text-brand-yellow-dark';
+    if (dday <= 14) return 'bg-brand-main text-white';
+    return 'bg-[#FFE889] text-brand-yellow-dark';
   };
 
   return (
