@@ -31,7 +31,7 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="ko" className="scroll-smooth">
+    <html lang="ko" className="scroll-smooth" data-scroll-behavior="smooth">
       <head>
         <meta name="format-detection" content="telephone=no" />
       </head>

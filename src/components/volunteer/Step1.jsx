@@ -26,7 +26,13 @@ const Step1 = ({
         <input
           type="text"
           value={formData.title}
-          onChange={(e) => onFormDataChange('title', e.target.value)}
+          onChange={(e) => {
+            try {
+              onFormDataChange('title', e.target.value);
+            } catch (error) {
+              console.error('제목 입력 오류:', error);
+            }
+          }}
           placeholder="이동 봉사 제목을 입력해주세요"
           className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-colors ${
             errors.title ? 'border-red-500' : 'border-gray-300'
@@ -75,7 +81,20 @@ const Step1 = ({
         </label>
         <textarea
           value={formData.description}
-          onChange={(e) => onFormDataChange('description', e.target.value)}
+          onChange={(e) => {
+            try {
+              onFormDataChange('description', e.target.value);
+            } catch (error) {
+              console.error('설명 입력 오류:', error);
+            }
+          }}
+          onInput={(e) => {
+            try {
+              onFormDataChange('description', e.target.value);
+            } catch (error) {
+              console.error('설명 입력 오류 (onInput):', error);
+            }
+          }}
           placeholder="이동 봉사에 대한 상세 설명을 입력해주세요"
           rows={4}
           className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-colors resize-none ${

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { supabase } from '@/lib/supabase';
+import { supabase, getSession } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth';
 import FormStep from '@/components/volunteer/FormStep';
 import Step1 from '@/components/volunteer/Step1';
 import Step2 from '@/components/volunteer/Step2';
@@ -13,6 +14,52 @@ import Preview from '@/components/volunteer/Preview';
 const VolunteerCreate = () => {
   const router = useRouter();
   const fileInputRef = useRef(null);
+  const { user, session } = useAuth();
+
+  // 전역 에러 핸들러 추가 (브라우저 확장 프로그램 충돌 방지)
+  React.useEffect(() => {
+    const handleError = (event) => {
+      if (event.error && event.error.message &&
+          (event.error.message.includes('message port closed') ||
+           event.error.message.includes('content.js'))) {
+        console.warn('브라우저 확장 프로그램과의 충돌 감지, 무시합니다:', event.error);
+        event.preventDefault();
+        event.stopPropagation();
+        return false;
+      }
+    };
+
+    const handleUnhandledRejection = (event) => {
+      if (event.reason && event.reason.message &&
+          (event.reason.message.includes('message port closed') ||
+           event.reason.message.includes('content.js'))) {
+        console.warn('브라우저 확장 프로그램과의 충돌 감지, 무시합니다:', event.reason);
+        event.preventDefault();
+        event.stopPropagation();
+        return false;
+      }
+    };
+
+    // 더 강력한 에러 핸들링
+    const originalConsoleError = console.error;
+    console.error = (...args) => {
+      const message = args.join(' ');
+      if (message.includes('message port closed') || message.includes('content.js')) {
+        console.warn('확장 프로그램 오류 무시:', ...args);
+        return;
+      }
+      originalConsoleError.apply(console, args);
+    };
+
+    window.addEventListener('error', handleError, true);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection, true);
+
+    return () => {
+      window.removeEventListener('error', handleError, true);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection, true);
+      console.error = originalConsoleError;
+    };
+  }, []);
 
   // 현재 단계 상태
   const [currentStep, setCurrentStep] = useState(1);
@@ -22,7 +69,11 @@ const VolunteerCreate = () => {
     // Step 1: 이동 봉사 정보
     title: '',
     departureAddress: '',
+    departureLat: null,
+    departureLng: null,
     arrivalAddress: '',
+    arrivalLat: null,
+    arrivalLng: null,
     description: '',
     // Step 2: 구조견 정보
     name: '',
@@ -54,9 +105,13 @@ const VolunteerCreate = () => {
   const [isSearchingDeparture, setIsSearchingDeparture] = useState(false);
   const [isSearchingArrival, setIsSearchingArrival] = useState(false);
 
-  // 폼 데이터 변경
+  // 폼 데이터 변경 (에러 핸들링 추가)
   const updateFormData = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    try {
+      setFormData(prev => ({ ...prev, [field]: value }));
+    } catch (error) {
+      console.error('폼 데이터 업데이트 오류:', error);
+    }
   };
 
   const handleGoBack = () => {
@@ -215,18 +270,22 @@ const VolunteerCreate = () => {
   const handleAddressChange = (type, value) => {
     updateFormData(type === 'departure' ? 'departureAddress' : 'arrivalAddress', value);
 
+    // 주소가 변경되면 위경도 좌표도 초기화
+    if (type === 'departure') {
+      updateFormData('departureLat', null);
+      updateFormData('departureLng', null);
+      setDepartureSearchResults([]);
+    } else {
+      updateFormData('arrivalLat', null);
+      updateFormData('arrivalLng', null);
+      setArrivalSearchResults([]);
+    }
+
     // 주소가 변경되면 검증 상태 초기화
     setAddressValidation(prev => ({
       ...prev,
       [type]: { isValid: null, message: '' }
     }));
-
-    // 검색 결과도 초기화
-    if (type === 'departure') {
-      setDepartureSearchResults([]);
-    } else {
-      setArrivalSearchResults([]);
-    }
   };
 
   // 주소 선택 핸들러
@@ -239,7 +298,14 @@ const VolunteerCreate = () => {
     // 상세주소가 있으면 추가
     const fullAddress = detailAddress ? `${baseAddress} ${detailAddress}` : baseAddress;
 
+    // 위경도 좌표 추출
+    const lat = selectedAddress.y ? parseFloat(selectedAddress.y) : null;
+    const lng = selectedAddress.x ? parseFloat(selectedAddress.x) : null;
+
     updateFormData('departureAddress', fullAddress);
+    updateFormData('departureLat', lat);
+    updateFormData('departureLng', lng);
+
     setDepartureSearchResults([]);
     setAddressValidation(prev => ({
       ...prev,
@@ -256,7 +322,14 @@ const VolunteerCreate = () => {
     // 상세주소가 있으면 추가
     const fullAddress = detailAddress ? `${baseAddress} ${detailAddress}` : baseAddress;
 
+    // 위경도 좌표 추출
+    const lat = selectedAddress.y ? parseFloat(selectedAddress.y) : null;
+    const lng = selectedAddress.x ? parseFloat(selectedAddress.x) : null;
+
     updateFormData('arrivalAddress', fullAddress);
+    updateFormData('arrivalLat', lat);
+    updateFormData('arrivalLng', lng);
+
     setArrivalSearchResults([]);
     setAddressValidation(prev => ({
       ...prev,
@@ -279,13 +352,25 @@ const VolunteerCreate = () => {
         return;
       }
 
-      // FileReader로 이미지 미리보기 생성
+      // FileReader로 이미지 미리보기 생성 (Promise 기반)
       const reader = new FileReader();
+
       reader.onload = (e) => {
-        const base64String = e.target.result;
-        setPhotoPreview(base64String);
-        updateFormData('photo', base64String);
+        try {
+          const base64String = e.target.result;
+          setPhotoPreview(base64String);
+          updateFormData('photo', base64String);
+        } catch (error) {
+          console.error('이미지 처리 오류:', error);
+          toast.error('이미지 처리 중 오류가 발생했습니다.');
+        }
       };
+
+      reader.onerror = (error) => {
+        console.error('파일 읽기 오류:', error);
+        toast.error('파일을 읽는 중 오류가 발생했습니다.');
+      };
+
       reader.readAsDataURL(file);
     }
   };
@@ -303,40 +388,81 @@ const VolunteerCreate = () => {
   };
 
   const handleSubmit = async () => {
+    console.log('=== 제출 시작 ===');
+    console.log('폼 데이터:', formData);
     setLoading(true);
 
     try {
-      // Supabase에서 현재 사용자의 세션 토큰 가져오기
-      const { data: { session } } = await supabase.auth.getSession();
+      // 세션 확인 (AuthContext의 user와 직접 세션 확인 조합)
+      console.log('세션 확인 중...');
+      console.log('AuthContext 사용자:', {
+        hasUser: !!user,
+        userId: user?.id
+      });
 
-      if (!session) {
+      if (!user) {
+        console.log('사용자 없음, 로그인 페이지로 이동');
         toast.error('로그인이 필요합니다.');
         router.push('/login');
         return;
       }
 
-      // 서버로 데이터 전송
-      const response = await fetch('/api/posts/volunteer', {
+      // 현재 세션에서 토큰 가져오기
+      const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError || !currentSession) {
+        console.log('세션 토큰 없음, 로그인 페이지로 이동');
+        toast.error('세션이 만료되었습니다. 다시 로그인해주세요.');
+        router.push('/login');
+        return;
+      }
+
+      console.log('세션 확인 완료:', {
+        hasSession: !!currentSession,
+        hasToken: !!currentSession?.access_token
+      });
+
+      // 서버로 데이터 전송 (타임아웃 추가)
+      console.log('API 호출 시작...');
+
+      const fetchPromise = fetch('/api/posts/volunteer', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
+          'Authorization': `Bearer ${currentSession.access_token}`,
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZuZXh2Zm5zZ2pmcml4ZXhsZ2RwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2MDAyODMsImV4cCI6MjA3MjE3NjI4M30.lvAYyChetNt3OtJc79O6JKMoI7h2aUhaejzasDi7DEI',
         },
         body: JSON.stringify(formData),
       });
 
+      const fetchTimeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('API 호출 타임아웃')), 30000)
+      );
+
+      const response = await Promise.race([fetchPromise, fetchTimeoutPromise]);
+
+      console.log('API 응답 상태:', response.status);
       const result = await response.json();
+      console.log('API 응답 결과:', result);
 
       if (result.success) {
+        console.log('등록 성공!');
         toast.success('이동 봉사 요청이 등록되었습니다!');
         router.push('/');
       } else {
+        console.log('등록 실패:', result.error);
         toast.error(result.error || '등록에 실패했습니다.');
       }
     } catch (error) {
       console.error('등록 오류:', error);
-      toast.error('등록 중 오류가 발생했습니다.');
+
+      if (error.message === 'API 호출 타임아웃') {
+        toast.error('서버 응답이 지연되고 있습니다. 잠시 후 다시 시도해주세요.');
+      } else {
+        toast.error('등록 중 오류가 발생했습니다.');
+      }
     } finally {
+      console.log('제출 완료, 로딩 상태 해제');
       setLoading(false);
     }
   };

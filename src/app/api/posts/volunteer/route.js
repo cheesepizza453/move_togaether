@@ -2,14 +2,29 @@ import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+// 환경 변수 확인
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('환경 변수 누락:', {
+    supabaseUrl: !!supabaseUrl,
+    supabaseAnonKey: !!supabaseAnonKey
+  });
+}
 
 export async function POST(request) {
   try {
+    console.log('=== 봉사자 등록 API 시작 ===');
+    console.log('요청 헤더:', Object.fromEntries(request.headers.entries()));
+
     const {
       title,
       departureAddress,
+      departureLat,
+      departureLng,
       arrivalAddress,
+      arrivalLat,
+      arrivalLng,
       description,
       name,
       photo,
@@ -18,30 +33,66 @@ export async function POST(request) {
       relatedPostLink
     } = await request.json();
 
+    console.log('받은 데이터:', {
+      title,
+      departureAddress,
+      departureLat,
+      departureLng,
+      arrivalAddress,
+      arrivalLat,
+      arrivalLng,
+      description,
+      name,
+      size,
+      breed,
+      relatedPostLink,
+      hasPhoto: !!photo
+    });
+
     // 필수 필드 검증
     if (!title || !departureAddress || !arrivalAddress || !name || !size) {
+      console.log('필수 필드 누락:', { title, departureAddress, arrivalAddress, name, size });
       return NextResponse.json({
         success: false,
         error: '필수 정보가 누락되었습니다.'
       }, { status: 400 });
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
-
-    // 현재 사용자 정보 가져오기
+    // 클라이언트에서 전달받은 인증 헤더 추출
     const authHeader = request.headers.get('authorization');
-    if (!authHeader) {
+    const apikeyHeader = request.headers.get('apikey');
+
+    console.log('인증 헤더:', {
+      hasAuth: !!authHeader,
+      hasApikey: !!apikeyHeader,
+      authLength: authHeader?.length
+    });
+
+    if (!authHeader || !apikeyHeader) {
+      console.log('인증 헤더 누락');
       return NextResponse.json({
         success: false,
         error: '인증이 필요합니다.'
       }, { status: 401 });
     }
 
-    // JWT 토큰에서 사용자 ID 추출
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    // Supabase 클라이언트를 인증 헤더와 함께 생성
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: {
+          Authorization: authHeader,
+          apikey: apikeyHeader
+        }
+      }
+    });
+    console.log('Supabase 클라이언트 생성 완료 (인증 헤더 포함)');
+
+    // JWT 토큰에서 사용자 정보 추출
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    console.log('사용자 인증 결과:', { user: !!user, error: authError?.message });
 
     if (authError || !user) {
+      console.log('인증 실패:', authError);
       return NextResponse.json({
         success: false,
         error: '유효하지 않은 인증 정보입니다.'
@@ -49,13 +100,17 @@ export async function POST(request) {
     }
 
     // 사용자 프로필 ID 가져오기
+    console.log('사용자 프로필 조회 시작, user.id:', user.id);
     const { data: userProfile, error: profileError } = await supabase
       .from('user_profiles')
       .select('id')
       .eq('auth_user_id', user.id)
       .single();
 
+    console.log('사용자 프로필 조회 결과:', { userProfile, error: profileError?.message });
+
     if (profileError || !userProfile) {
+      console.log('사용자 프로필 없음:', profileError);
       return NextResponse.json({
         success: false,
         error: '사용자 프로필을 찾을 수 없습니다.'
@@ -76,7 +131,7 @@ export async function POST(request) {
         const fileName = `posts/${timestamp}_${randomString}.jpg`;
 
         // Supabase Storage에 업로드
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from('post-images')
           .upload(fileName, buffer, {
             contentType: 'image/jpeg',
@@ -115,7 +170,11 @@ export async function POST(request) {
           title,
           description: description || '',
           departure_address: departureAddress,
+          departure_lat: departureLat,
+          departure_lng: departureLng,
           arrival_address: arrivalAddress,
+          arrival_lat: arrivalLat,
+          arrival_lng: arrivalLng,
           dog_name: name,
           dog_size: size,
           dog_breed: breed || '',
