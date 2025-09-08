@@ -38,7 +38,7 @@ const BottomNavigation = () => {
       id: 'post',
       label: '',
       icon: IconMenuBarPlus,
-      href: '/posts/new',
+      href: '/volunteer/create',
       isCircle: true
     },
     {
@@ -75,7 +75,7 @@ const BottomNavigation = () => {
             label: '로그인하기',
             onClick: () => {
               // 로그인 성공 후 다시 작성 페이지로 이동할 수 있도록 현재 경로 저장
-              sessionStorage.setItem('redirectAfterLogin', '/posts/new');
+              sessionStorage.setItem('redirectAfterLogin', '/volunteer/create');
               router.push('/login');
             }
           }

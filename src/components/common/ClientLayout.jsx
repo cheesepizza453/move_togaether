@@ -10,13 +10,14 @@ import { Toaster } from 'sonner';
 const ClientLayout = ({ children }) => {
   const pathname = usePathname();
   const isLoginPage = ['/login', '/signup', '/signup/additional-info', '/signup/kakao'].includes(pathname);
+  const isVolunteerCreatePage = pathname === '/volunteer/create';
 
   return (
     <AuthProvider>
       {/* {!isLoginPage && <Header />} */}
       <main>{children}</main>
-      {!isLoginPage && <Footer />}
       {!isLoginPage && <BottomNavigation />}
+      {!isLoginPage && <Footer />}
       <Toaster
         position="top-right"
         expand={true}
