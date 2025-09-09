@@ -11,11 +11,14 @@ export const GET = withAuth(async (request) => {
       return NextResponse.json({ error: 'Post ID required' }, { status: 400 })
     }
 
+    // post_id를 정수로 변환 (posts.id는 integer 타입)
+    const postId = parseInt(post_id)
+
     // 찜 여부 확인
     const { data: favorite, error } = await request.supabase
       .from('favorites')
       .select('id')
-      .eq('post_id', post_id)
+      .eq('post_id', postId)
       .eq('user_id', request.profile.id)
       .eq('is_deleted', false)
       .single()

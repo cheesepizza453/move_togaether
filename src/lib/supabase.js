@@ -29,11 +29,11 @@ const createSupabaseClient = () => {
 // 클라이언트 사이드용 Supabase 인스턴스 (인증 전용)
 export const supabase = createSupabaseClient();
 
-// 서버 사이드용 Supabase 인스턴스 (서비스 롤 키 사용)
+// 서버 사이드용 Supabase 인스턴스 (사용자 토큰 기반)
 export const createServerSupabaseClient = (accessToken) => {
   if (accessToken) {
-    // 인증된 사용자용 (서비스 롤 키 사용)
-    return createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY, {
+    // 인증된 사용자용 (anon key + 사용자 토큰)
+    return createClient(supabaseUrl, supabaseAnonKey, {
       global: {
         headers: {
           Authorization: `Bearer ${accessToken}`
@@ -41,9 +41,14 @@ export const createServerSupabaseClient = (accessToken) => {
       }
     })
   } else {
-    // 익명 사용자용 (anon key 사용)
+    // 서버사이드 익명 사용자용 (anon key 사용)
     return createClient(supabaseUrl, supabaseAnonKey)
   }
+}
+
+// 관리자 기능용 Supabase 인스턴스 (서비스 롤 키 사용)
+export const createAdminSupabaseClient = () => {
+  return createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY)
 }
 
 // 인증 상태 확인 함수 (클라이언트용)

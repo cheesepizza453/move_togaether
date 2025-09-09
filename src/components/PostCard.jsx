@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 import IconHeart from "../../public/img/icon/IconHeart";
 
 const PostCard = ({ post }) => {
-  const [isFavorite, setIsFavorite] = useState(post.isFavorite || false);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const {
     id,
@@ -20,9 +22,101 @@ const PostCard = ({ post }) => {
     dday
   } = post;
 
-  const toggleFavorite = (e) => {
+  // 즐겨찾기 상태 확인
+  useEffect(() => {
+    checkFavoriteStatus();
+  }, [id]);
+
+  const checkFavoriteStatus = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const response = await fetch(`/api/favorites/check?post_id=${id}`, {
+        headers: {
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+        }
+      });
+
+      if (response.ok) {
+        const { isFavorited } = await response.json();
+        setIsFavorite(isFavorited);
+      }
+    } catch (error) {
+      console.error('즐겨찾기 상태 확인 오류:', error);
+    }
+  };
+
+  const toggleFavorite = async (e) => {
     e.stopPropagation();
-    setIsFavorite(!isFavorite);
+
+    if (loading) return;
+
+    try {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        alert('로그인이 필요합니다.');
+        return;
+      }
+
+      console.log('PostCard - Toggle favorite:', {
+        postId: id,
+        postIdType: typeof id,
+        isFavorite: isFavorite,
+        loading: loading
+      });
+
+      const token = (await supabase.auth.getSession()).data.session?.access_token;
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+
+      if (isFavorite) {
+        // 즐겨찾기 제거
+        const response = await fetch(`/api/favorites?post_id=${id}`, {
+          method: 'DELETE',
+          headers
+        });
+
+        if (response.ok) {
+          setIsFavorite(false);
+        } else {
+          const error = await response.json();
+          console.error('즐겨찾기 제거 에러:', error);
+          throw new Error(error.error || '즐겨찾기 제거 실패');
+        }
+      } else {
+        // 즐겨찾기 추가
+        const response = await fetch('/api/favorites', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ post_id: id })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('PostCard - 즐겨찾기 추가 성공:', result);
+          setIsFavorite(true);
+        } else {
+          const error = await response.json();
+          console.error('PostCard - 즐겨찾기 추가 에러:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: error,
+            requestBody: { post_id: id }
+          });
+          throw new Error(error.error || '즐겨찾기 추가 실패');
+        }
+      }
+    } catch (error) {
+      console.error('즐겨찾기 처리 오류:', error);
+      alert('즐겨찾기 처리 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCardClick = () => {
@@ -57,7 +151,11 @@ const PostCard = ({ post }) => {
         <div className="flex-shrink-0 relative">
           {/* 강아지 이미지 */}
           <figure className="relative w-[80px] h-[80px] overflow-hidden bg-gray-200 rounded-[15px] shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]">
-              <img className={'absolute top-1/2 left-1/2 max-w-full max-h-full -translate-x-1/2 -translate-y-1/2 object-contain'} src={"/img/dummy_thumbnail.jpg"} alt={'Dummy'} />
+              <img
+                className={'w-full h-full object-cover'}
+                src={images && images.length > 0 ? images[0] : "/img/dummy_thumbnail.jpg"}
+                alt={dogName || '강아지 사진'}
+              />
           </figure>
         </div>
 
@@ -67,7 +165,8 @@ const PostCard = ({ post }) => {
           <div className="absolute top-[10px] right-[10px]">
             <button
               onClick={toggleFavorite}
-              className="p-0 rounded-full"
+              disabled={loading}
+              className="p-0 rounded-full disabled:opacity-50"
             >
               <figure className={'w-[16px] h-[14px]'}>
                 <IconHeart fill={isFavorite ? '#F36C5E' : '#D2D2D2'}/>

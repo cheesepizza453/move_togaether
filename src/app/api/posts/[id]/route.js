@@ -4,14 +4,13 @@ import { supabase } from '@/lib/supabase'
 // GET: 개별 게시물 조회
 export async function GET(request, { params }) {
   try {
-    const { id } = params
+    const { id } = await params
 
     const { data: post, error } = await supabase
       .from('posts')
       .select(`
         *,
-        user_profiles!inner(display_name, phone_visible, phone),
-        shelters!inner(name, verified, description, phone, instagram, naver_cafe, kakao_openchat)
+        user_profiles(display_name, phone_visible, phone)
       `)
       .eq('id', id)
       .eq('is_deleted', false)
@@ -19,7 +18,8 @@ export async function GET(request, { params }) {
       .single()
 
     if (error) {
-      return NextResponse.json({ error: 'Post not found' }, { status: 404 })
+      console.error('Post query error:', error)
+      return NextResponse.json({ error: 'Post not found', details: error.message }, { status: 404 })
     }
 
     return NextResponse.json({ post })
@@ -45,7 +45,7 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
 
     // 게시물 작성자 확인
@@ -111,7 +111,7 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
-    const { id } = params
+    const { id } = await params
 
     // 게시물 작성자 확인
     const { data: post, error: postError } = await supabase

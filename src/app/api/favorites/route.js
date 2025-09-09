@@ -85,25 +85,33 @@ export async function POST(request) {
     const body = await request.json()
     const { post_id } = body
 
+    console.log('Favorites POST - Received data:', { post_id, type: typeof post_id })
+
     // 필수 필드 검증
     if (!post_id) {
+      console.log('Favorites POST - Missing post_id')
       return NextResponse.json({ error: 'Missing post_id' }, { status: 400 })
     }
+
+    // post_id를 정수로 변환 (posts.id는 integer 타입)
+    const postId = parseInt(post_id)
+    console.log('Favorites POST - Converted postId:', { postId, type: typeof postId })
 
     // 게시물 존재 및 활성 상태 확인
     const { data: post, error: postError } = await supabase
       .from('posts')
       .select('id, status')
-      .eq('id', post_id)
+      .eq('id', postId)
       .eq('is_deleted', false)
       .eq('status', 'active')
       .single()
 
     if (postError || !post) {
+      console.log('Favorites POST - Post not found:', { postError, post })
       return NextResponse.json({ error: 'Post not found or not active' }, { status: 404 })
     }
 
-    // 사용자 프로필 확인
+    // 사용자 프로필 확인 (user_profiles.id 사용)
     const { data: profile, error: profileError } = await supabase
       .from('user_profiles')
       .select('id')
@@ -112,14 +120,22 @@ export async function POST(request) {
       .single()
 
     if (profileError || !profile) {
+      console.log('Favorites POST - Profile not found:', { profileError, profile })
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
+
+    console.log('Favorites POST - Profile found:', {
+      profile: profile,
+      profileId: profile.id,
+      profileIdType: typeof profile.id,
+      profileKeys: Object.keys(profile)
+    })
 
     // 이미 찜한 게시물인지 확인
     const { data: existingFavorite, error: duplicateError } = await supabase
       .from('favorites')
       .select('id')
-      .eq('post_id', post_id)
+      .eq('post_id', postId)
       .eq('user_id', profile.id)
       .eq('is_deleted', false)
       .single()
@@ -129,18 +145,32 @@ export async function POST(request) {
     }
 
     // 찜 추가
+    console.log('Favorites POST - Inserting favorite:', {
+      post_id: postId,
+      user_id: profile.id,
+      user_id_type: typeof profile.id
+    });
+
     const { data: favorite, error } = await supabase
       .from('favorites')
       .insert({
-        post_id,
+        post_id: postId,
         user_id: profile.id
       })
       .select()
       .single()
 
     if (error) {
-      return NextResponse.json({ error: 'Failed to add favorite' }, { status: 400 })
+      console.error('Favorites POST - Insert error:', {
+        error: error,
+        post_id: postId,
+        user_id: profile.id,
+        user_id_type: typeof profile.id
+      });
+      return NextResponse.json({ error: 'Failed to add favorite', details: error.message }, { status: 400 })
     }
+
+    console.log('Favorites POST - Successfully added favorite:', favorite);
 
     return NextResponse.json({ favorite }, { status: 201 })
   } catch (error) {
@@ -172,7 +202,10 @@ export async function DELETE(request) {
       return NextResponse.json({ error: 'Missing post_id' }, { status: 400 })
     }
 
-    // 사용자 프로필 확인
+    // post_id를 정수로 변환 (posts.id는 integer 타입)
+    const postId = parseInt(post_id)
+
+    // 사용자 프로필 확인 (user_profiles.id 사용)
     const { data: profile, error: profileError } = await supabase
       .from('user_profiles')
       .select('id')
@@ -191,7 +224,7 @@ export async function DELETE(request) {
         is_deleted: true,
         deleted_at: new Date().toISOString()
       })
-      .eq('post_id', post_id)
+      .eq('post_id', postId)
       .eq('user_id', profile.id)
       .eq('is_deleted', false)
 

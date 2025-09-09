@@ -1,8 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+import { createServerSupabaseClient } from '@/lib/supabase';
 
 export async function POST(request) {
   try {
@@ -24,8 +21,8 @@ export async function POST(request) {
       );
     }
 
-    // Supabase 클라이언트 생성 (anon key 사용)
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    // Supabase 클라이언트 생성 (익명 사용자용)
+    const supabase = createServerSupabaseClient();
 
     // user_profiles 테이블에서 이메일 중복 확인 (provider 정보 포함)
     const { data: profileData, error: profileError } = await supabase

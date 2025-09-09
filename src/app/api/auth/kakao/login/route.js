@@ -1,8 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+import { createServerSupabaseClient, createAdminSupabaseClient } from '@/lib/supabase';
 
 export async function POST(request) {
   try {
@@ -17,8 +14,8 @@ export async function POST(request) {
 
     console.log('카카오톡 로그인 요청:', { email: userInfo.email });
 
-    // Supabase 클라이언트 생성
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    // Supabase 클라이언트 생성 (익명 사용자용)
+    const supabase = createServerSupabaseClient();
 
     // 이메일로 기존 사용자 확인
     const { data: existingProfile, error: checkError } = await supabase
@@ -40,7 +37,8 @@ export async function POST(request) {
       // 기존 사용자인 경우
       if (existingProfile.provider === 'kakao') {
         // 카카오톡으로 가입된 사용자 - Supabase Auth에서 사용자 찾기
-        const { data: { users }, error: usersError } = await supabase.auth.admin.listUsers();
+        const adminSupabase = createAdminSupabaseClient();
+        const { data: { users }, error: usersError } = await adminSupabase.auth.admin.listUsers();
 
         if (usersError) {
           console.error('사용자 목록 조회 오류:', usersError);

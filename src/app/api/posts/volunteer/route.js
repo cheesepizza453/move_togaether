@@ -1,16 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-// 환경 변수 확인
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('환경 변수 누락:', {
-    supabaseUrl: !!supabaseUrl,
-    supabaseAnonKey: !!supabaseAnonKey
-  });
-}
+import { createServerSupabaseClient } from '@/lib/supabase';
 
 export async function POST(request) {
   try {
@@ -76,16 +65,10 @@ export async function POST(request) {
       }, { status: 401 });
     }
 
-    // Supabase 클라이언트를 인증 헤더와 함께 생성
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: {
-          Authorization: authHeader,
-          apikey: apikeyHeader
-        }
-      }
-    });
-    console.log('Supabase 클라이언트 생성 완료 (인증 헤더 포함)');
+    // Supabase 클라이언트를 인증 토큰과 함께 생성
+    const accessToken = authHeader.replace('Bearer ', '');
+    const supabase = createServerSupabaseClient(accessToken);
+    console.log('Supabase 클라이언트 생성 완료 (인증 토큰 포함)');
 
     // JWT 토큰에서 사용자 정보 추출
     const { data: { user }, error: authError } = await supabase.auth.getUser();

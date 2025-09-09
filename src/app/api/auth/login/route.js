@@ -1,11 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-// Supabase 클라이언트 생성 (서버 사이드)
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
-);
+import { createServerSupabaseClient } from '@/lib/supabase';
 
 export async function POST(request) {
   try {
@@ -20,6 +14,9 @@ export async function POST(request) {
     }
 
     console.log('서버 로그인 시도:', { email, password: '***' });
+
+    // Supabase 클라이언트 생성 (익명 사용자용)
+    const supabase = createServerSupabaseClient();
 
     // Supabase Auth로 로그인
     const { data, error } = await supabase.auth.signInWithPassword({
