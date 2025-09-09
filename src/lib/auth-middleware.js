@@ -1,29 +1,39 @@
-import { createServerSupabaseClient } from './supabase'
+import { createClient } from '@supabase/supabase-js'
 
-// API 라우트용 인증 미들웨어
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+// API 라우트용 인증 미들웨어 (프록시 패턴)
 export const withAuth = (handler) => {
   return async (request) => {
     try {
-      // Authorization 헤더에서 토큰 추출
+      // 프록시 패턴: 클라이언트에서 전달받은 헤더를 그대로 사용
       const authHeader = request.headers.get('authorization')
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      const apikeyHeader = request.headers.get('apikey')
+
+      if (!authHeader || !apikeyHeader) {
         return new Response(
-          JSON.stringify({ error: 'Unauthorized - No token provided' }),
+          JSON.stringify({ error: '인증 헤더가 필요합니다.' }),
           { status: 401, headers: { 'Content-Type': 'application/json' } }
         )
       }
 
-      const accessToken = authHeader.substring(7)
+      // 프록시용 Supabase 클라이언트 생성
+      const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        global: {
+          headers: {
+            Authorization: authHeader,
+            apikey: apikeyHeader
+          }
+        }
+      })
 
-      // 서버 사이드 Supabase 클라이언트 생성
-      const supabase = createServerSupabaseClient(accessToken)
-
-      // 토큰 유효성 검증
+      // JWT 토큰에서 사용자 정보 추출
       const { data: { user }, error: authError } = await supabase.auth.getUser()
 
       if (authError || !user) {
         return new Response(
-          JSON.stringify({ error: 'Unauthorized - Invalid token' }),
+          JSON.stringify({ error: '유효하지 않은 인증 정보입니다.' }),
           { status: 401, headers: { 'Content-Type': 'application/json' } }
         )
       }

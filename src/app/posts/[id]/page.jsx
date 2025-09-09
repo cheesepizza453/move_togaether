@@ -8,6 +8,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Calendar, Clock, User, Phone, Heart } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function PostDetailPage() {
   const params = useParams();
@@ -17,6 +27,8 @@ export default function PostDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [showApplyDialog, setShowApplyDialog] = useState(false);
 
   useEffect(() => {
     if (postId) {
@@ -95,7 +107,7 @@ export default function PostDetailPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        alert('로그인이 필요합니다.');
+        setShowLoginDialog(true);
         return;
       }
 
@@ -123,13 +135,12 @@ export default function PostDetailPage() {
       }
     } catch (err) {
       console.error('즐겨찾기 처리 오류:', err);
-      alert('즐겨찾기 처리 중 오류가 발생했습니다.');
+      // 에러는 콘솔에만 기록
     }
   };
 
   const handleApply = () => {
-    // 신청 기능 (추후 구현)
-    alert('신청 기능은 준비 중입니다.');
+    setShowApplyDialog(true);
   };
 
   if (loading) {
@@ -354,6 +365,41 @@ export default function PostDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* 로그인 필요 다이얼로그 */}
+      <AlertDialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>로그인이 필요합니다</AlertDialogTitle>
+            <AlertDialogDescription>
+              찜 기능을 사용하려면 로그인해주세요.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction onClick={() => window.location.href = '/login'}>
+              로그인하기
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* 신청 기능 준비 중 다이얼로그 */}
+      <AlertDialog open={showApplyDialog} onOpenChange={setShowApplyDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>신청 기능 준비 중</AlertDialogTitle>
+            <AlertDialogDescription>
+              봉사 신청 기능은 현재 준비 중입니다. 곧 만나보실 수 있습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowApplyDialog(false)}>
+              확인
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

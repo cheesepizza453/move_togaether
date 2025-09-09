@@ -15,6 +15,8 @@ export default function Home() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [favoritePostIds, setFavoritePostIds] = useState(new Set());
+  const [favoritesLoading, setFavoritesLoading] = useState(false);
 
   // 목업 데이터 (실제로는 API에서 가져올 데이터)
   /* const mockPosts = [
@@ -60,6 +62,32 @@ export default function Home() {
     }
   ]; */
   const mockPosts = [];
+
+  // 찜 목록 가져오기
+  const fetchFavorites = async () => {
+    try {
+      setFavoritesLoading(true);
+
+      const session = await supabase.auth.getSession();
+      if (!session.data.session) return;
+
+      const response = await fetch('/api/favorites', {
+        headers: {
+          'Authorization': `Bearer ${session.data.session.access_token}`,
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+        }
+      });
+
+      if (response.ok) {
+        const { favoritePostIds } = await response.json();
+        setFavoritePostIds(new Set(favoritePostIds));
+      }
+    } catch (error) {
+      console.error('찜 목록 조회 오류:', error);
+    } finally {
+      setFavoritesLoading(false);
+    }
+  };
 
   // Supabase에서 게시물 데이터 가져오기
   useEffect(() => {
@@ -108,8 +136,7 @@ export default function Home() {
           deadline: formatDeadline(post.deadline),
           images: post.images || [],
           status: post.status,
-          dday: post.deadline ? moment(post.deadline).diff(moment(), 'days') : 0,
-          isFavorite: post.is_favorite || false
+          dday: post.deadline ? moment(post.deadline).diff(moment(), 'days') : 0
         }));
 
         console.log('포맷팅된 데이터:', formattedPosts);
@@ -123,7 +150,21 @@ export default function Home() {
     };
 
     fetchPosts();
+    fetchFavorites();
   }, []);
+
+  // 찜 상태 토글 핸들러
+  const handleFavoriteToggle = (postId, isFavorited) => {
+    setFavoritePostIds(prev => {
+      const newSet = new Set(prev);
+      if (isFavorited) {
+        newSet.add(postId);
+      } else {
+        newSet.delete(postId);
+      }
+      return newSet;
+    });
+  };
 
   const handleSortChange = (sortId) => {
     setSortOption(sortId);
@@ -180,7 +221,12 @@ export default function Home() {
           ) : (
             <div className="space-y-[18px]">
               {allPosts.map((post) => (
-                <PostCard key={post.id} post={post} />
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  isFavorite={favoritePostIds.has(post.id)}
+                  onFavoriteToggle={handleFavoriteToggle}
+                />
               ))}
             </div>
           )}

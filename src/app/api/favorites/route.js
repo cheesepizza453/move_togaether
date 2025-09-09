@@ -1,20 +1,35 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 // GET: 사용자의 찜 목록 조회
 export async function GET(request) {
   try {
-    // 인증 토큰 확인
+    // 프록시 패턴: 클라이언트에서 전달받은 헤더를 그대로 사용
     const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const apikeyHeader = request.headers.get('apikey')
+
+    if (!authHeader || !apikeyHeader) {
+      return NextResponse.json({ error: '인증 헤더가 필요합니다.' }, { status: 401 })
     }
 
-    const token = authHeader.substring(7)
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+    // 프록시용 Supabase 클라이언트 생성
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: {
+          Authorization: authHeader,
+          apikey: apikeyHeader
+        }
+      }
+    })
+
+    // JWT 토큰에서 사용자 정보 추출
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+      return NextResponse.json({ error: '유효하지 않은 인증 정보입니다.' }, { status: 401 })
     }
 
     const { searchParams } = new URL(request.url)
@@ -33,32 +48,22 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
-    // 찜 목록 조회
-    const from = (page - 1) * limit
-    const to = from + limit - 1
-
-    const { data: favorites, error, count } = await supabase
+    // 찜한 게시물 ID 목록만 조회 (효율적인 찜 상태 확인용)
+    const { data: favorites, error } = await supabase
       .from('favorites')
-      .select(`
-        *,
-        posts!inner(
-          id, title, dog_name, dog_size, dog_breed,
-          departure_address, arrival_address, deadline, status
-        )
-      `)
+      .select('post_id')
       .eq('user_id', profile.id)
       .eq('is_deleted', false)
-      .eq('posts.is_deleted', false)
-      .order('created_at', { ascending: false })
-      .range(from, to)
 
     if (error) {
       return NextResponse.json({ error: 'Failed to fetch favorites' }, { status: 400 })
     }
 
+    // 게시물 ID 배열로 변환
+    const favoritePostIds = favorites?.map(fav => fav.post_id) || []
+
     return NextResponse.json({
-      favorites,
-      pagination: { page, limit, total: count || 0 }
+      favoritePostIds
     })
   } catch (error) {
     console.error('Favorites GET error:', error)
@@ -69,17 +74,29 @@ export async function GET(request) {
 // POST: 찜 추가
 export async function POST(request) {
   try {
-    // 인증 토큰 확인
+    // 프록시 패턴: 클라이언트에서 전달받은 헤더를 그대로 사용
     const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const apikeyHeader = request.headers.get('apikey')
+
+    if (!authHeader || !apikeyHeader) {
+      return NextResponse.json({ error: '인증 헤더가 필요합니다.' }, { status: 401 })
     }
 
-    const token = authHeader.substring(7)
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+    // 프록시용 Supabase 클라이언트 생성
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: {
+          Authorization: authHeader,
+          apikey: apikeyHeader
+        }
+      }
+    })
+
+    // JWT 토큰에서 사용자 정보 추출
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+      return NextResponse.json({ error: '유효하지 않은 인증 정보입니다.' }, { status: 401 })
     }
 
     const body = await request.json()
@@ -182,21 +199,42 @@ export async function POST(request) {
 // DELETE: 찜 제거
 export async function DELETE(request) {
   try {
-    // 인증 토큰 확인
+    console.log('=== Favorites DELETE API 시작 ===');
+
+    // 프록시 패턴: 클라이언트에서 전달받은 헤더를 그대로 사용
     const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const apikeyHeader = request.headers.get('apikey')
+
+    console.log('DELETE 요청 헤더:', {
+      hasAuth: !!authHeader,
+      hasApikey: !!apikeyHeader
+    });
+
+    if (!authHeader || !apikeyHeader) {
+      return NextResponse.json({ error: '인증 헤더가 필요합니다.' }, { status: 401 })
     }
 
-    const token = authHeader.substring(7)
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+    // 프록시용 Supabase 클라이언트 생성
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: {
+          Authorization: authHeader,
+          apikey: apikeyHeader
+        }
+      }
+    })
+
+    // JWT 토큰에서 사용자 정보 추출
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+      return NextResponse.json({ error: '유효하지 않은 인증 정보입니다.' }, { status: 401 })
     }
 
     const { searchParams } = new URL(request.url)
     const post_id = searchParams.get('post_id')
+
+    console.log('DELETE 요청 파라미터:', { post_id, type: typeof post_id });
 
     if (!post_id) {
       return NextResponse.json({ error: 'Missing post_id' }, { status: 400 })
@@ -204,6 +242,7 @@ export async function DELETE(request) {
 
     // post_id를 정수로 변환 (posts.id는 integer 타입)
     const postId = parseInt(post_id)
+    console.log('변환된 postId:', { postId, type: typeof postId });
 
     // 사용자 프로필 확인 (user_profiles.id 사용)
     const { data: profile, error: profileError } = await supabase
@@ -217,21 +256,29 @@ export async function DELETE(request) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
-    // 찜 제거 (소프트 삭제)
-    const { error } = await supabase
+    // 찜 제거 (하드 삭제)
+    console.log('찜 제거 시도:', {
+      postId,
+      userId: profile.id,
+      userIdType: typeof profile.id
+    });
+
+    const { data, error } = await supabase
       .from('favorites')
-      .update({
-        is_deleted: true,
-        deleted_at: new Date().toISOString()
-      })
+      .delete()
       .eq('post_id', postId)
       .eq('user_id', profile.id)
       .eq('is_deleted', false)
+      .select()
+
+    console.log('찜 제거 결과:', { data, error });
 
     if (error) {
-      return NextResponse.json({ error: 'Failed to remove favorite' }, { status: 400 })
+      console.error('찜 제거 실패:', error);
+      return NextResponse.json({ error: 'Failed to remove favorite', details: error.message }, { status: 400 })
     }
 
+    console.log('찜 제거 성공');
     return NextResponse.json({ message: 'Favorite removed successfully' })
   } catch (error) {
     console.error('Favorites DELETE error:', error)
