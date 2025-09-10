@@ -36,7 +36,7 @@ export async function GET(request) {
     const { data, error, count } = await supabase
       .from('posts')
       .select('*', { count: 'exact' })
-      .eq('status', 'active')
+      .eq('status', 'active') // status가 active인 게시물만
       .gte('deadline', now) // deadline이 지나지 않은 게시물만
       .order(orderConfig.column, { ascending: orderConfig.ascending })
       .range(from, to)
