@@ -1,51 +1,60 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createServerSupabaseClient } from '@/lib/supabase'
+import moment from 'moment'
 
-// GET: 게시물 목록 조회 (검색, 필터링 포함)
+// GET: 게시물 목록 조회 (페이지네이션, 정렬, deadline 필터 적용)
 export async function GET(request) {
   try {
+    // 익명 사용자용 Supabase 클라이언트 생성 (로그인 불필요)
+    const supabase = createServerSupabaseClient()
+
     const { searchParams } = new URL(request.url)
+    const sortBy = searchParams.get('sortBy') || 'latest'
     const page = parseInt(searchParams.get('page')) || 1
     const limit = parseInt(searchParams.get('limit')) || 10
-    const search = searchParams.get('search') || ''
-    const dogSize = searchParams.get('dogSize') || ''
-    const status = searchParams.get('status') || 'active'
 
-    let query = supabase
-      .from('posts')
-      .select(`
-        *,
-        user_profiles!inner(display_name, phone_visible),
-        shelters!inner(name, verified)
-      `)
-      .eq('is_deleted', false)
-      .eq('status', status)
-      .order('created_at', { ascending: false })
-
-    // 검색어가 있으면 제목이나 설명에서 검색
-    if (search) {
-      query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`)
+    // 정렬 옵션에 따른 order by 설정
+    let orderConfig
+    switch (sortBy) {
+      case 'latest':
+        orderConfig = { column: 'created_at', ascending: false } // 최신순: 등록일 역순
+        break
+      case 'deadline':
+        orderConfig = { column: 'created_at', ascending: true } // 종료순: 등록일순
+        break
+      default:
+        orderConfig = { column: 'created_at', ascending: false }
     }
 
-    // 강아지 크기 필터
-    if (dogSize) {
-      query = query.eq('dog_size', dogSize)
-    }
+    // 현재 시간
+    const now = moment().toISOString()
 
-    // 페이지네이션
+    // 페이지네이션 설정
     const from = (page - 1) * limit
     const to = from + limit - 1
-    query = query.range(from, to)
 
-    const { data: posts, error, count } = await query
+    const { data, error, count } = await supabase
+      .from('posts')
+      .select('*', { count: 'exact' })
+      .eq('status', 'active')
+      .gte('deadline', now) // deadline이 지나지 않은 게시물만
+      .order(orderConfig.column, { ascending: orderConfig.ascending })
+      .range(from, to)
 
     if (error) {
-      return NextResponse.json({ error: 'Failed to fetch posts' }, { status: 400 })
+      console.error('게시물 조회 오류:', error)
+      return NextResponse.json({ error: '게시물을 불러오는 중 오류가 발생했습니다.' }, { status: 400 })
     }
 
     return NextResponse.json({
-      posts,
-      pagination: { page, limit, total: count || 0 }
+      posts: data || [],
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / limit),
+        hasMore: to < (count || 0) - 1
+      }
     })
   } catch (error) {
     console.error('Posts GET error:', error)
@@ -53,23 +62,30 @@ export async function GET(request) {
   }
 }
 
-// POST: 새 게시물 생성
+// POST: 게시물 등록
 export async function POST(request) {
   try {
-    // 인증 토큰 확인
+    // 프록시 패턴: 클라이언트에서 전달받은 헤더를 그대로 사용
     const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    if (!authHeader) {
+      return NextResponse.json({ error: '인증 헤더가 필요합니다.' }, { status: 401 })
     }
 
-    const token = authHeader.substring(7)
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+    // JWT 토큰에서 access_token 추출
+    const accessToken = authHeader.replace('Bearer ', '')
+
+    // 서버사이드 Supabase 클라이언트 생성
+    const supabase = createServerSupabaseClient(accessToken)
+
+    // JWT 토큰에서 사용자 정보 추출
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+      return NextResponse.json({ error: '유효하지 않은 인증 정보입니다.' }, { status: 401 })
     }
 
-    // 사용자 프로필 확인
+    // 사용자 프로필 조회
     const { data: profile, error: profileError } = await supabase
       .from('user_profiles')
       .select('id')
@@ -78,65 +94,63 @@ export async function POST(request) {
       .single()
 
     if (profileError || !profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+      return NextResponse.json({ error: '사용자 프로필을 찾을 수 없습니다.' }, { status: 404 })
     }
 
+    // 요청 본문 파싱
     const body = await request.json()
     const {
       title,
       description,
+      name,
+      size,
+      breed,
       departure_address,
+      arrival_address,
       departure_lat,
       departure_lng,
-      arrival_address,
       arrival_lat,
       arrival_lng,
-      dog_name,
-      dog_size,
-      dog_breed,
-      dog_age,
-      dog_characteristics,
-      images,
-      related_link,
-      deadline
+      deadline,
+      images
     } = body
 
     // 필수 필드 검증
-    if (!title || !description || !departure_address || !arrival_address || !dog_name || !dog_size || !dog_breed || !deadline) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    if (!title || !description || !name || !size || !breed || !departure_address || !arrival_address) {
+      return NextResponse.json({ error: '필수 필드가 누락되었습니다.' }, { status: 400 })
     }
 
-    // 게시물 생성
-    const { data: post, error } = await supabase
+    // 게시물 등록
+    const { data, error } = await supabase
       .from('posts')
       .insert({
         user_id: profile.id,
         title,
         description,
+        name,
+        size,
+        breed,
         departure_address,
+        arrival_address,
         departure_lat,
         departure_lng,
-        arrival_address,
         arrival_lat,
         arrival_lng,
-        dog_name,
-        dog_size,
-        dog_breed,
-        dog_age,
-        dog_characteristics,
-        images: images || [],
-        related_link,
         deadline,
+        images: images || [],
         status: 'active'
       })
       .select()
-      .single()
 
     if (error) {
-      return NextResponse.json({ error: 'Failed to create post' }, { status: 400 })
+      console.error('게시물 등록 오류:', error)
+      return NextResponse.json({ error: '게시물 등록 중 오류가 발생했습니다.' }, { status: 400 })
     }
 
-    return NextResponse.json({ post }, { status: 201 })
+    return NextResponse.json({
+      success: true,
+      post: data[0]
+    })
   } catch (error) {
     console.error('Posts POST error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

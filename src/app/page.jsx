@@ -121,42 +121,21 @@ export default function Home() {
         setHasMore(true);
       }
 
-      // 정렬 옵션에 따른 order by 설정
-      let orderConfig;
-      switch (sortBy) {
-        case 'latest':
-          orderConfig = { column: 'created_at', ascending: false }; // 최신순: 등록일 역순
-          break;
-        case 'deadline':
-          orderConfig = { column: 'created_at', ascending: true }; // 종료순: 등록일순
-          break;
-        default:
-          orderConfig = { column: 'created_at', ascending: false };
-      }
+      // API 호출 (로그인 불필요)
+      const response = await fetch(`/api/posts?sortBy=${sortBy}&page=${pageNum}&limit=10`);
 
-      // 페이지네이션 설정 (한 페이지당 10개)
-      const pageSize = 10;
-      const from = (pageNum - 1) * pageSize;
-      const to = from + pageSize - 1;
-
-      const { data, error } = await supabase
-        .from('posts')
-        .select('*')
-        .eq('status', 'active')
-        .order(orderConfig.column, { ascending: orderConfig.ascending })
-        .range(from, to);
-
-      if (error) {
-        console.error('게시물 조회 오류:', error);
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('API 오류:', errorData);
         setError('게시물을 불러오는 중 오류가 발생했습니다.');
         return;
       }
 
-      console.log(`페이지 ${pageNum} Supabase에서 가져온 원본 데이터:`, data);
-      console.log(`페이지 ${pageNum} 데이터 개수:`, data.length, `페이지 크기:`, pageSize);
+      const { posts, pagination } = await response.json();
+      console.log(`페이지 ${pageNum} API에서 가져온 데이터:`, { posts, pagination });
 
       // 데이터 포맷팅 (Supabase 컬럼명을 PostCard가 기대하는 필드명으로 매핑)
-      const formattedPosts = data.map(post => ({
+      const formattedPosts = posts.map(post => ({
         id: post.id,
         title: post.title,
         dogName: post.name || post.dog_name, // 강아지 이름
@@ -172,13 +151,8 @@ export default function Home() {
 
       console.log(`페이지 ${pageNum} 포맷팅된 데이터:`, formattedPosts);
 
-      // 더 이상 로드할 데이터가 없는지 확인 (페이지 크기 미만이면 마지막 페이지)
-      if (formattedPosts.length < pageSize) {
-        console.log('마지막 페이지 도달 - 더 이상 로드할 데이터 없음');
-        setHasMore(false);
-      } else {
-        console.log('더 로드할 데이터 있음 - hasMore: true');
-      }
+      // 페이지네이션 정보 업데이트
+      setHasMore(pagination.hasMore);
 
       if (isLoadMore) {
         // 추가 로드인 경우 기존 데이터에 추가
