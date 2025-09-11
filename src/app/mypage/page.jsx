@@ -3,13 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/hooks/useAuth';
-import { User, Settings, Heart, MessageCircle, LogOut, Edit } from 'lucide-react';
+import { ChevronLeft, Edit } from 'lucide-react';
 
 const MyPage = () => {
-  const { user, profile, loading, signOut, createProfileManually } = useAuth();
+  const { user, profile, loading, signOut } = useAuth();
   const router = useRouter();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [activeTab, setActiveTab] = useState('지원');
 
   // 로그인 상태 확인
   useEffect(() => {
@@ -21,26 +22,6 @@ const MyPage = () => {
       router.push('/login');
     }
   }, [user, loading, router]);
-
-  // 로그아웃 처리
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
-    try {
-      console.log('마이페이지에서 로그아웃 시작');
-      const result = await signOut();
-      console.log('로그아웃 결과:', result);
-
-      // 로그아웃 성공 여부와 관계없이 메인 페이지로 이동
-      // (상태 초기화는 signOut에서 이미 처리됨)
-      router.push('/');
-    } catch (error) {
-      console.error('로그아웃 오류:', error);
-      // 오류가 발생해도 메인 페이지로 이동
-      router.push('/');
-    } finally {
-      setIsLoggingOut(false);
-    }
-  };
 
   // 로딩 중이거나 로그인되지 않은 경우
   if (loading) {
@@ -61,115 +42,152 @@ const MyPage = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <div className="bg-[#FFDD44] px-6 py-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-black">마이페이지</h1>
-            <p className="text-gray-700 mt-1">
-              안녕하세요, {profile?.display_name || user.email}님!
-            </p>
-          </div>
-          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center">
-            <User size={32} className="text-gray-600" />
-          </div>
-        </div>
+      <div className="flex items-center justify-between px-4 py-3 bg-white">
+        <button
+          onClick={() => router.back()}
+          className="text-gray-600 text-lg"
+        >
+          <span className="flex items-center">
+            <ChevronLeft size={20} className="text-gray-600 display-inline-block" />
+            <span className="ml-1">마이페이지</span>
+          </span>
+        </button>
+        <div className="w-6"></div>
       </div>
 
-      {/* 사용자 정보 카드 */}
-      <div className="px-6 py-6">
-        <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-800">프로필 정보</h2>
-            <button className="text-yellow-600 hover:text-yellow-700">
-              <Edit size={20} />
-            </button>
-          </div>
-
-          <div className="space-y-3">
-            <div>
-              <label className="text-sm text-gray-500">닉네임</label>
-              <p className="text-gray-800">{profile?.display_name || '미설정'}</p>
+      {/* 프로필 정보 카드 */}
+      <div className="px-4 py-6">
+        <div className="bg-[#FFE066] rounded-2xl p-6">
+          <div className="flex items-center">
+            {/* 프로필 이미지 */}
+            <div className="w-20 h-20 rounded-full overflow-hidden bg-white flex-shrink-0 mr-4">
+              <Image
+                src={profile?.profile_image_url || '/img/default_profile.jpg'}
+                alt="프로필"
+                width={80}
+                height={80}
+                className="w-full h-full object-cover"
+              />
             </div>
 
-            <div>
-              <label className="text-sm text-gray-500">이메일</label>
-              <p className="text-gray-800">{user.email}</p>
-            </div>
-
-            <div>
-              <label className="text-sm text-gray-500">연락처</label>
-              <p className="text-gray-800">{profile?.phone || '미설정'}</p>
-            </div>
-
-            {profile?.bio && (
-              <div>
-                <label className="text-sm text-gray-500">소개</label>
-                <p className="text-gray-800">{profile.bio}</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* 메뉴 리스트 */}
-      <div className="px-6 pb-6">
-        <div className="space-y-2">
-          {/* 내 게시글 */}
-          <Link href="/mypage/posts" className="flex items-center p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-            <MessageCircle size={24} className="text-gray-600 mr-4" />
-            <div className="flex-1">
-              <h3 className="font-medium text-gray-800">내 게시글</h3>
-              <p className="text-sm text-gray-500">작성한 이동봉사 게시글 관리</p>
-            </div>
-          </Link>
-
-          {/* 찜한 게시글 */}
-          <Link href="/mypage/favorites" className="flex items-center p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-            <Heart size={24} className="text-gray-600 mr-4" />
-            <div className="flex-1">
-              <h3 className="font-medium text-gray-800">찜한 게시글</h3>
-              <p className="text-sm text-gray-500">관심 있는 이동봉사 게시글</p>
-            </div>
-          </Link>
-
-          {/* 설정 */}
-          <Link href="/mypage/settings" className="flex items-center p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-            <Settings size={24} className="text-gray-600 mr-4" />
-            <div className="flex-1">
-              <h3 className="font-medium text-gray-800">설정</h3>
-              <p className="text-sm text-gray-500">계정 및 알림 설정</p>
-            </div>
-          </Link>
-
-          {/* 프로필 생성 버튼 (디버깅용) */}
-          {user && !profile && (
-            <button
-              onClick={createProfileManually}
-              className="w-full flex items-center p-4 bg-white border border-yellow-200 rounded-lg hover:bg-yellow-50 transition-colors"
-            >
-              <User size={24} className="text-yellow-600 mr-4" />
-              <div className="flex-1 text-left">
-                <h3 className="font-medium text-yellow-600">프로필 생성</h3>
-                <p className="text-sm text-gray-500">user_metadata에서 프로필 생성</p>
-              </div>
-            </button>
-          )}
-
-          {/* 로그아웃 */}
-          <button
-            onClick={handleLogout}
-            disabled={isLoggingOut}
-            className="w-full flex items-center p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-          >
-            <LogOut size={24} className="text-red-600 mr-4" />
-            <div className="flex-1 text-left">
-              <h3 className="font-medium text-red-600">로그아웃</h3>
-              <p className="text-sm text-gray-500">
-                {isLoggingOut ? '로그아웃 중...' : '계정에서 로그아웃'}
+            {/* 사용자 정보 */}
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg font-bold text-gray-800 mb-1">
+                {profile?.display_name || '사용자'}
+              </h2>
+              <p className="text-sm text-gray-600 mb-1">
+                {profile?.phone || '010-0000-0000'}
+              </p>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                {profile?.bio || '소개글이 없습니다.'}
               </p>
             </div>
+          </div>
+
+          {/* 내 정보 수정 버튼 */}
+          <button className="w-full mt-4 bg-yellow-400 text-gray-800 py-3 px-4 rounded-xl font-semibold text-center hover:bg-yellow-500 transition-colors">
+            내 정보 수정
           </button>
         </div>
+      </div>
+
+      {/* 탭 메뉴 */}
+      <div className="px-4 pb-6">
+        <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
+          <button
+            onClick={() => setActiveTab('지원')}
+            className={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors ${
+              activeTab === '지원'
+                ? 'bg-white text-gray-800 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            지원
+          </button>
+          <button
+            onClick={() => setActiveTab('작성')}
+            className={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors ${
+              activeTab === '작성'
+                ? 'bg-white text-gray-800 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            작성
+          </button>
+        </div>
+      </div>
+
+      {/* 탭 콘텐츠 */}
+      <div className="px-4 pb-6">
+        {activeTab === '지원' && (
+          <div className="space-y-4">
+            {/* 지원한 게시글 목록 */}
+            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+              <div className="flex items-center mb-3">
+                <div className="w-12 h-12 bg-gray-100 rounded-lg mr-3 flex-shrink-0"></div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-medium text-gray-800 mb-1 line-clamp-2">
+                    서울에서 대구까지 입양 예정 강아지 호치의 이동을 도와 주실 보호자 구합니다.
+                  </h3>
+                  <p className="text-xs text-gray-500 mb-2">호치 / 소형견</p>
+                  <p className="text-xs text-gray-400">25/01/01</p>
+                </div>
+                <div className="ml-2">
+                  <span className="inline-block bg-red-100 text-red-600 text-xs px-2 py-1 rounded-full font-medium">
+                    D-10
+                  </span>
+                </div>
+              </div>
+              <button className="w-full bg-yellow-400 text-gray-800 py-2 px-4 rounded-xl text-sm font-medium hover:bg-yellow-500 transition-colors">
+                24.10.01 지원
+              </button>
+            </div>
+
+            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+              <div className="flex items-center mb-3">
+                <div className="w-12 h-12 bg-gray-100 rounded-lg mr-3 flex-shrink-0"></div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-medium text-gray-800 mb-1 line-clamp-2">
+                    강아지 이동 봉사 구합니다.
+                  </h3>
+                  <p className="text-xs text-gray-500 mb-2">통통치 / 중형견</p>
+                  <p className="text-xs text-gray-400">25/01/01</p>
+                </div>
+                <div className="ml-2">
+                  <span className="inline-block bg-green-100 text-green-600 text-xs px-2 py-1 rounded-full font-medium">
+                    입양
+                  </span>
+                </div>
+              </div>
+              <button className="w-full bg-yellow-400 text-gray-800 py-2 px-4 rounded-xl text-sm font-medium hover:bg-yellow-500 transition-colors">
+                24.10.01 지원
+              </button>
+            </div>
+          </div>
+        )}
+
+        {activeTab === '작성' && (
+          <div className="space-y-4">
+            {/* 작성한 게시글 목록 */}
+            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+              <div className="flex items-center mb-3">
+                <div className="w-12 h-12 bg-gray-100 rounded-lg mr-3 flex-shrink-0"></div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-medium text-gray-800 mb-1 line-clamp-2">
+                    작성한 게시글이 없습니다.
+                  </h3>
+                  <p className="text-xs text-gray-500">새로운 이동봉사 게시글을 작성해보세요.</p>
+                </div>
+              </div>
+              <Link
+                href="/write"
+                className="w-full bg-yellow-400 text-gray-800 py-2 px-4 rounded-xl text-sm font-medium hover:bg-yellow-500 transition-colors text-center block"
+              >
+                게시글 작성하기
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 하단 여백 */}
