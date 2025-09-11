@@ -57,7 +57,7 @@ const MyPage = () => {
 
       {/* 프로필 정보 카드 */}
       <div className="px-4 py-6">
-        <div className="bg-[#FFE066] rounded-2xl p-6">
+        <div className="p-6">
           <div className="flex items-center">
             {/* 프로필 이미지 */}
             <div className="w-20 h-20 rounded-full overflow-hidden bg-white flex-shrink-0 mr-4">
@@ -85,7 +85,7 @@ const MyPage = () => {
           </div>
 
           {/* 내 정보 수정 버튼 */}
-          <button className="w-full mt-4 bg-yellow-400 text-gray-800 py-3 px-4 rounded-xl font-semibold text-center hover:bg-yellow-500 transition-colors">
+          <button className="w-full mt-4 bg-[#FFF6D1] text-[#DBA913] py-3 px-4 rounded-[20px] border border-[#DBA108] font-semibold text-center transition-colors">
             내 정보 수정
           </button>
         </div>

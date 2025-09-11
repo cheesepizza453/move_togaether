@@ -179,7 +179,7 @@ export default function FavoritesPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#FFE066]">
+    <div className="min-h-screen bg-brand-main">
       {/* 헤더 - 노란색 배경 */}
       <div className="w-full px-[23px] pt-[15px] pb-4">
         <h1 className="text-[22px] font-bold text-gray-900 mx-6 py-8">
@@ -256,6 +256,7 @@ export default function FavoritesPage() {
                 key={post.id}
                 post={post}
                 onFavoriteToggle={handleFavoriteToggle}
+                isCompleted={activeTab === 'completed'}
               />
             ))}
           </div>

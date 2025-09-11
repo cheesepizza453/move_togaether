@@ -10,7 +10,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-const FavoriteCard = ({ post, onFavoriteToggle }) => {
+const FavoriteCard = ({ post, onFavoriteToggle, isCompleted = false }) => {
   const [loading, setLoading] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const { user } = useAuth();
@@ -68,6 +68,33 @@ const FavoriteCard = ({ post, onFavoriteToggle }) => {
     return `D-${dday}`;
   };
 
+  // 상태에 따른 버튼 텍스트와 스타일 결정
+  const getButtonInfo = () => {
+    if (isCompleted) {
+      if (status !== 'active') {
+        return {
+          text: '입양 완료',
+          className: 'w-full bg-gray-400 text-white py-3 px-4 rounded-[20px] font-medium text-sm cursor-not-allowed',
+          disabled: true
+        };
+      } else {
+        return {
+          text: '아직 못 갔어요 🥺',
+          className: 'w-full bg-[#FFE066] text-gray-900 py-3 px-4 rounded-[20px] font-medium text-sm hover:bg-[#FFD700] transition-colors',
+          disabled: false
+        };
+      }
+    } else {
+      return {
+        text: '문의하기',
+        className: 'w-full bg-[#FFE066] text-gray-900 py-3 px-4 rounded-[20px] font-medium text-sm hover:bg-[#FFD700] transition-colors',
+        disabled: false
+      };
+    }
+  };
+
+  const buttonInfo = getButtonInfo();
+
   return (
     <>
       <div
@@ -101,10 +128,12 @@ const FavoriteCard = ({ post, onFavoriteToggle }) => {
               )}
             </div>
 
-            {/* D-day 배지 */}
-            <div className={`absolute -top-3 -right-2 px-2 py-1 rounded-full text-xs font-bold text-white ${getDdayColor(dday)}`}>
-              {getDdayText(dday)}
-            </div>
+            {/* D-day 배지 - 모집중일 때만 표시 */}
+            {!isCompleted && (
+              <div className={`absolute -top-3 -right-2 px-2 py-1 rounded-full text-xs font-bold text-white ${getDdayColor(dday)}`}>
+                {getDdayText(dday)}
+              </div>
+            )}
           </div>
         </div>
 
@@ -113,11 +142,14 @@ const FavoriteCard = ({ post, onFavoriteToggle }) => {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              // 문의하기 기능 (추후 구현)
+              if (!buttonInfo.disabled) {
+                // 문의하기 기능 (추후 구현)
+              }
             }}
-            className="w-full bg-[#FFE066] text-gray-900 py-3 px-4 rounded-[20px] font-medium text-sm hover:bg-[#FFD700] transition-colors"
+            className={buttonInfo.className}
+            disabled={buttonInfo.disabled}
           >
-            문의하기
+            {buttonInfo.text}
           </button>
         </div>
 
