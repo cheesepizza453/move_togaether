@@ -121,8 +121,8 @@ export default function Home() {
         setHasMore(true);
       }
 
-      // API 호출 (로그인 불필요)
-      const response = await fetch(`/api/posts?sortBy=${sortBy}&page=${pageNum}&limit=10`);
+    // API 호출 (로그인 불필요)
+    const response = await fetch(`/api/posts/list?type=all&sortBy=${sortBy}&page=${pageNum}&limit=10&status=active`);
 
       if (!response.ok) {
         const errorData = await response.json();

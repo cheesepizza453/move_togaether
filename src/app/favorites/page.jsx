@@ -77,7 +77,7 @@ export default function FavoritesPage() {
       }
 
       // 즐겨찾기한 게시물의 상세 정보 조회
-      const response = await fetch('/api/favorites?includeDetails=true', {
+      const response = await fetch('/api/posts/list?type=favorites&status=all', {
         headers: {
           'Authorization': `Bearer ${session.data.session.access_token}`,
           'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -89,9 +89,9 @@ export default function FavoritesPage() {
         throw new Error(errorData.error || '즐겨찾기 목록을 불러오는 중 오류가 발생했습니다.');
       }
 
-      const { favoritePosts } = await response.json();
+      const { posts } = await response.json();
 
-      if (!favoritePosts || favoritePosts.length === 0) {
+      if (!posts || posts.length === 0) {
         setAllFavorites([]);
         setActiveFavorites([]);
         setCompletedFavorites([]);
@@ -99,19 +99,22 @@ export default function FavoritesPage() {
       }
 
       // 데이터 포맷팅
-      const formattedPosts = favoritePosts.map(post => ({
-        id: post.id,
-        title: post.title,
-        dogName: post.name || post.dog_name,
-        dogSize: convertDogSize(post.size || post.dog_size),
-        dogBreed: post.breed || post.dog_breed,
-        departureAddress: post.departure_address,
-        arrivalAddress: post.arrival_address,
-        deadline: formatDeadline(post.deadline),
-        images: post.images || [],
-        status: post.status,
-        dday: post.deadline ? moment(post.deadline).diff(moment(), 'days') : 0
-      }));
+      const formattedPosts = posts.map(item => {
+        const post = item.post;
+        return {
+          id: post.id,
+          title: post.title,
+          dogName: post.dog_name,
+          dogSize: convertDogSize(post.dog_size),
+          dogBreed: post.dog_breed,
+          departureAddress: post.departure_address,
+          arrivalAddress: post.arrival_address,
+          deadline: formatDeadline(post.deadline),
+          images: post.images || [],
+          status: post.status,
+          dday: post.deadline ? moment(post.deadline).diff(moment(), 'days') : 0
+        };
+      });
 
       setAllFavorites(formattedPosts);
 
