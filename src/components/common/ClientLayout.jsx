@@ -9,7 +9,7 @@ import { Toaster } from 'sonner';
 
 const ClientLayout = ({ children }) => {
   const pathname = usePathname();
-  const isLoginPage = ['/login', '/signup', '/signup/additional-info', '/signup/kakao'].includes(pathname);
+  const isLoginPage = ['/login', '/signup', '/signup/additional-info', '/signup/kakao', '/signup/success'].includes(pathname);
   const isVolunteerCreatePage = pathname === '/volunteer/create';
 
   return (

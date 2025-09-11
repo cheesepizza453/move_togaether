@@ -3,110 +3,138 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Mail, CheckCircle, ArrowRight } from 'lucide-react';
+import Image from 'next/image';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/lib/supabase';
+import { ChevronLeft } from 'lucide-react';
 
 const SignupSuccessPage = () => {
-  const [email, setEmail] = useState('');
+  const [nickname, setNickname] = useState('');
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const { user, profile } = useAuth();
 
-  // URL 파라미터에서 이메일 확인
+  // 회원가입 후 자동 로그인 처리 및 닉네임 조회
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const emailParam = urlParams.get('email');
-    if (emailParam) {
-      setEmail(emailParam);
-    }
-  }, []);
+    const handleSignupSuccess = async () => {
+      try {
+        // 1. URL 파라미터에서 닉네임 확인 (우선순위)
+        const urlParams = new URLSearchParams(window.location.search);
+        const nicknameParam = urlParams.get('nickname');
+        if (nicknameParam) {
+          setNickname(decodeURIComponent(nicknameParam));
+          console.log('URL에서 닉네임 조회 성공:', nicknameParam);
+          setLoading(false);
+          return;
+        }
+
+        // 2. 현재 세션 확인
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session?.user) {
+          console.log('회원가입 성공 후 세션 확인:', session.user.id);
+
+          // 3. user_metadata에서 닉네임 조회
+          const metadata = session.user.user_metadata;
+          if (metadata?.nickname) {
+            setNickname(metadata.nickname);
+            console.log('user_metadata에서 닉네임 조회 성공:', metadata.nickname);
+          } else {
+            // 4. 프로필 테이블에서 닉네임 조회 (백업)
+            const { data: profileData } = await supabase
+              .from('user_profiles')
+              .select('display_name')
+              .eq('auth_user_id', session.user.id)
+              .eq('is_deleted', false)
+              .single();
+
+            if (profileData?.display_name) {
+              setNickname(profileData.display_name);
+              console.log('프로필에서 닉네임 조회 성공:', profileData.display_name);
+            }
+          }
+        }
+
+        // 5. useAuth 훅에서 프로필 정보 확인
+        if (profile?.display_name) {
+          setNickname(profile.display_name);
+          console.log('useAuth 프로필에서 닉네임 조회 성공:', profile.display_name);
+        }
+      } catch (error) {
+        console.error('닉네임 조회 오류:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    handleSignupSuccess();
+  }, [profile]);
+
+  // 로딩 중일 때
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">로딩 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
-        {/* 성공 아이콘 */}
-        <div className="mb-6">
-          <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
-        </div>
+    <div className="min-h-screen bg-white flex flex-col">
+      {/* 상단 네비게이션 */}
+      <div className="flex items-center justify-between px-4 py-3 bg-white">
+        <button
+          onClick={() => router.back()}
+          className="text-gray-600 text-lg"
+        >
+          <span className="flex items-center">
+            <ChevronLeft size={20} className="text-gray-600 display-inline-block" />
+            <span className="ml-1">회원가입</span>
+          </span>
+        </button>
+        <div className="w-6"></div>
+      </div>
 
-        {/* 제목 */}
-        <h1 className="text-2xl font-bold text-gray-800 mb-4">
-          회원가입이 완료되었습니다!
-        </h1>
-
-        {/* 설명 */}
-        <p className="text-gray-600 mb-6 leading-relaxed">
-          무브투게더에 오신 것을 환영합니다!
-          이제 이메일 인증을 완료하면 서비스를 이용할 수 있습니다.
-        </p>
-
-        {/* 이메일 인증 안내 */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <div className="flex items-center justify-center mb-3">
-            <Mail className="w-5 h-5 text-blue-500 mr-2" />
-            <span className="text-blue-700 font-medium">이메일 인증이 필요합니다</span>
-          </div>
-          <p className="text-sm text-blue-600">
-            {email ? `${email}로 인증 메일을 발송했습니다.` : '가입하신 이메일로 인증 메일을 발송했습니다.'}
+      {/* 메인 콘텐츠 */}
+      <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
+        {/* 닉네임 표시 */}
+        <div className="text-center mb-8">
+          <p className="text-gray-600">
+            {nickname ? `${nickname}님` : '회원가입'}
           </p>
         </div>
 
-        {/* 인증 단계 안내 */}
-        <div className="space-y-3 mb-8">
-          <div className="flex items-center text-sm text-gray-600">
-            <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-medium mr-3">
-              1
-            </div>
-            <span>이메일 수신함을 확인하세요</span>
-          </div>
-          <div className="flex items-center text-sm text-gray-600">
-            <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-medium mr-3">
-              2
-            </div>
-            <span>인증 링크를 클릭하세요</span>
-          </div>
-          <div className="flex items-center text-sm text-gray-600">
-            <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-medium mr-3">
-              3
-            </div>
-            <span>로그인하여 서비스를 이용하세요</span>
-          </div>
+        {/* 가운데 이미지 */}
+        <div className="mb-12">
+          <img
+            src="/img/join_logo.png"
+            alt="회원가입 완료"
+            className="mx-auto"
+          />
         </div>
 
-        {/* 액션 버튼 */}
-        <div className="space-y-3">
-          <Link
-            href="/login"
-            className="w-full inline-flex items-center justify-center bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors"
-          >
-            로그인하기
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </Link>
+        {/* 성공 메시지 */}
+        <div className="text-center mb-8">
+          <h2 className="text-xl font-bold text-gray-800 mb-2">
+            회원가입이 <span className="text-orange-500">완료</span>되었습니다!
+          </h2>
+          <p className="text-gray-600 text-sm">
+            확인 버튼을 누르시면 메인으로 이동합니다.
+          </p>
+        </div>
+      </div>
 
+      {/* 메인으로 이동 버튼 - 화면 하단 고정 */}
+      <div className="px-4 pb-8">
+        <div className="w-full max-w-sm mx-auto">
           <Link
             href="/"
-            className="w-full inline-flex items-center justify-center bg-gray-100 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+            className="w-full bg-yellow-400 text-gray-800 py-4 px-6 rounded-lg font-semibold text-center block hover:bg-yellow-500 transition-colors"
           >
-            홈으로 돌아가기
-          </Link>
-        </div>
-
-        {/* 추가 안내 */}
-        <div className="mt-6 pt-6 border-t border-gray-200">
-          <p className="text-xs text-gray-500 mb-2">
-            이메일을 받지 못하셨나요?
-          </p>
-          <div className="text-xs text-gray-500 space-y-1">
-            <p>• 스팸 메일함을 확인해보세요</p>
-            <p>• 이메일 주소를 다시 한 번 확인해보세요</p>
-            <p>• 문제가 지속되면 고객센터에 문의해주세요</p>
-          </div>
-        </div>
-
-        {/* 고객센터 링크 */}
-        <div className="mt-4">
-          <Link
-            href="/contact"
-            className="text-blue-500 hover:text-blue-600 text-sm font-medium"
-          >
-            고객센터 문의하기
+            메인으로 이동
           </Link>
         </div>
       </div>

@@ -219,8 +219,8 @@ const AdditionalInfoContent = () => {
         // 성공 메시지 표시
         toast.success('회원가입이 완료되었습니다! 이메일을 확인해주세요.');
 
-        // 회원가입 성공 - 이메일 인증 안내 페이지로 이동
-        router.push('/signup/success');
+        // 회원가입 성공 - 이메일 인증 안내 페이지로 이동 (닉네임 전달)
+        router.push(`/signup/success?nickname=${encodeURIComponent(formData.nickname)}`);
       } else {
         // 에러 메시지를 Toast로 표시
         toast.error(result.error || '회원가입 중 오류가 발생했습니다.');

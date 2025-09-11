@@ -68,11 +68,30 @@ export async function POST(request) {
     // user_metadata에 프로필 정보가 이미 저장됨 (signUp 시 options.data로 전달)
     console.log('프로필 정보가 user_metadata에 저장됨');
 
+    // 회원가입 성공 후 자동 로그인을 위해 세션 생성
+    try {
+      // 이메일 인증 없이도 임시로 로그인 상태로 만들기
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (signInError) {
+        console.log('자동 로그인 실패 (이메일 인증 필요):', signInError.message);
+        // 이메일 인증이 필요한 경우는 정상적인 플로우
+      } else {
+        console.log('자동 로그인 성공:', signInData.user.id);
+      }
+    } catch (autoLoginError) {
+      console.log('자동 로그인 시도 중 오류 (정상적인 플로우):', autoLoginError.message);
+    }
+
     // 응답 데이터 구성 (민감한 정보 제거)
     const userData = {
       id: data.user.id,
       email: data.user.email,
-      created_at: data.user.created_at
+      created_at: data.user.created_at,
+      nickname: data.user.user_metadata?.nickname || ''
     };
 
     return NextResponse.json({
