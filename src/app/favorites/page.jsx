@@ -8,6 +8,7 @@ import Header from '@/components/common/Header';
 import BottomNavigation from '@/components/common/BottomNavigation';
 import FavoriteCard from '@/components/FavoriteCard';
 import { Button } from '@/components/ui/button';
+import { favoritesAPI, handleAPIError } from '@/lib/api-client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -77,19 +78,9 @@ export default function FavoritesPage() {
       }
 
       // 즐겨찾기한 게시물의 상세 정보 조회
-      const response = await fetch('/api/posts/list?type=favorites&status=all', {
-        headers: {
-          'Authorization': `Bearer ${session.data.session.access_token}`,
-          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || '즐겨찾기 목록을 불러오는 중 오류가 발생했습니다.');
-      }
-
-      const { posts } = await response.json();
+      const response = await favoritesAPI.getList();
+      console.log('찜한 목록 API 응답:', response);
+      const posts = response.posts || [];
 
       if (!posts || posts.length === 0) {
         setAllFavorites([]);
@@ -98,7 +89,7 @@ export default function FavoritesPage() {
         return;
       }
 
-      // 데이터 포맷팅
+      // 데이터 포맷팅 (favorites 타입은 {favorite_id, favorited_at, post} 구조)
       const formattedPosts = posts.map(item => {
         const post = item.post;
         return {
@@ -135,7 +126,8 @@ export default function FavoritesPage() {
 
     } catch (error) {
       console.error('즐겨찾기 조회 오류:', error);
-      setError(error.message);
+      const errorInfo = handleAPIError(error);
+      setError(errorInfo.message);
     } finally {
       setLoading(false);
     }

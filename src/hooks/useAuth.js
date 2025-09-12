@@ -2,6 +2,7 @@
 
 import { useState, useEffect, createContext, useContext } from 'react';
 import { supabase } from '@/lib/supabase';
+import { authAPI, handleAPIError } from '@/lib/api-client';
 
 // Auth Context 생성
 const AuthContext = createContext();
@@ -229,23 +230,16 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
 
       console.log('서버 회원가입 요청 시작...');
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password,
-          nickname,
-          introduction,
-          phone,
-          contactChannels,
-          channelInputs
-        }),
+      const result = await authAPI.signup({
+        email,
+        password,
+        nickname,
+        introduction,
+        phone,
+        contactChannels,
+        channelInputs
       });
 
-      const result = await response.json();
       console.log('서버 회원가입 응답:', result);
 
       if (result.success) {
@@ -263,9 +257,10 @@ export const AuthProvider = ({ children }) => {
 
     } catch (error) {
       console.error('회원가입 중 오류:', error);
+      const errorInfo = handleAPIError(error);
       return {
         success: false,
-        error: '회원가입 중 오류가 발생했습니다.'
+        error: errorInfo.message
       };
     } finally {
       setLoading(false);
@@ -348,14 +343,8 @@ export const AuthProvider = ({ children }) => {
       // 3. 서버 사이드 로그아웃 (백업)
       console.log('서버 로그아웃 요청...');
       try {
-        const response = await fetch('/api/auth/logout', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-        const result = await response.json();
-        console.log('서버 로그아웃 응답:', result);
+        await authAPI.logout();
+        console.log('서버 로그아웃 성공');
       } catch (serverError) {
         console.error('서버 로그아웃 오류:', serverError);
         // 서버 오류는 무시하고 클라이언트 로그아웃만으로 처리
@@ -404,21 +393,7 @@ export const AuthProvider = ({ children }) => {
         return { isDuplicate: false, message: '' };
       }
 
-      const response = await fetch('/api/auth/check-nickname', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ nickname: nickname.trim() }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        console.error('닉네임 중복 체크 API 오류:', result);
-        return { isDuplicate: false, message: '중복 체크 중 오류가 발생했습니다.' };
-      }
-
+      const result = await authAPI.checkNickname(nickname.trim());
       return result;
     } catch (error) {
       console.error('닉네임 중복 체크 중 오류:', error);
@@ -483,15 +458,7 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
 
       console.log('카카오톡 로그인 요청 시작...');
-      const response = await fetch('/api/auth/kakao/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userInfo }),
-      });
-
-      const result = await response.json();
+      const result = await authAPI.kakaoLogin({ userInfo });
       console.log('카카오톡 로그인 응답:', result);
 
       if (result.success) {
@@ -559,24 +526,16 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
 
       console.log('카카오톡 회원가입 요청 시작...');
-      const response = await fetch('/api/auth/kakao/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userInfo,
-          display_name,
-          phone,
-          phone_visible,
-          bio,
-          instagram,
-          naver_cafe,
-          kakao_openchat
-        }),
+      const result = await authAPI.kakaoSignup({
+        userInfo,
+        display_name,
+        phone,
+        phone_visible,
+        bio,
+        instagram,
+        naver_cafe,
+        kakao_openchat
       });
-
-      const result = await response.json();
       console.log('카카오톡 회원가입 응답:', result);
 
       if (result.success) {

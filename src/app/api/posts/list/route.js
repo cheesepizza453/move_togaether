@@ -11,6 +11,7 @@ export async function GET(request) {
     const page = parseInt(searchParams.get('page')) || 1
     const limit = parseInt(searchParams.get('limit')) || 10
     const status = searchParams.get('status') || 'active' // active, completed, all
+    const filter = searchParams.get('filter') // in_progress, expired (마이페이지 하위 필터용)
 
     // 인증이 필요한 타입들
     const authRequiredTypes = ['my', 'applied', 'favorites']
@@ -100,7 +101,17 @@ export async function GET(request) {
           .order(orderConfig.column, { ascending: orderConfig.ascending })
           .range(from, to)
 
-        if (status !== 'all') {
+        // 하위 필터 처리 (진행중, 종료, 완료)
+        if (filter) {
+          const now = moment().toISOString()
+          if (filter === 'in_progress') {
+            // 진행중: deadline 미지남 + status active
+            query = query.eq('status', 'active').gte('deadline', now)
+          } else if (filter === 'expired') {
+            // 종료: deadline 지남 + status active
+            query = query.eq('status', 'active').lt('deadline', now)
+          }
+        } else if (status !== 'all') {
           if (status === 'active') {
             const now = moment().toISOString()
             query = query.eq('status', 'active').gte('deadline', now)
@@ -174,7 +185,6 @@ export async function GET(request) {
             )
           `, { count: 'exact' })
           .eq('user_id', profile.id)
-          .eq('is_deleted', false)
           .order('created_at', { ascending: false })
           .range(from, to)
 
@@ -197,6 +207,8 @@ export async function GET(request) {
       return NextResponse.json({ error: '게시물을 불러오는 중 오류가 발생했습니다.' }, { status: 400 })
     }
 
+    console.log(`${type} 타입 조회 결과:`, { data, count, error });
+
     // 데이터 정리
     let posts = []
     if (type === 'applied') {
@@ -215,16 +227,58 @@ export async function GET(request) {
       })) || []
     } else {
       posts = data || []
+
+      // 'my' 타입인 경우 각 게시물의 지원자 수 조회
+      if (type === 'my' && posts.length > 0) {
+        const postIds = posts.map(post => post.id)
+
+        // 각 게시물별 지원자 수 조회
+        const { data: applicationsData, error: applicationsError } = await supabase
+          .from('applications')
+          .select('post_id')
+          .in('post_id', postIds)
+          .eq('status', 'pending') // 대기 중인 지원만 카운트
+
+        if (!applicationsError && applicationsData) {
+          // post_id별로 지원자 수 계산
+          const applicantCounts = applicationsData.reduce((acc, app) => {
+            acc[app.post_id] = (acc[app.post_id] || 0) + 1
+            return acc
+          }, {})
+
+          // 각 게시물에 지원자 수 추가
+          posts = posts.map(post => ({
+            ...post,
+            applicant_count: applicantCounts[post.id] || 0
+          }))
+        }
+      }
     }
+
+    // 페이지네이션 정보 계산
+    const total = count || 0;
+    const totalPages = Math.ceil(total / limit);
+    const hasMore = page < totalPages && posts.length === limit;
+
+    console.log('페이지네이션 정보:', {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasMore,
+      postsLength: posts.length,
+      to,
+      from
+    });
 
     return NextResponse.json({
       posts,
       pagination: {
         page,
         limit,
-        total: count || 0,
-        totalPages: Math.ceil((count || 0) / limit),
-        hasMore: to < (count || 0) - 1
+        total,
+        totalPages,
+        hasMore
       }
     })
 

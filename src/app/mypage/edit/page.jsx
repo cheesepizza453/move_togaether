@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
-import { ChevronLeft, Save } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import SignupForm from '@/components/signup/SignupForm';
+import ProfileEditForm from '@/components/ProfileEditForm';
 import { toast } from 'sonner';
 
 const EditProfilePage = () => {
@@ -15,8 +15,11 @@ const EditProfilePage = () => {
   const [formData, setFormData] = useState({
     nickname: '',
     introduction: '',
-    phone: ''
+    phone: '',
+    profileImage: ''
   });
+  const [originalData, setOriginalData] = useState({});
+  const [hasChanges, setHasChanges] = useState(false);
   const [contactChannels, setContactChannels] = useState({
     instagram: false,
     naverCafe: false,
@@ -42,11 +45,16 @@ const EditProfilePage = () => {
   // 프로필 데이터 로드
   useEffect(() => {
     if (profile) {
-      setFormData({
+      const initialData = {
         nickname: profile.display_name || '',
         introduction: profile.bio || '',
-        phone: profile.phone || ''
-      });
+        phone: profile.phone || '',
+        profileImage: profile.profile_image || ''
+      };
+
+      setFormData(initialData);
+      setOriginalData(initialData);
+
       setContactChannels({
         instagram: !!profile.instagram,
         naverCafe: !!profile.naver_cafe,
@@ -59,6 +67,18 @@ const EditProfilePage = () => {
       });
     }
   }, [profile]);
+
+  // 변경사항 감지
+  useEffect(() => {
+    const hasFormChanges = JSON.stringify(formData) !== JSON.stringify(originalData);
+    setHasChanges(hasFormChanges);
+  }, [formData, originalData]);
+
+  // 프로필 이미지 변경 핸들러
+  const handleProfileImageChange = (imageData) => {
+    setFormData(prev => ({ ...prev, profileImage: imageData }));
+    setErrors(prev => ({ ...prev, profileImage: '' }));
+  };
 
   // 닉네임 변경 핸들러
   const handleNicknameChange = (value) => {
@@ -150,6 +170,11 @@ const EditProfilePage = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  // 취소 핸들러
+  const handleCancel = () => {
+    router.push('/mypage');
+  };
+
   // 프로필 저장
   const handleSave = async () => {
     if (!validateForm()) {
@@ -171,6 +196,7 @@ const EditProfilePage = () => {
           display_name: formData.nickname,
           bio: formData.introduction,
           phone: formData.phone,
+          profile_image: formData.profileImage,
           instagram: contactChannels.instagram ? channelInputs.instagram : null,
           naver_cafe: contactChannels.naverCafe ? channelInputs.naverCafe : null,
           kakao_openchat: contactChannels.kakaoOpenChat ? channelInputs.kakaoOpenChat : null,
@@ -213,38 +239,21 @@ const EditProfilePage = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200">
+      <div className="flex items-center px-4 py-3 bg-white border-b border-gray-200">
         <button
           onClick={() => router.back()}
           className="text-gray-600 text-lg"
         >
           <span className="flex items-center">
-            <ChevronLeft size={20} className="text-gray-600 display-inline-block" />
+            <ChevronLeft size={20} className="text-gray-600" />
             <span className="ml-1">내 정보 수정</span>
           </span>
         </button>
-        <Button
-          onClick={handleSave}
-          disabled={saving}
-          className="bg-yellow-400 text-gray-800 hover:bg-yellow-500"
-        >
-          {saving ? (
-            <div className="flex items-center">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-800 mr-2"></div>
-              저장 중...
-            </div>
-          ) : (
-            <div className="flex items-center">
-              <Save size={16} className="mr-1" />
-              저장
-            </div>
-          )}
-        </Button>
       </div>
 
       {/* Form */}
-      <div className="px-6 py-8">
-        <SignupForm
+      <div className="px-6 pt-8">
+        <ProfileEditForm
           formData={formData}
           setFormData={setFormData}
           contactChannels={contactChannels}
@@ -254,36 +263,47 @@ const EditProfilePage = () => {
           errors={errors}
           setErrors={setErrors}
           nicknameValidation={nicknameValidation}
-          setNicknameValidation={setNicknameValidation}
           nicknameChecking={nicknameChecking}
-          setNicknameChecking={setNicknameChecking}
           onNicknameChange={handleNicknameChange}
           onNicknameBlur={handleNicknameBlur}
           onChannelChange={handleChannelChange}
           onChannelInputChange={handleChannelInputChange}
-          showProfileImage={false}
-          showIntroduction={true}
+          onProfileImageChange={handleProfileImageChange}
         />
 
-        {/* 이메일 정보 (읽기 전용) */}
-        <div className="mt-6 bg-gray-50 rounded-xl p-4">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">계정 정보</h3>
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">이메일</label>
-            <input
-              value={user.email || ''}
-              disabled
-              className="w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm text-gray-600"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              이메일은 로그인 방식에 따라 자동으로 설정됩니다.
-            </p>
+        {/* 하단 버튼들 */}
+        <div className="bottom-0 left-0 right-0 bg-white p-4 mt-4">
+          <div className="text-right mb-8">
+            <button
+              onClick={() => {
+                if (confirm('정말 로그아웃하시겠습니까?')) {
+                  // 로그아웃 로직 (useAuth의 signOut 사용)
+                  router.push('/logout');
+                }
+              }}
+              className="text-sm text-[#DBA913] underline font-bold"
+            >
+              로그아웃
+            </button>
+          </div>
+          <div className="flex space-x-3 mb-3">
+            <Button
+              onClick={handleSave}
+              disabled={!hasChanges || saving}
+              className="flex-1 bg-yellow-400 text-gray-800 hover:bg-yellow-500 disabled:bg-gray-300 disabled:text-gray-500"
+            >
+              {saving ? '수정 중...' : '수정하기'}
+            </Button>
+            <Button
+              onClick={handleCancel}
+              variant="outline"
+              className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50"
+            >
+              취소
+            </Button>
           </div>
         </div>
       </div>
-
-      {/* 하단 여백 */}
-      <div className="h-20"></div>
     </div>
   );
 };

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import IconHeart from "../../public/img/icon/IconHeart";
+import { favoritesAPI, handleAPIError } from '@/lib/api-client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -60,33 +61,12 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle }) => {
 
       if (isFavorite) {
         // 즐겨찾기 제거
-        const response = await fetch(`/api/favorites?post_id=${id}`, {
-          method: 'DELETE',
-          headers
-        });
-
-        if (response.ok) {
-          onFavoriteToggle?.(id, false);
-        } else {
-          const error = await response.json();
-          console.error('즐겨찾기 제거 에러:', error);
-          throw new Error(error.error || '즐겨찾기 제거 실패');
-        }
+        await favoritesAPI.remove(id);
+        onFavoriteToggle?.(id, false);
       } else {
         // 즐겨찾기 추가
-        const response = await fetch('/api/favorites', {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({ post_id: id })
-        });
-
-        if (response.ok) {
-          onFavoriteToggle?.(id, true);
-        } else {
-          const error = await response.json();
-          console.error('즐겨찾기 추가 에러:', error);
-          throw new Error(error.error || '즐겨찾기 추가 실패');
-        }
+        await favoritesAPI.add(id);
+        onFavoriteToggle?.(id, true);
       }
     } catch (error) {
       console.error('즐겨찾기 처리 오류:', error);

@@ -9,6 +9,7 @@ import SortOptions from '../components/SortOptions';
 import PostCard from '../components/PostCard';
 import Footer from '../components/common/Footer';
 import BottomNavigation from '../components/common/BottomNavigation';
+import { postsAPI, favoritesAPI, handleAPIError } from '@/lib/api-client';
 
 export default function Home() {
   const [sortOption, setSortOption] = useState('latest');
@@ -22,6 +23,7 @@ export default function Home() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isFetching, setIsFetching] = useState(false); // 중복 호출 방지용
 
   // 목업 데이터 (실제로는 API에서 가져올 데이터)
   /* const mockPosts = [
@@ -68,31 +70,28 @@ export default function Home() {
   ]; */
   const mockPosts = [];
 
-  // 찜 목록 가져오기
-  const fetchFavorites = async () => {
+  // 찜 목록 가져오기 (페이지 로드 시 한 번만 실행)
+  const fetchFavorites = useCallback(async () => {
     try {
       setFavoritesLoading(true);
 
       const session = await supabase.auth.getSession();
-      if (!session.data.session) return;
-
-      const response = await fetch('/api/favorites', {
-        headers: {
-          'Authorization': `Bearer ${session.data.session.access_token}`,
-          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-        }
-      });
-
-      if (response.ok) {
-        const { favoritePostIds } = await response.json();
-        setFavoritePostIds(new Set(favoritePostIds));
+      if (!session.data.session) {
+        setFavoritePostIds(new Set()); // 로그인하지 않은 경우 빈 Set
+        return;
       }
+
+      const { favoritePostIds } = await favoritesAPI.getList();
+      setFavoritePostIds(new Set(favoritePostIds));
     } catch (error) {
       console.error('찜 목록 조회 오류:', error);
+      const errorInfo = handleAPIError(error);
+      console.error('Error details:', errorInfo);
+      setFavoritePostIds(new Set()); // 에러 시 빈 Set
     } finally {
       setFavoritesLoading(false);
     }
-  };
+  }, []); // 의존성 배열 비워서 한 번만 생성
 
   // 강아지 크기 변환 함수
   const convertDogSize = (size) => {
@@ -111,28 +110,47 @@ export default function Home() {
   };
 
   // Supabase에서 게시물 데이터 가져오기 (페이징 적용)
-  const fetchPosts = useCallback(async (sortBy = 'latest', pageNum = 1, isLoadMore = false) => {
+  const fetchPosts = async (sortBy = 'latest', pageNum = 1, isLoadMore = false) => {
+    // 중복 호출 방지
+    if (isFetching) {
+      console.log('이미 데이터를 가져오는 중입니다. 중복 호출 방지');
+      return;
+    }
+
     try {
+      setIsFetching(true);
+
       if (isLoadMore) {
         setIsLoadingMore(true);
       } else {
         setLoading(true);
+        setError(null); // 에러 상태 초기화
         setPage(1);
         setHasMore(true);
+        setPosts([]); // 새로 로드할 때 기존 데이터 초기화
       }
 
-    // API 호출 (로그인 불필요)
-    const response = await fetch(`/api/posts/list?type=all&sortBy=${sortBy}&page=${pageNum}&limit=10&status=active`);
+      // API 호출 (로그인 불필요)
+      const { posts, pagination } = await postsAPI.getList({
+        type: 'all',
+        sortBy,
+        page: pageNum,
+        limit: 10,
+        status: 'active'
+      });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('API 오류:', errorData);
-        setError('게시물을 불러오는 중 오류가 발생했습니다.');
+      console.log(`페이지 ${pageNum} API에서 가져온 데이터:`, { posts, pagination });
+
+      // posts가 배열이 아닌 경우 처리
+      if (!Array.isArray(posts)) {
+        console.warn('API에서 받은 posts가 배열이 아닙니다:', posts);
+        if (isLoadMore) {
+          setHasMore(false);
+        } else {
+          setPosts([]);
+        }
         return;
       }
-
-      const { posts, pagination } = await response.json();
-      console.log(`페이지 ${pageNum} API에서 가져온 데이터:`, { posts, pagination });
 
       // 데이터 포맷팅 (Supabase 컬럼명을 PostCard가 기대하는 필드명으로 매핑)
       const formattedPosts = posts.map(post => ({
@@ -152,7 +170,24 @@ export default function Home() {
       console.log(`페이지 ${pageNum} 포맷팅된 데이터:`, formattedPosts);
 
       // 페이지네이션 정보 업데이트
-      setHasMore(pagination.hasMore);
+      const hasMoreData = pagination?.hasMore ?? (formattedPosts.length === 10); // 10개 미만이면 더 이상 없음
+
+      console.log(`페이지 ${pageNum} 페이지네이션 정보:`, {
+        hasMore: hasMoreData,
+        postsCount: formattedPosts.length,
+        pagination,
+        isLoadMore
+      });
+
+      if (!hasMoreData) {
+        console.log('더 이상 로드할 데이터가 없습니다:', {
+          paginationHasMore: pagination?.hasMore,
+          postsLength: formattedPosts.length,
+          limit: 10
+        });
+      }
+
+      setHasMore(hasMoreData);
 
       if (isLoadMore) {
         // 추가 로드인 경우 기존 데이터에 추가
@@ -166,20 +201,34 @@ export default function Home() {
 
     } catch (err) {
       console.error('게시물 조회 중 예외 발생:', err);
-      setError('게시물을 불러오는 중 오류가 발생했습니다.');
+      const errorInfo = handleAPIError(err);
+      setError(errorInfo.message);
+
+      // 에러 발생 시 데이터 초기화 (새로 로드인 경우만)
+      if (!isLoadMore) {
+        setPosts([]);
+      }
+      setHasMore(false); // 에러 발생 시 더 이상 로드하지 않음
     } finally {
       setLoading(false);
       setIsLoadingMore(false);
+      setIsFetching(false); // 중복 호출 방지 플래그 해제
     }
-  }, []);
+  };
 
   // 무한 스크롤을 위한 Intersection Observer 설정
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         const target = entries[0];
-        if (target.isIntersecting && hasMore && !isLoadingMore && !loading) {
-          console.log('스크롤 하단 도달, 다음 페이지 로드');
+        if (target.isIntersecting && hasMore && !isLoadingMore && !loading && !isFetching && page > 1) {
+          console.log('스크롤 하단 도달, 다음 페이지 로드', {
+            hasMore,
+            isLoadingMore,
+            loading,
+            isFetching,
+            page
+          });
           fetchPosts(sortOption, page, true);
         }
       },
@@ -200,16 +249,16 @@ export default function Home() {
         observer.unobserve(loadMoreTrigger);
       }
     };
-  }, [hasMore, isLoadingMore, loading, sortOption, page, fetchPosts]);
+  }, [hasMore, isLoadingMore, loading, isFetching, sortOption, page]);
 
   // 초기 데이터 로드
   useEffect(() => {
     fetchPosts(sortOption);
-    fetchFavorites();
-  }, [sortOption, fetchPosts]);
+    fetchFavorites(); // 페이지 로드 시 한 번만 실행
+  }, []); // 컴포넌트 마운트 시에만 실행
 
-  // 찜 상태 토글 핸들러
-  const handleFavoriteToggle = (postId, isFavorited) => {
+  // 찜 상태 토글 핸들러 (로컬 상태만 업데이트)
+  const handleFavoriteToggle = useCallback((postId, isFavorited) => {
     setFavoritePostIds(prev => {
       const newSet = new Set(prev);
       if (isFavorited) {
@@ -219,16 +268,18 @@ export default function Home() {
       }
       return newSet;
     });
-  };
+  }, []);
 
   const handleSortChange = (sortId) => {
     setSortOption(sortId);
     setPage(1);
     setHasMore(true);
+    setPosts([]); // 기존 데이터 초기화
+    setError(null); // 에러 상태 초기화
     console.log('정렬 옵션 변경:', sortId);
 
-    // sortOption이 변경되면 useEffect가 실행되어 서버에서 정렬된 데이터를 다시 가져옴
-    // 클라이언트 정렬은 제거하고 서버에서 order by로 처리
+    // 정렬 옵션 변경 시 즉시 새 데이터 가져오기
+    fetchPosts(sortId, 1, false);
   };
 
   const allPosts = [...mockPosts, ...posts];

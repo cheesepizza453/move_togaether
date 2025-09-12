@@ -149,7 +149,7 @@ const LoginPage = () => {
     }
   };
 
-      const handleKakaoSignup = () => {
+  const handleKakaoSignup = () => {
     const kakaoJsKey = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
 
     console.log('카카오톡 환경변수 확인:', {

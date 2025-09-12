@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -8,11 +8,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import moment from 'moment';
 import { ChevronLeft, Edit } from 'lucide-react';
+import { myPageAPI, handleAPIError } from '@/lib/api-client';
+import MyPageCard from '@/components/MyPageCard';
 
 const MyPage = () => {
   const { user, profile, loading, signOut } = useAuth();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('지원');
+  const [activeSubTab, setActiveSubTab] = useState('진행중'); // 작성 탭의 하위 탭
   const [myPosts, setMyPosts] = useState([]);
   const [appliedPosts, setAppliedPosts] = useState([]);
   const [dataLoading, setDataLoading] = useState(false);
@@ -20,8 +23,11 @@ const MyPage = () => {
   const [loadedTabs, setLoadedTabs] = useState(new Set());
 
   // 탭별 데이터 조회 함수
-  const fetchTabData = async (tabType) => {
-    if (loadedTabs.has(tabType)) {
+  const fetchTabData = useCallback(async (tabType, subTabType = null, forceRefresh = false) => {
+    const tabKey = subTabType ? `${tabType}-${subTabType}` : tabType;
+
+    // 강제 새로고침이 아닌 경우에만 캐시 확인
+    if (!forceRefresh && loadedTabs.has(tabKey)) {
       return; // 이미 로드된 탭은 다시 로드하지 않음
     }
 
@@ -34,21 +40,28 @@ const MyPage = () => {
         throw new Error('로그인이 필요합니다.');
       }
 
-      const type = tabType === '지원' ? 'applied' : 'my';
-      const response = await fetch(`/api/posts/list?type=${type}&status=all`, {
-        headers: {
-          'Authorization': `Bearer ${session.data.session.access_token}`,
-          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      let posts;
+      if (tabType === '지원') {
+        const result = await myPageAPI.getAppliedPosts();
+        posts = result.posts;
+      } else {
+        // 작성 탭의 경우 하위 탭에 따라 다른 API 호출
+        if (subTabType === '진행중') {
+          const result = await myPageAPI.getMyPostsInProgress();
+          posts = result.posts;
+        } else if (subTabType === '종료') {
+          const result = await myPageAPI.getMyPostsExpired();
+          posts = result.posts;
+        } else if (subTabType === '완료') {
+          const result = await myPageAPI.getMyPostsCompleted();
+          posts = result.posts;
+        } else {
+          const result = await myPageAPI.getMyPosts();
+          posts = result.posts;
         }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || '데이터를 불러오는 중 오류가 발생했습니다.');
       }
 
-      const { posts } = await response.json();
-
+      // 데이터 설정 전에 현재 탭이 여전히 활성 상태인지 확인
       if (tabType === '지원') {
         setAppliedPosts(posts || []);
       } else {
@@ -56,15 +69,23 @@ const MyPage = () => {
       }
 
       // 로드된 탭 기록
-      setLoadedTabs(prev => new Set([...prev, tabType]));
+      setLoadedTabs(prev => new Set([...prev, tabKey]));
 
     } catch (err) {
       console.error(`${tabType} 탭 데이터 조회 오류:`, err);
-      setError(err.message);
+      const errorInfo = handleAPIError(err);
+      setError(errorInfo.message);
+
+      // 에러 발생 시 해당 탭의 데이터 초기화
+      if (tabType === '지원') {
+        setAppliedPosts([]);
+      } else {
+        setMyPosts([]);
+      }
     } finally {
       setDataLoading(false);
     }
-  };
+  }, [loadedTabs]);
 
   // 로그인 상태 확인
   useEffect(() => {
@@ -80,67 +101,46 @@ const MyPage = () => {
   // 활성 탭 변경 시 데이터 조회
   useEffect(() => {
     if (user && profile && activeTab) {
-      fetchTabData(activeTab);
+      if (activeTab === '작성') {
+        fetchTabData(activeTab, activeSubTab);
+      } else {
+        fetchTabData(activeTab);
+      }
     }
-  }, [activeTab, user, profile]);
+  }, [activeTab, activeSubTab, user, profile, fetchTabData]);
 
   // 탭 변경 핸들러
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setError(null); // 탭 변경 시 에러 초기화
-  };
 
-  // 유틸리티 함수들
-  const convertDogSize = (size) => {
-    const sizeMap = {
-      'small': '소형견',
-      'medium-small': '중소형견',
-      'medium': '중형견',
-      'large': '대형견'
-    };
-    return sizeMap[size] || size;
-  };
-
-  const formatDate = (date) => {
-    return moment(date).format('YY/MM/DD');
-  };
-
-  const getDday = (deadline) => {
-    const today = moment();
-    const deadlineDate = moment(deadline);
-    const diffDays = deadlineDate.diff(today, 'days');
-
-    if (diffDays < 0) return `D+${Math.abs(diffDays)}`;
-    if (diffDays === 0) return 'D-Day';
-    return `D-${diffDays}`;
-  };
-
-  const getStatusBadge = (status, dday) => {
-    if (status !== 'active') {
-      return {
-        text: '입양 완료',
-        className: 'bg-green-100 text-green-600'
-      };
-    }
-
-    const ddayNum = parseInt(dday.replace('D-', '').replace('D+', ''));
-    if (ddayNum <= 3) {
-      return {
-        text: dday,
-        className: 'bg-red-100 text-red-600'
-      };
-    } else if (ddayNum <= 7) {
-      return {
-        text: dday,
-        className: 'bg-orange-100 text-orange-600'
-      };
+    // 탭 변경 시 데이터 초기화
+    if (tab === '지원') {
+      setAppliedPosts([]);
     } else {
-      return {
-        text: dday,
-        className: 'bg-yellow-100 text-yellow-600'
-      };
+      setMyPosts([]);
+    }
+
+    if (tab === '작성') {
+      // 작성 탭으로 변경 시 기본 하위 탭(진행중)으로 설정
+      setActiveSubTab('진행중');
+      fetchTabData(tab, '진행중', true); // 강제 새로고침
+    } else {
+      fetchTabData(tab, null, true); // 강제 새로고침
     }
   };
+
+  // 하위 탭 변경 핸들러
+  const handleSubTabChange = (subTab) => {
+    setActiveSubTab(subTab);
+    setError(null);
+
+    // 하위 탭 변경 시 데이터 초기화
+    setMyPosts([]);
+
+    fetchTabData('작성', subTab, true); // 강제 새로고침
+  };
+
 
   // 로딩 중이거나 로그인되지 않은 경우
   if (loading) {
@@ -214,7 +214,7 @@ const MyPage = () => {
       </div>
 
       {/* 탭 메뉴 */}
-      <div className="px-4 pb-6">
+      <div className="px-[23px] pb-6">
         <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
           <button
             onClick={() => handleTabChange('지원')}
@@ -240,7 +240,7 @@ const MyPage = () => {
       </div>
 
       {/* 탭 콘텐츠 */}
-      <div className="px-4 pb-6">
+      <div className="px-[23px] pb-6">
         {activeTab === '지원' && (
           <div className="space-y-4">
             {dataLoading ? (
@@ -274,7 +274,7 @@ const MyPage = () => {
               appliedPosts.map((app) => {
                 const post = app.post;
                 const dday = getDday(post.deadline);
-                const statusBadge = getStatusBadge(post.status, dday);
+                const statusBadge = getStatusBadge(post.status, post.deadline);
 
                 return (
                   <div key={app.application_id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
@@ -317,15 +317,50 @@ const MyPage = () => {
 
         {activeTab === '작성' && (
           <div className="space-y-4">
+            {/* 하위 탭 메뉴 */}
+            <div className="flex space-x-6 py-2">
+              <button
+                onClick={() => handleSubTabChange('진행중')}
+                className={`text-sm font-medium transition-colors ${
+                  activeSubTab === '진행중'
+                    ? 'text-yellow-500 font-bold'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                진행중
+              </button>
+              <button
+                onClick={() => handleSubTabChange('종료')}
+                className={`text-sm font-medium transition-colors ${
+                  activeSubTab === '종료'
+                    ? 'text-yellow-500 font-bold'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                종료
+              </button>
+              <button
+                onClick={() => handleSubTabChange('완료')}
+                className={`text-sm font-medium transition-colors ${
+                  activeSubTab === '완료'
+                    ? 'text-yellow-500 font-bold'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                완료
+              </button>
+            </div>
+
+            {/* 하위 탭 콘텐츠 */}
             {dataLoading ? (
               <div className="flex justify-center items-center py-8">
-                <div className="text-gray-500">작성한 게시물을 불러오는 중...</div>
+                <div className="text-gray-500">{activeSubTab} 게시물을 불러오는 중...</div>
               </div>
             ) : error ? (
               <div className="flex flex-col items-center justify-center py-8">
                 <div className="text-red-500 mb-4">{error}</div>
                 <button
-                  onClick={() => fetchTabData(activeTab)}
+                  onClick={() => fetchTabData('작성', activeSubTab)}
                   className="bg-yellow-400 text-gray-800 py-2 px-4 rounded-xl text-sm font-medium hover:bg-yellow-500 transition-colors"
                 >
                   다시 시도
@@ -334,64 +369,34 @@ const MyPage = () => {
             ) : myPosts.length === 0 ? (
               <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 text-center">
                 <div className="text-gray-500 mb-4">
-                  <p className="text-lg font-medium mb-2">작성한 게시글이 없습니다</p>
-                  <p className="text-sm">새로운 이동봉사 게시글을 작성해보세요</p>
+                  <p className="text-lg font-medium mb-2">
+                    {activeSubTab === '진행중' && '진행중인 게시글이 없습니다'}
+                    {activeSubTab === '종료' && '종료된 게시글이 없습니다'}
+                    {activeSubTab === '완료' && '완료된 게시글이 없습니다'}
+                  </p>
+                  <p className="text-sm">
+                    {activeSubTab === '진행중' && '새로운 이동봉사 게시글을 작성해보세요'}
+                    {activeSubTab === '종료' && '마감된 게시글을 확인할 수 있습니다'}
+                    {activeSubTab === '완료' && '완료 처리된 게시글을 확인할 수 있습니다'}
+                  </p>
                 </div>
-                <Link
-                  href="/volunteer/create"
-                  className="inline-block bg-yellow-400 text-gray-800 py-2 px-4 rounded-xl text-sm font-medium hover:bg-yellow-500 transition-colors"
-                >
-                  게시글 작성하기
-                </Link>
+                {activeSubTab === '진행중' && (
+                  <Link
+                    href="/volunteer/create"
+                    className="inline-block bg-yellow-400 text-gray-800 py-2 px-4 rounded-xl text-sm font-medium hover:bg-yellow-500 transition-colors"
+                  >
+                    게시글 작성하기
+                  </Link>
+                )}
               </div>
             ) : (
-              myPosts.map((post) => {
-                const dday = getDday(post.deadline);
-                const statusBadge = getStatusBadge(post.status, dday);
-
-                return (
-                  <div key={post.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                    <div className="flex items-center mb-3">
-                      <div className="w-12 h-12 bg-gray-100 rounded-lg mr-3 flex-shrink-0 overflow-hidden">
-                        {post.images && post.images.length > 0 ? (
-                          <img
-                            src={post.images[0]}
-                            alt={post.dog_name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                            이미지 없음
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-medium text-gray-800 mb-1 line-clamp-2">
-                          {post.title}
-                        </h3>
-                        <p className="text-xs text-gray-500 mb-2">{post.dog_name} / {convertDogSize(post.dog_size)}</p>
-                        <p className="text-xs text-gray-400">{formatDate(post.created_at)}</p>
-                      </div>
-                      <div className="ml-2">
-                        <span className={`inline-block text-xs px-2 py-1 rounded-full font-medium ${statusBadge.className}`}>
-                          {statusBadge.text}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex space-x-2">
-                      <Link
-                        href={`/posts/${post.id}`}
-                        className="flex-1 bg-yellow-400 text-gray-800 py-2 px-4 rounded-xl text-sm font-medium hover:bg-yellow-500 transition-colors text-center"
-                      >
-                        상세보기
-                      </Link>
-                      <button className="flex-1 bg-gray-100 text-gray-600 py-2 px-4 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors">
-                        수정하기
-                      </button>
-                    </div>
-                  </div>
-                );
-              })
+              myPosts.map((post) => (
+                <MyPageCard
+                  key={post.id}
+                  post={post}
+                  activeSubTab={activeSubTab}
+                />
+              ))
             )}
           </div>
         )}
