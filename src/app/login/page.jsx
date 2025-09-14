@@ -155,7 +155,9 @@ const LoginPage = () => {
     console.log('카카오톡 환경변수 확인:', {
       hasKey: !!kakaoJsKey,
       keyLength: kakaoJsKey?.length,
-      keyPrefix: kakaoJsKey?.substring(0, 10) + '...'
+      keyPrefix: kakaoJsKey?.substring(0, 10) + '...',
+      currentOrigin: window.location.origin,
+      fullKey: kakaoJsKey // 디버깅용 (실제 배포 시에는 제거)
     });
 
     if (!kakaoJsKey) {
@@ -167,7 +169,13 @@ const LoginPage = () => {
     const redirectUri = `${window.location.origin}/signup/kakao`;
     const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${kakaoJsKey}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=profile_nickname,account_email`;
 
-    console.log('카카오톡 OAuth URL:', kakaoAuthUrl);
+    console.log('카카오톡 OAuth 설정:', {
+      redirectUri,
+      kakaoAuthUrl,
+      clientId: kakaoJsKey
+    });
+
+    console.log('카카오톡 인증 페이지로 이동 중...');
 
     // 카카오톡 인증 페이지로 리다이렉트
     window.location.href = kakaoAuthUrl;

@@ -106,19 +106,31 @@ const KakaoSignupPage = () => {
   const handleKakaoCallback = async (code) => {
     try {
       setLoading(true);
+      console.log('카카오 콜백 처리 시작, 코드:', code);
+
+      // 클라이언트에서 사용한 redirect_uri를 서버로 전달
+      const redirectUri = `${window.location.origin}/signup/kakao`;
+      console.log('클라이언트 redirect_uri:', redirectUri);
 
       // 카카오톡 인증 코드로 사용자 정보 가져오기
+      console.log('카카오 콜백 API 호출 중...');
       const response = await fetch('/api/auth/kakao/callback', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({
+          code,
+          redirect_uri: redirectUri // 클라이언트에서 사용한 redirect_uri 전달
+        }),
       });
 
+      console.log('카카오 콜백 API 응답 상태:', response.status);
       const result = await response.json();
+      console.log('카카오 콜백 API 응답 데이터:', result);
 
       if (result.success) {
+        console.log('카카오 인증 성공, 사용자 정보:', result.userInfo);
         setUserInfo(result.userInfo);
         setFormData(prev => ({
           ...prev,
@@ -126,6 +138,7 @@ const KakaoSignupPage = () => {
         }));
         toast.success('카카오톡 인증이 완료되었습니다.');
       } else {
+        console.error('카카오 인증 실패:', result);
         toast.error(result.error || '카카오톡 인증에 실패했습니다.');
         router.push('/login');
       }

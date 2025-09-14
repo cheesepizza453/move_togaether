@@ -7,7 +7,7 @@ export async function POST(request) {
     const body = await request.json();
     console.log('요청 body:', body);
 
-    const { code } = body;
+    const { code, redirect_uri: clientRedirectUri } = body;
 
     if (!code) {
       console.error('인증 코드가 없음:', body);
@@ -22,12 +22,20 @@ export async function POST(request) {
     // 환경변수 확인
     const clientId = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
     const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-    const redirectUri = `${appUrl}/signup/kakao`;
+
+    // 클라이언트에서 전달받은 redirect_uri 사용 (KOE303 에러 방지)
+    const redirectUri = clientRedirectUri || `${appUrl}/signup/kakao`;
+
+    console.log('Redirect URI 설정:');
+    console.log('- 클라이언트에서 전달받은 URI:', clientRedirectUri);
+    console.log('- 최종 사용할 URI:', redirectUri);
 
     console.log('환경변수 확인:');
     console.log('- clientId:', clientId ? '설정됨' : '없음');
     console.log('- appUrl:', appUrl);
     console.log('- redirectUri:', redirectUri);
+    console.log('- NODE_ENV:', process.env.NODE_ENV);
+    console.log('- 모든 NEXT_PUBLIC_ 환경변수:', Object.keys(process.env).filter(key => key.startsWith('NEXT_PUBLIC_')));
 
     if (!clientId) {
       console.error('KAKAO_JS_KEY 환경변수가 설정되지 않음');
