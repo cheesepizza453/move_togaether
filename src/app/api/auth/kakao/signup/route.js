@@ -72,24 +72,30 @@ export async function POST(request) {
     }
 
     // Supabase Auth로 카카오톡 사용자 생성
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    // signUp 대신 admin API를 사용하여 provider를 'kakao'로 설정
+    const { createAdminSupabaseClient } = await import('@/lib/supabase');
+    const adminSupabase = createAdminSupabaseClient();
+
+    const { data: authData, error: authError } = await adminSupabase.auth.admin.createUser({
       email: userInfo.email.toLowerCase(),
       password: `kakao_${userInfo.id}_${Date.now()}`, // 임시 비밀번호
-      options: {
-        data: {
-          provider: 'kakao',
-          kakao_id: userInfo.id,
-          kakao_nickname: userInfo.nickname,
-          kakao_profile_image: userInfo.profile_image,
-          display_name,
-          phone,
-          phone_visible,
-          bio,
-          instagram,
-          naver_cafe,
-          kakao_openchat,
-          profile_created: false
-        }
+      email_confirm: true, // 이메일 자동 확인
+      user_metadata: {
+        provider: 'kakao',
+        kakao_id: userInfo.id,
+        kakao_nickname: userInfo.nickname,
+        kakao_profile_image: userInfo.profile_image,
+        display_name,
+        phone,
+        phone_visible,
+        bio,
+        instagram,
+        naver_cafe,
+        kakao_openchat,
+        profile_created: false
+      },
+      app_metadata: {
+        provider: 'kakao'
       }
     });
 
@@ -111,6 +117,13 @@ export async function POST(request) {
     }
 
     // user_profiles 테이블에 프로필 생성
+    // 카카오 가입이므로 provider는 항상 'kakao'
+    const provider = 'kakao';
+
+    console.log('카카오 가입 - provider 설정:', provider);
+    console.log('authData.user:', authData.user);
+    console.log('user_metadata:', authData.user.user_metadata);
+
     const { data: profile, error: profileError } = await supabase
       .from('user_profiles')
       .insert({
@@ -123,7 +136,7 @@ export async function POST(request) {
         instagram: instagram || null,
         naver_cafe: naver_cafe || null,
         kakao_openchat: kakao_openchat || null,
-        provider: 'kakao', // 카카오톡 가입 방식 저장
+        provider: provider, // user_metadata에서 가져온 provider 사용
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
@@ -132,14 +145,29 @@ export async function POST(request) {
 
     if (profileError) {
       console.error('프로필 생성 오류:', profileError);
+      console.error('프로필 생성 시 사용된 데이터:', {
+        auth_user_id: authData.user.id,
+        email: userInfo.email.toLowerCase(),
+        display_name,
+        provider: provider
+      });
       // 프로필 생성 실패해도 회원가입은 성공으로 처리 (나중에 수정 가능)
     } else {
       console.log('카카오톡 프로필 생성 성공:', profile.id);
+      console.log('생성된 프로필 정보:', {
+        id: profile.id,
+        email: profile.email,
+        provider: profile.provider,
+        display_name: profile.display_name
+      });
     }
 
     // user_metadata에 프로필 생성 완료 플래그 업데이트
-    const { error: updateError } = await supabase.auth.updateUser({
-      data: { profile_created: true }
+    const { error: updateError } = await adminSupabase.auth.admin.updateUserById(authData.user.id, {
+      user_metadata: {
+        ...authData.user.user_metadata,
+        profile_created: true
+      }
     });
 
     if (updateError) {
@@ -150,8 +178,16 @@ export async function POST(request) {
     const userData = {
       id: authData.user.id,
       email: authData.user.email,
-      created_at: authData.user.created_at
+      created_at: authData.user.created_at,
+      provider: authData.user.app_metadata?.provider || 'kakao'
     };
+
+    console.log('생성된 Auth 사용자 정보:', {
+      id: authData.user.id,
+      email: authData.user.email,
+      provider: authData.user.app_metadata?.provider,
+      user_metadata: authData.user.user_metadata
+    });
 
     return NextResponse.json({
       success: true,
