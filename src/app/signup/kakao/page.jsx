@@ -131,15 +131,54 @@ const KakaoSignupPage = () => {
 
       if (result.success) {
         console.log('카카오 인증 성공, 사용자 정보:', result.userInfo);
-        setUserInfo(result.userInfo);
-        setFormData(prev => ({
-          ...prev,
-          nickname: result.userInfo.nickname || result.userInfo.name || ''
-        }));
-        toast.success('카카오톡 인증이 완료되었습니다.');
+
+        // 기존 사용자인 경우 로그인 처리
+        if (result.isExistingUser && result.needsLogin) {
+          console.log('기존 사용자 로그인 처리 시작');
+          toast.success('카카오톡 로그인이 완료되었습니다!');
+
+          // 기존 사용자 로그인 처리
+          try {
+            const loginResult = await signInWithKakao({ userInfo: result.userInfo });
+
+            if (loginResult.success) {
+              console.log('기존 사용자 로그인 성공');
+              router.push('/mypage');
+              return;
+            } else {
+              console.error('기존 사용자 로그인 실패:', loginResult.error);
+              toast.error(loginResult.error || '로그인 처리 중 오류가 발생했습니다.');
+              router.push('/login');
+              return;
+            }
+          } catch (error) {
+            console.error('기존 사용자 로그인 처리 오류:', error);
+            toast.error('로그인 처리 중 오류가 발생했습니다.');
+            router.push('/login');
+            return;
+          }
+        }
+
+        // 신규 사용자인 경우 가입 폼 표시
+        if (result.needsSignup) {
+          console.log('신규 사용자, 가입 폼 표시');
+          setUserInfo(result.userInfo);
+          setFormData(prev => ({
+            ...prev,
+            nickname: result.userInfo.nickname || result.userInfo.name || ''
+          }));
+          toast.success('카카오톡 인증이 완료되었습니다.');
+        }
       } else {
         console.error('카카오 인증 실패:', result);
-        toast.error(result.error || '카카오톡 인증에 실패했습니다.');
+
+        // 중복 가입 오류 처리
+        if (result.duplicateInfo) {
+          const providerName = result.duplicateInfo.providerName || '이메일';
+          toast.error(`이미 ${providerName}로 가입된 이메일입니다.`);
+        } else {
+          toast.error(result.error || '카카오톡 인증에 실패했습니다.');
+        }
         router.push('/login');
       }
     } catch (error) {

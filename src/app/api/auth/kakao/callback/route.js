@@ -146,11 +146,100 @@ export async function POST(request) {
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      userInfo,
-      message: '카카오톡 인증이 완료되었습니다.'
-    });
+    // 기존 사용자인지 확인
+    console.log('기존 사용자 확인 시작:', userInfo.email);
+
+    // Supabase 클라이언트 생성
+    const { createServerSupabaseClient } = await import('@/lib/supabase');
+    const supabase = createServerSupabaseClient();
+
+    // 이메일로 기존 사용자 확인
+    const { data: existingProfile, error: checkError } = await supabase
+      .from('user_profiles')
+      .select('id, provider, display_name, auth_user_id, email')
+      .eq('email', userInfo.email.toLowerCase())
+      .eq('is_deleted', false)
+      .single();
+
+    console.log('기존 사용자 확인 결과:', { existingProfile, checkError });
+
+    if (existingProfile) {
+      // 기존 사용자인 경우
+      if (existingProfile.provider === 'kakao') {
+        console.log('카카오로 가입된 기존 사용자, 로그인 처리');
+
+        // Supabase Auth에서 사용자 정보 조회
+        const { createAdminSupabaseClient } = await import('@/lib/supabase');
+        const adminSupabase = createAdminSupabaseClient();
+
+        const { data: { users }, error: usersError } = await adminSupabase.auth.admin.listUsers();
+
+        if (usersError) {
+          console.error('사용자 목록 조회 오류:', usersError);
+          return NextResponse.json(
+            { success: false, error: '사용자 조회 중 오류가 발생했습니다.' },
+            { status: 500 }
+          );
+        }
+
+        const authUser = users.find(user => user.id === existingProfile.auth_user_id);
+
+        if (authUser) {
+          console.log('기존 사용자 로그인 성공');
+          return NextResponse.json({
+            success: true,
+            userInfo,
+            message: '카카오톡 로그인이 완료되었습니다.',
+            isExistingUser: true,
+            needsLogin: true,
+            existingProfile: {
+              id: existingProfile.id,
+              display_name: existingProfile.display_name,
+              email: existingProfile.email
+            }
+          });
+        } else {
+          console.error('인증 사용자를 찾을 수 없음:', existingProfile.auth_user_id);
+          return NextResponse.json(
+            { success: false, error: '인증 정보를 찾을 수 없습니다.' },
+            { status: 400 }
+          );
+        }
+      } else {
+        // 다른 방식으로 가입된 사용자
+        const providerName = existingProfile.provider === 'email' ? '이메일' : '기타';
+        console.log('다른 방식으로 가입된 사용자:', providerName);
+        return NextResponse.json(
+          {
+            success: false,
+            error: `이미 ${providerName}로 가입된 이메일입니다.`,
+            duplicateInfo: {
+              provider: existingProfile.provider,
+              providerName: providerName,
+              displayName: existingProfile.display_name
+            }
+          },
+          { status: 400 }
+        );
+      }
+    } else if (checkError && checkError.code !== 'PGRST116') {
+      // 데이터베이스 오류
+      console.error('사용자 확인 오류:', checkError);
+      return NextResponse.json(
+        { success: false, error: '사용자 확인 중 오류가 발생했습니다.' },
+        { status: 500 }
+      );
+    } else {
+      // 신규 사용자
+      console.log('신규 사용자, 가입 페이지로 이동');
+      return NextResponse.json({
+        success: true,
+        userInfo,
+        message: '카카오톡 인증이 완료되었습니다.',
+        isExistingUser: false,
+        needsSignup: true
+      });
+    }
 
   } catch (error) {
     console.error('카카오톡 콜백 처리 오류:', {
