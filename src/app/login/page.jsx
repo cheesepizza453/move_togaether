@@ -149,36 +149,29 @@ const LoginPage = () => {
     }
   };
 
-  const handleKakaoSignup = () => {
-    const kakaoJsKey = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
+  const handleKakaoSignup = async () => {
+    try {
+      console.log('Supabase OAuth 카카오 로그인 시작');
 
-    console.log('카카오톡 환경변수 확인:', {
-      hasKey: !!kakaoJsKey,
-      keyLength: kakaoJsKey?.length,
-      keyPrefix: kakaoJsKey?.substring(0, 10) + '...',
-      currentOrigin: window.location.origin,
-      fullKey: kakaoJsKey // 디버깅용 (실제 배포 시에는 제거)
-    });
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'kakao',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
 
-    if (!kakaoJsKey) {
-      toast.error('카카오톡 설정이 필요합니다. NEXT_PUBLIC_KAKAO_JS_KEY를 확인해주세요.');
-      return;
+      if (error) {
+        console.error('카카오 OAuth 오류:', error);
+        toast.error('카카오 로그인 중 오류가 발생했습니다.');
+        return;
+      }
+
+      console.log('카카오 OAuth 리다이렉트:', data);
+
+    } catch (error) {
+      console.error('카카오 로그인 처리 오류:', error);
+      toast.error('카카오 로그인 중 오류가 발생했습니다.');
     }
-
-    // 카카오톡 OAuth URL로 직접 리다이렉트
-    const redirectUri = `${window.location.origin}/signup/kakao`;
-    const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${kakaoJsKey}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=profile_nickname,account_email`;
-
-    console.log('카카오톡 OAuth 설정:', {
-      redirectUri,
-      kakaoAuthUrl,
-      clientId: kakaoJsKey
-    });
-
-    console.log('카카오톡 인증 페이지로 이동 중...');
-
-    // 카카오톡 인증 페이지로 리다이렉트
-    window.location.href = kakaoAuthUrl;
   };
 
   const handleTestConnection = async () => {
