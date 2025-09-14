@@ -72,30 +72,24 @@ export async function POST(request) {
     }
 
     // Supabase Auth로 카카오톡 사용자 생성
-    // signUp 대신 admin API를 사용하여 provider를 'kakao'로 설정
-    const { createAdminSupabaseClient } = await import('@/lib/supabase');
-    const adminSupabase = createAdminSupabaseClient();
-
-    const { data: authData, error: authError } = await adminSupabase.auth.admin.createUser({
+    const { data: authData, error: authError } = await supabase.auth.signUp({
       email: userInfo.email.toLowerCase(),
       password: `kakao_${userInfo.id}_${Date.now()}`, // 임시 비밀번호
-      email_confirm: true, // 이메일 자동 확인
-      user_metadata: {
-        provider: 'kakao',
-        kakao_id: userInfo.id,
-        kakao_nickname: userInfo.nickname,
-        kakao_profile_image: userInfo.profile_image,
-        display_name,
-        phone,
-        phone_visible,
-        bio,
-        instagram,
-        naver_cafe,
-        kakao_openchat,
-        profile_created: false
-      },
-      app_metadata: {
-        provider: 'kakao'
+      options: {
+        data: {
+          provider: 'kakao',
+          kakao_id: userInfo.id,
+          kakao_nickname: userInfo.nickname,
+          kakao_profile_image: userInfo.profile_image,
+          display_name,
+          phone,
+          phone_visible,
+          bio,
+          instagram,
+          naver_cafe,
+          kakao_openchat,
+          profile_created: false
+        }
       }
     });
 
@@ -163,11 +157,8 @@ export async function POST(request) {
     }
 
     // user_metadata에 프로필 생성 완료 플래그 업데이트
-    const { error: updateError } = await adminSupabase.auth.admin.updateUserById(authData.user.id, {
-      user_metadata: {
-        ...authData.user.user_metadata,
-        profile_created: true
-      }
+    const { error: updateError } = await supabase.auth.updateUser({
+      data: { profile_created: true }
     });
 
     if (updateError) {
@@ -178,14 +169,12 @@ export async function POST(request) {
     const userData = {
       id: authData.user.id,
       email: authData.user.email,
-      created_at: authData.user.created_at,
-      provider: authData.user.app_metadata?.provider || 'kakao'
+      created_at: authData.user.created_at
     };
 
     console.log('생성된 Auth 사용자 정보:', {
       id: authData.user.id,
       email: authData.user.email,
-      provider: authData.user.app_metadata?.provider,
       user_metadata: authData.user.user_metadata
     });
 
