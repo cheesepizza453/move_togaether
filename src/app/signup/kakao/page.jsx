@@ -403,7 +403,44 @@ const KakaoSignupPage = () => {
 
       // 직접 프로필 생성 (API 호출 대신)
       console.log('1. 사용자 인증 정보 확인 중...');
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+      // 타임아웃을 추가한 사용자 정보 조회
+      const getUserWithTimeout = () => {
+        return Promise.race([
+          supabase.auth.getUser(),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('사용자 정보 조회 타임아웃')), 5000)
+          )
+        ]);
+      };
+
+      let user, userError;
+      try {
+        const result = await getUserWithTimeout();
+        user = result.data?.user;
+        userError = result.error;
+      } catch (timeoutError) {
+        console.error('사용자 정보 조회 타임아웃:', timeoutError);
+
+        // 대안: 세션에서 사용자 정보 가져오기
+        console.log('1-1. 세션에서 사용자 정보 가져오기 시도...');
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+        if (sessionError) {
+          console.error('세션 조회 오류:', sessionError);
+          toast.error('사용자 인증 정보를 가져올 수 없습니다.');
+          return;
+        }
+
+        if (!session?.user) {
+          console.error('세션에 사용자 정보가 없음');
+          toast.error('사용자 인증 정보가 없습니다.');
+          return;
+        }
+
+        user = session.user;
+        console.log('1-2. 세션에서 사용자 정보 가져오기 성공:', user.id);
+      }
 
       if (userError) {
         console.error('사용자 인증 정보 조회 오류:', userError);
