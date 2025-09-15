@@ -110,10 +110,7 @@ const KakaoSignupPage = () => {
             // 신규 사용자 플래그 설정
             setIsNewUser(true);
 
-            // 신규 사용자는 로그아웃 처리 (프로필 생성 전까지)
-            await supabase.auth.signOut();
-
-            // 카카오 사용자 정보 추출
+            // 카카오 사용자 정보 추출 (로그아웃 전에)
             const userMetadata = data.session.user.user_metadata || {};
             const kakaoInfo = {
               id: userMetadata.kakao_id,
@@ -130,6 +127,9 @@ const KakaoSignupPage = () => {
               nickname: kakaoInfo.nickname || kakaoInfo.name || ''
             }));
             toast.success('카카오톡 인증이 완료되었습니다.');
+
+            // 프로필 생성 후 로그아웃 처리
+            // (handleSubmit에서 프로필 생성 후 로그아웃)
 
           } else {
             // 기존 사용자인 경우 로그인 처리
@@ -436,6 +436,9 @@ const KakaoSignupPage = () => {
       });
 
       if (result.success) {
+        // 프로필 생성 완료 후 로그아웃
+        await supabase.auth.signOut();
+
         // sessionStorage 정리
         sessionStorage.removeItem('kakaoUserInfo');
         // 신규 사용자 플래그 리셋
