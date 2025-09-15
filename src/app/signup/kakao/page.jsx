@@ -100,6 +100,9 @@ const KakaoSignupPage = () => {
             // 프로필이 없는 경우 (신규 사용자) - 가입 폼 표시
             console.log('신규 사용자, 가입 폼 표시');
 
+            // 신규 사용자는 로그아웃 처리 (프로필 생성 전까지)
+            await supabase.auth.signOut();
+
             // 카카오 사용자 정보 추출
             const userMetadata = data.session.user.user_metadata || {};
             const kakaoInfo = {
@@ -411,6 +414,21 @@ const KakaoSignupPage = () => {
     try {
       setLoading(true);
 
+      // Supabase OAuth로 다시 로그인 (프로필 생성용)
+      const { data: authData, error: authError } = await supabase.auth.signInWithOAuth({
+        provider: 'kakao',
+        options: {
+          redirectTo: `${window.location.origin}/signup/kakao`
+        }
+      });
+
+      if (authError) {
+        console.error('OAuth 로그인 오류:', authError);
+        toast.error('인증 처리 중 오류가 발생했습니다.');
+        return;
+      }
+
+      // OAuth 리다이렉트 후 프로필 생성
       const result = await signUpWithKakao({
         userInfo,
         nickname: formData.nickname,
