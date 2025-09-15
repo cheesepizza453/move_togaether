@@ -35,41 +35,10 @@ const KakaoSignupPage = () => {
   const [nicknameValidation, setNicknameValidation] = useState(null);
   const [nicknameChecking, setNicknameChecking] = useState(false);
   const router = useRouter();
-  const { user, loading: authLoading, signUpWithKakao, signInWithKakao, checkNicknameDuplicate } = useAuth();
+  const { loading: authLoading, signUpWithKakao, signInWithKakao, checkNicknameDuplicate } = useAuth();
 
-  // 로그인 상태 확인 및 리다이렉트
-  useEffect(() => {
-    const checkAuthAndRedirect = async () => {
-      // 신규 사용자 가입 과정 중이면 리다이렉트 하지 않음
-      if (isNewUser) {
-        console.log('신규 사용자 가입 과정 중, 리다이렉트 건너뜀');
-        return;
-      }
-
-      // useAuth 훅의 로딩이 완료되었고 사용자가 있는 경우
-      if (!authLoading && user) {
-        console.log('로그인된 사용자 감지, 메인 페이지로 리다이렉트:', user.id);
-        router.replace('/');
-        return;
-      }
-
-      // useAuth 훅이 로딩 중이 아닌데도 사용자 정보가 없는 경우
-      // Supabase 세션을 직접 확인하여 추가 검증
-      if (!authLoading && !user) {
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session?.user) {
-            console.log('세션에서 사용자 발견, 메인 페이지로 리다이렉트:', session.user.id);
-            router.replace('/');
-          }
-        } catch (error) {
-          console.error('세션 확인 오류:', error);
-        }
-      }
-    };
-
-    checkAuthAndRedirect();
-  }, [user, authLoading, router, isNewUser]);
+  // 신규 사용자 가입 과정 중에는 리다이렉트 하지 않음
+  // (useAuth 훅의 사용자 상태를 무시하고 자체적으로 관리)
 
   useEffect(() => {
     const handleOAuthCallback = async () => {
@@ -496,32 +465,7 @@ const KakaoSignupPage = () => {
     }
   };
 
-  // 인증 상태 로딩 중일 때 로딩 화면 표시
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-yellow-500 mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">로그인 상태 확인 중...</h2>
-          <p className="text-gray-500">잠시만 기다려주세요.</p>
-        </div>
-      </div>
-    );
-  }
-
-  // 이미 로그인된 사용자는 리다이렉트 처리 (useEffect에서 처리되지만 추가 안전장치)
-  if (user) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-yellow-500 mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">메인 페이지로 이동 중...</h2>
-          <p className="text-gray-500">이미 로그인되어 있습니다.</p>
-        </div>
-      </div>
-    );
-  }
-
+  // OAuth 콜백 처리 중일 때 로딩 화면 표시
   if (loading && !userInfo) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
