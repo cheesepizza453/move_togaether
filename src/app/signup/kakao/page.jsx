@@ -65,114 +65,198 @@ const KakaoSignupPage = () => {
   }, [user, authLoading, router]);
 
   useEffect(() => {
-    // URL에서 카카오톡 인증 코드 확인 (기존 방식)
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-    const error = urlParams.get('error');
+    const handleOAuthCallback = async () => {
+      try {
+        console.log('OAuth 콜백 처리 시작');
 
-    if (error) {
-      toast.error('카카오톡 인증에 실패했습니다.');
-      router.push('/login');
-      return;
-    }
+        // URL에서 세션 정보 가져오기
+        const { data, error } = await supabase.auth.getSession();
 
-    if (code) {
-      handleKakaoCallback(code);
-    } else {
-      // sessionStorage에서 카카오톡 사용자 정보 가져오기 (기존 방식)
-      const kakaoUserInfo = sessionStorage.getItem('kakaoUserInfo');
-
-      if (kakaoUserInfo) {
-        try {
-          const userInfo = JSON.parse(kakaoUserInfo);
-          setUserInfo(userInfo);
-          setFormData(prev => ({
-            ...prev,
-            nickname: userInfo.nickname || userInfo.name || ''
-          }));
-          toast.success('카카오톡 인증이 완료되었습니다.');
-        } catch (error) {
-          console.error('사용자 정보 파싱 오류:', error);
-          toast.error('사용자 정보를 불러올 수 없습니다.');
+        if (error) {
+          console.error('세션 가져오기 오류:', error);
+          toast.error('인증 처리 중 오류가 발생했습니다.');
           router.push('/login');
+          return;
         }
-      } else {
-        toast.error('카카오톡 인증 정보가 없습니다.');
+
+        if (data.session?.user) {
+          console.log('OAuth 로그인 성공:', data.session.user);
+
+          // 사용자 프로필 확인
+          const { data: profile, error: profileError } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('auth_user_id', data.session.user.id)
+            .single();
+
+          if (profileError && profileError.code !== 'PGRST116') {
+            console.error('프로필 조회 오류:', profileError);
+            toast.error('사용자 정보를 가져올 수 없습니다.');
+            router.push('/login');
+            return;
+          }
+
+          if (!profile) {
+            // 프로필이 없는 경우 (신규 사용자) - 가입 폼 표시
+            console.log('신규 사용자, 가입 폼 표시');
+
+            // 카카오 사용자 정보 추출
+            const userMetadata = data.session.user.user_metadata || {};
+            const kakaoInfo = {
+              id: userMetadata.kakao_id,
+              email: data.session.user.email,
+              nickname: userMetadata.kakao_nickname || userMetadata.display_name,
+              name: userMetadata.display_name,
+              profile_image: userMetadata.kakao_profile_image,
+              thumbnail_image: userMetadata.kakao_profile_image
+            };
+
+            setUserInfo(kakaoInfo);
+            setFormData(prev => ({
+              ...prev,
+              nickname: kakaoInfo.nickname || kakaoInfo.name || ''
+            }));
+            toast.success('카카오톡 인증이 완료되었습니다.');
+
+          } else {
+            // 기존 사용자인 경우 로그인 처리
+            console.log('기존 사용자 로그인 성공');
+            toast.success('카카오톡 로그인이 완료되었습니다!');
+            router.push('/mypage');
+            return;
+          }
+
+        } else {
+          console.log('세션이 없음, 기존 방식으로 처리');
+
+          // 기존 방식: URL 파라미터나 sessionStorage에서 정보 가져오기
+          const urlParams = new URLSearchParams(window.location.search);
+          const code = urlParams.get('code');
+          const error = urlParams.get('error');
+
+          if (error) {
+            toast.error('카카오톡 인증에 실패했습니다.');
+            router.push('/login');
+            return;
+          }
+
+          if (code) {
+            handleKakaoCallback(code);
+          } else {
+            // sessionStorage에서 카카오톡 사용자 정보 가져오기 (기존 방식)
+            const kakaoUserInfo = sessionStorage.getItem('kakaoUserInfo');
+
+            if (kakaoUserInfo) {
+              try {
+                const userInfo = JSON.parse(kakaoUserInfo);
+                setUserInfo(userInfo);
+                setFormData(prev => ({
+                  ...prev,
+                  nickname: userInfo.nickname || userInfo.name || ''
+                }));
+                toast.success('카카오톡 인증이 완료되었습니다.');
+              } catch (error) {
+                console.error('사용자 정보 파싱 오류:', error);
+                toast.error('사용자 정보를 불러올 수 없습니다.');
+                router.push('/login');
+              }
+            } else {
+              toast.error('카카오톡 인증 정보가 없습니다.');
+              router.push('/login');
+            }
+          }
+        }
+
+      } catch (error) {
+        console.error('OAuth 콜백 처리 오류:', error);
+        toast.error('인증 처리 중 오류가 발생했습니다.');
         router.push('/login');
       }
-    }
+    };
+
+    handleOAuthCallback();
   }, [router]);
 
   const handleKakaoCallback = async (code) => {
     try {
       setLoading(true);
-      console.log('Supabase OAuth 콜백 처리 시작, 코드:', code);
+      console.log('카카오 콜백 처리 시작, 코드:', code);
 
-      // Supabase OAuth 콜백 처리
-      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+      // 클라이언트에서 사용한 redirect_uri를 서버로 전달
+      const redirectUri = `${window.location.origin}/signup/kakao`;
+      console.log('클라이언트 redirect_uri:', redirectUri);
 
-      if (error) {
-        console.error('Supabase OAuth 오류:', error);
-        toast.error('카카오톡 인증에 실패했습니다.');
-        router.push('/login');
-        return;
-      }
+      // 카카오톡 인증 코드로 사용자 정보 가져오기
+      console.log('카카오 콜백 API 호출 중...');
+      const response = await fetch('/api/auth/kakao/callback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code,
+          redirect_uri: redirectUri // 클라이언트에서 사용한 redirect_uri 전달
+        }),
+      });
 
-      if (data.session?.user) {
-        console.log('Supabase OAuth 로그인 성공:', data.session.user);
+      console.log('카카오 콜백 API 응답 상태:', response.status);
+      const result = await response.json();
+      console.log('카카오 콜백 API 응답 데이터:', result);
 
-        // 사용자 프로필 확인
-        const { data: profile, error: profileError } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('auth_user_id', data.session.user.id)
-          .single();
+      if (result.success) {
+        console.log('카카오 인증 성공, 사용자 정보:', result.userInfo);
 
-        if (profileError && profileError.code !== 'PGRST116') {
-          console.error('프로필 조회 오류:', profileError);
-          toast.error('사용자 정보를 가져올 수 없습니다.');
-          router.push('/login');
-          return;
+        // 기존 사용자인 경우 로그인 처리
+        if (result.isExistingUser && result.needsLogin) {
+          console.log('기존 사용자 로그인 처리 시작');
+          toast.success('카카오톡 로그인이 완료되었습니다!');
+
+          // 기존 사용자 로그인 처리
+          try {
+            const loginResult = await signInWithKakao({ userInfo: result.userInfo });
+
+            if (loginResult.success) {
+              console.log('기존 사용자 로그인 성공');
+              router.push('/mypage');
+              return;
+            } else {
+              console.error('기존 사용자 로그인 실패:', loginResult.error);
+              toast.error(loginResult.error || '로그인 처리 중 오류가 발생했습니다.');
+              router.push('/login');
+              return;
+            }
+          } catch (error) {
+            console.error('기존 사용자 로그인 처리 오류:', error);
+            toast.error('로그인 처리 중 오류가 발생했습니다.');
+            router.push('/login');
+            return;
+          }
         }
 
-        if (!profile) {
-          // 프로필이 없는 경우 (신규 사용자) - 가입 폼 표시
+        // 신규 사용자인 경우 가입 폼 표시
+        if (result.needsSignup) {
           console.log('신규 사용자, 가입 폼 표시');
-
-          // 카카오 사용자 정보 추출
-          const userMetadata = data.session.user.user_metadata || {};
-          const kakaoInfo = {
-            id: userMetadata.kakao_id,
-            email: data.session.user.email,
-            nickname: userMetadata.kakao_nickname || userMetadata.display_name,
-            name: userMetadata.display_name,
-            profile_image: userMetadata.kakao_profile_image,
-            thumbnail_image: userMetadata.kakao_profile_image
-          };
-
-          setUserInfo(kakaoInfo);
+          setUserInfo(result.userInfo);
           setFormData(prev => ({
             ...prev,
-            nickname: kakaoInfo.nickname || kakaoInfo.name || ''
+            nickname: result.userInfo.nickname || result.userInfo.name || ''
           }));
           toast.success('카카오톡 인증이 완료되었습니다.');
-
-        } else {
-          // 기존 사용자인 경우 로그인 처리
-          console.log('기존 사용자 로그인 성공');
-          toast.success('카카오톡 로그인이 완료되었습니다!');
-          router.push('/mypage');
-          return;
         }
-
       } else {
-        console.error('세션 정보가 없습니다.');
-        toast.error('카카오톡 인증에 실패했습니다.');
+        console.error('카카오 인증 실패:', result);
+
+        // 중복 가입 오류 처리
+        if (result.duplicateInfo) {
+          const providerName = result.duplicateInfo.providerName || '이메일';
+          toast.error(`이미 ${providerName}로 가입된 이메일입니다.`);
+        } else {
+          toast.error(result.error || '카카오톡 인증에 실패했습니다.');
+        }
         router.push('/login');
       }
-
     } catch (error) {
-      console.error('Supabase OAuth 콜백 처리 오류:', error);
+      console.error('카카오톡 콜백 처리 오류:', error);
       toast.error('카카오톡 인증 처리 중 오류가 발생했습니다.');
       router.push('/login');
     } finally {
