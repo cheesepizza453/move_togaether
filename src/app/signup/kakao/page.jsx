@@ -39,6 +39,12 @@ const KakaoSignupPage = () => {
   // 로그인 상태 확인 및 리다이렉트
   useEffect(() => {
     const checkAuthAndRedirect = async () => {
+      // userInfo가 있으면 신규 사용자 가입 과정 중이므로 리다이렉트 하지 않음
+      if (userInfo) {
+        console.log('신규 사용자 가입 과정 중, 리다이렉트 건너뜀');
+        return;
+      }
+
       // useAuth 훅의 로딩이 완료되었고 사용자가 있는 경우
       if (!authLoading && user) {
         console.log('로그인된 사용자 감지, 메인 페이지로 리다이렉트:', user.id);
@@ -62,7 +68,7 @@ const KakaoSignupPage = () => {
     };
 
     checkAuthAndRedirect();
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, userInfo]);
 
   useEffect(() => {
     const handleOAuthCallback = async () => {
@@ -414,21 +420,6 @@ const KakaoSignupPage = () => {
     try {
       setLoading(true);
 
-      // Supabase OAuth로 다시 로그인 (프로필 생성용)
-      const { data: authData, error: authError } = await supabase.auth.signInWithOAuth({
-        provider: 'kakao',
-        options: {
-          redirectTo: `${window.location.origin}/signup/kakao`
-        }
-      });
-
-      if (authError) {
-        console.error('OAuth 로그인 오류:', authError);
-        toast.error('인증 처리 중 오류가 발생했습니다.');
-        return;
-      }
-
-      // OAuth 리다이렉트 후 프로필 생성
       const result = await signUpWithKakao({
         userInfo,
         nickname: formData.nickname,
