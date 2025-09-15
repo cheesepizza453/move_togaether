@@ -402,43 +402,64 @@ const KakaoSignupPage = () => {
       });
 
       // 직접 프로필 생성 (API 호출 대신)
-      const { data: { user } } = await supabase.auth.getUser();
+      console.log('1. 사용자 인증 정보 확인 중...');
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+      if (userError) {
+        console.error('사용자 인증 정보 조회 오류:', userError);
+        toast.error('사용자 인증 정보를 가져올 수 없습니다.');
+        return;
+      }
 
       if (!user) {
+        console.error('사용자 정보가 없음');
         toast.error('사용자 인증 정보가 없습니다.');
         return;
       }
 
-      console.log('현재 사용자:', user.id);
+      console.log('2. 현재 사용자 확인:', {
+        id: user.id,
+        email: user.email,
+        emailConfirmed: !!user.email_confirmed_at
+      });
+
+      // 프로필 데이터 준비
+      const profileData = {
+        auth_user_id: user.id,
+        email: user.email,
+        display_name: formData.nickname,
+        bio: formData.introduction || null,
+        phone: formData.phone || null,
+        instagram: contactChannels.instagram ? channelInputs.instagram : null,
+        naver_cafe: contactChannels.naverCafe ? channelInputs.naverCafe : null,
+        kakao_openchat: contactChannels.kakaoOpenChat ? channelInputs.kakaoOpenChat : null,
+        provider: 'kakao',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      console.log('3. 프로필 데이터 준비 완료:', profileData);
 
       // user_profiles 테이블에 프로필 정보 저장
-      const { data: profileData, error: profileError } = await supabase
+      console.log('4. user_profiles 테이블에 INSERT 시도...');
+      const { data: insertedProfile, error: profileError } = await supabase
         .from('user_profiles')
-        .insert([
-          {
-            auth_user_id: user.id,
-            email: user.email,
-            display_name: formData.nickname,
-            bio: formData.introduction || null,
-            phone: formData.phone || null,
-            instagram: contactChannels.instagram ? channelInputs.instagram : null,
-            naver_cafe: contactChannels.naverCafe ? channelInputs.naverCafe : null,
-            kakao_openchat: contactChannels.kakaoOpenChat ? channelInputs.kakaoOpenChat : null,
-            provider: 'kakao',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }
-        ])
+        .insert([profileData])
         .select()
         .single();
 
       if (profileError) {
-        console.error('프로필 생성 오류:', profileError);
+        console.error('5. 프로필 생성 오류:', {
+          code: profileError.code,
+          message: profileError.message,
+          details: profileError.details,
+          hint: profileError.hint
+        });
         toast.error('프로필 생성에 실패했습니다: ' + profileError.message);
         return;
       }
 
-      console.log('프로필 생성 성공:', profileData);
+      console.log('6. 프로필 생성 성공:', insertedProfile);
 
       // 프로필 생성 완료 후 로그아웃
       await supabase.auth.signOut();
