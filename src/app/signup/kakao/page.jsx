@@ -394,69 +394,72 @@ const KakaoSignupPage = () => {
 
     try {
       setLoading(true);
-
-      const result = await signUpWithKakao({
+      console.log('프로필 생성 시작:', {
         userInfo,
-        nickname: formData.nickname,
-        introduction: formData.introduction,
-        phone: formData.phone,
+        formData,
         contactChannels,
         channelInputs
       });
 
-      if (result.success) {
-        // 프로필 생성 완료 후 로그아웃
-        await supabase.auth.signOut();
+      // 직접 프로필 생성 (API 호출 대신)
+      const { data: { user } } = await supabase.auth.getUser();
 
-        // sessionStorage 정리
-        sessionStorage.removeItem('kakaoUserInfo');
-        // 신규 사용자 플래그 리셋
-        setIsNewUser(false);
-        toast.success('회원가입이 완료되었습니다!');
-
-        // 가입 성공 후 리다이렉트 경로 확인
-        const redirectPath = sessionStorage.getItem('redirectAfterLogin');
-        if (redirectPath) {
-          console.log('저장된 리다이렉트 경로로 이동:', redirectPath);
-          sessionStorage.removeItem('redirectAfterLogin');
-          router.push(redirectPath);
-        } else {
-          console.log('기본 경로로 이동: 마이페이지');
-          router.push('/mypage');
-        }
-      } else {
-        // 기존 사용자인 경우 로그인 처리
-        if (result.needsLogin && result.isExistingUser) {
-          toast.info('이미 가입된 계정입니다. 로그인을 진행합니다.');
-
-          // 카카오톡 로그인 시도
-          const loginResult = await signInWithKakao({ userInfo });
-
-          if (loginResult.success) {
-            sessionStorage.removeItem('kakaoUserInfo');
-            toast.success('카카오톡 로그인이 완료되었습니다!');
-
-            // 로그인 성공 후 리다이렉트 경로 확인
-            const redirectPath = sessionStorage.getItem('redirectAfterLogin');
-            if (redirectPath) {
-              console.log('저장된 리다이렉트 경로로 이동:', redirectPath);
-              sessionStorage.removeItem('redirectAfterLogin');
-              router.push(redirectPath);
-            } else {
-              console.log('기본 경로로 이동: 마이페이지');
-              router.push('/mypage');
-            }
-            return;
-          } else {
-            toast.error(loginResult.error || '로그인에 실패했습니다.');
-            return;
-          }
-        }
-
-        // 개선된 에러 메시지 표시 (가입 방식 구분 안내)
-        const errorMessage = result.error || '회원가입에 실패했습니다.';
-        toast.error(errorMessage);
+      if (!user) {
+        toast.error('사용자 인증 정보가 없습니다.');
+        return;
       }
+
+      console.log('현재 사용자:', user.id);
+
+      // user_profiles 테이블에 프로필 정보 저장
+      const { data: profileData, error: profileError } = await supabase
+        .from('user_profiles')
+        .insert([
+          {
+            auth_user_id: user.id,
+            email: user.email,
+            display_name: formData.nickname,
+            bio: formData.introduction || null,
+            phone: formData.phone || null,
+            instagram: contactChannels.instagram ? channelInputs.instagram : null,
+            naver_cafe: contactChannels.naverCafe ? channelInputs.naverCafe : null,
+            kakao_openchat: contactChannels.kakaoOpenChat ? channelInputs.kakaoOpenChat : null,
+            provider: 'kakao',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+        ])
+        .select()
+        .single();
+
+      if (profileError) {
+        console.error('프로필 생성 오류:', profileError);
+        toast.error('프로필 생성에 실패했습니다: ' + profileError.message);
+        return;
+      }
+
+      console.log('프로필 생성 성공:', profileData);
+
+      // 프로필 생성 완료 후 로그아웃
+      await supabase.auth.signOut();
+
+      // sessionStorage 정리
+      sessionStorage.removeItem('kakaoUserInfo');
+      // 신규 사용자 플래그 리셋
+      setIsNewUser(false);
+      toast.success('회원가입이 완료되었습니다!');
+
+      // 가입 성공 후 리다이렉트 경로 확인
+      const redirectPath = sessionStorage.getItem('redirectAfterLogin');
+      if (redirectPath) {
+        console.log('저장된 리다이렉트 경로로 이동:', redirectPath);
+        sessionStorage.removeItem('redirectAfterLogin');
+        router.push(redirectPath);
+      } else {
+        console.log('기본 경로로 이동: 마이페이지');
+        router.push('/mypage');
+      }
+
     } catch (error) {
       console.error('카카오톡 회원가입 오류:', error);
       toast.error('회원가입 처리 중 오류가 발생했습니다.');
