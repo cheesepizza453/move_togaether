@@ -12,6 +12,7 @@ import SignupForm from '@/components/signup/SignupForm';
 const KakaoSignupPage = () => {
   const [loading, setLoading] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
+  const [isNewUser, setIsNewUser] = useState(false);
   const [formData, setFormData] = useState({
     nickname: '',
     introduction: '',
@@ -39,8 +40,8 @@ const KakaoSignupPage = () => {
   // 로그인 상태 확인 및 리다이렉트
   useEffect(() => {
     const checkAuthAndRedirect = async () => {
-      // userInfo가 있으면 신규 사용자 가입 과정 중이므로 리다이렉트 하지 않음
-      if (userInfo) {
+      // 신규 사용자 가입 과정 중이면 리다이렉트 하지 않음
+      if (isNewUser) {
         console.log('신규 사용자 가입 과정 중, 리다이렉트 건너뜀');
         return;
       }
@@ -68,7 +69,7 @@ const KakaoSignupPage = () => {
     };
 
     checkAuthAndRedirect();
-  }, [user, authLoading, router, userInfo]);
+  }, [user, authLoading, router, isNewUser]);
 
   useEffect(() => {
     const handleOAuthCallback = async () => {
@@ -105,6 +106,9 @@ const KakaoSignupPage = () => {
           if (!profile) {
             // 프로필이 없는 경우 (신규 사용자) - 가입 폼 표시
             console.log('신규 사용자, 가입 폼 표시');
+
+            // 신규 사용자 플래그 설정
+            setIsNewUser(true);
 
             // 신규 사용자는 로그아웃 처리 (프로필 생성 전까지)
             await supabase.auth.signOut();
@@ -158,6 +162,7 @@ const KakaoSignupPage = () => {
             if (kakaoUserInfo) {
               try {
                 const userInfo = JSON.parse(kakaoUserInfo);
+                setIsNewUser(true); // 신규 사용자 플래그 설정
                 setUserInfo(userInfo);
                 setFormData(prev => ({
                   ...prev,
@@ -245,6 +250,7 @@ const KakaoSignupPage = () => {
         // 신규 사용자인 경우 가입 폼 표시
         if (result.needsSignup) {
           console.log('신규 사용자, 가입 폼 표시');
+          setIsNewUser(true); // 신규 사용자 플래그 설정
           setUserInfo(result.userInfo);
           setFormData(prev => ({
             ...prev,
@@ -432,6 +438,8 @@ const KakaoSignupPage = () => {
       if (result.success) {
         // sessionStorage 정리
         sessionStorage.removeItem('kakaoUserInfo');
+        // 신규 사용자 플래그 리셋
+        setIsNewUser(false);
         toast.success('회원가입이 완료되었습니다!');
 
         // 가입 성공 후 리다이렉트 경로 확인
