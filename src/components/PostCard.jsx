@@ -5,22 +5,12 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import IconHeart from "../../public/img/icon/IconHeart";
 import { favoritesAPI, handleAPIError } from '@/lib/api-client';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { useDialogContext } from '@/components/DialogProvider';
 
 const PostCard = ({ post, isFavorite = false, onFavoriteToggle }) => {
   const [loading, setLoading] = useState(false);
-  const [showLoginDialog, setShowLoginDialog] = useState(false);
   const { user } = useAuth();
+  const { showConfirm, showSuccess, showError } = useDialogContext();
 
   const {
     id,
@@ -44,33 +34,57 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle }) => {
 
     // AuthContext에서 사용자 정보 확인
     if (!user) {
-      setShowLoginDialog(true);
+      showConfirm(
+        '로그인이 필요한 서비스입니다.\n로그인하시겠습니까?',
+        '로그인 필요',
+        {
+          confirmText: '로그인',
+          cancelText: '취소',
+          onConfirm: () => {
+            window.location.href = '/login';
+          }
+        }
+      );
       return;
     }
 
+    if (isFavorite) {
+      // 즐겨찾기 제거 확인
+      showConfirm(
+        '즐겨찾기에서 제거하시겠습니까?',
+        '즐겨찾기 제거',
+        {
+          confirmText: '제거',
+          cancelText: '취소',
+          onConfirm: async () => {
+            await performFavoriteToggle();
+          }
+        }
+      );
+    } else {
+      // 즐겨찾기 추가
+      await performFavoriteToggle();
+    }
+  };
+
+  const performFavoriteToggle = async () => {
     try {
       setLoading(true);
-
-      const session = await supabase.auth.getSession();
-      const token = session.data.session?.access_token;
-      const headers = {
-        'Authorization': `Bearer ${token}`,
-        'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-        'Content-Type': 'application/json'
-      };
 
       if (isFavorite) {
         // 즐겨찾기 제거
         await favoritesAPI.remove(id);
         onFavoriteToggle?.(id, false);
+        showSuccess('즐겨찾기에서 제거되었습니다.');
       } else {
         // 즐겨찾기 추가
         await favoritesAPI.add(id);
         onFavoriteToggle?.(id, true);
+        showSuccess('즐겨찾기에 추가되었습니다.');
       }
     } catch (error) {
       console.error('즐겨찾기 처리 오류:', error);
-      // 에러는 콘솔에만 기록하고 사용자에게는 조용히 처리
+      showError('처리 중 오류가 발생했습니다.\n다시 시도해주세요.');
     } finally {
       setLoading(false);
     }
@@ -154,23 +168,6 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle }) => {
         </div>
       </div>
 
-      {/* 로그인 필요 다이얼로그 */}
-      <AlertDialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>로그인이 필요합니다</AlertDialogTitle>
-            <AlertDialogDescription>
-              찜 기능을 사용하려면 로그인해주세요.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>취소</AlertDialogCancel>
-            <AlertDialogAction onClick={() => window.location.href = '/login'}>
-              로그인하기
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };
