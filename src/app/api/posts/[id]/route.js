@@ -1,16 +1,17 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createServerSupabaseClient } from '@/lib/supabase'
 
 // GET: 개별 게시물 조회
 export async function GET(request, { params }) {
   try {
     const { id } = await params
 
+    const supabase = createServerSupabaseClient()
     const { data: post, error } = await supabase
       .from('posts')
       .select(`
         *,
-        user_profiles(display_name, phone_visible, phone)
+        user_profiles!posts_user_id_fkey(display_name, phone_visible, phone)
       `)
       .eq('id', id)
       .eq('is_deleted', false)
@@ -39,7 +40,8 @@ export async function PUT(request, { params }) {
     }
 
     const token = authHeader.substring(7)
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+    const supabase = createServerSupabaseClient(token)
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
@@ -105,7 +107,8 @@ export async function DELETE(request, { params }) {
     }
 
     const token = authHeader.substring(7)
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+    const supabase = createServerSupabaseClient(token)
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
