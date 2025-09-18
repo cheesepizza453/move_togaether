@@ -3,98 +3,110 @@
 import PhotoUpload from './PhotoUpload';
 
 const Step2 = ({
-  formData,
-  errors,
-  photoPreview,
-  onFormDataChange,
-  onPhotoChange,
-  onPhotoRemove
-}) => {
-  const sizeOptions = [
-    { value: 'small', label: '소형견 (10kg 이하)' },
-    { value: 'medium', label: '중형견 (10-25kg)' },
-    { value: 'large', label: '대형견 (25kg 이상)' }
-  ];
+                   title,
+                   formData,
+                   errors,
+                   photoPreview,
+                   onFormDataChange,
+                   onPhotoChange,
+                   onPhotoRemove,
+                   inputStyle
+               }) => {
+    const sizeOptions = [
+        { value: 'small', label: '소형' },
+        { value: 'smallMedium', label: '중소형' },
+        { value: 'medium', label: '중형' },
+        { value: 'large', label: '대형' }
+    ];
 
-  return (
-    <div className="space-y-6">
-      {/* 강아지 사진 */}
-      <PhotoUpload
-        photoPreview={photoPreview}
-        onPhotoChange={onPhotoChange}
-        onPhotoRemove={onPhotoRemove}
-        error={errors.photo}
-      />
+    return (
+        <div className="space-y-6">
+            <div className={'flex justify-between items-start'}>
+                <h5 className={'text-20-m'}>{title}</h5>
+                <p className={'flex items-start text-10-l text-[#DB1F1F]'}><span
+                    className={'text-16-m mt-[-2px]'}>*</span>표시는 필수 입력 정보입니다.</p>
+            </div>
+            {/* 강아지 이름 */}
+            <div className={'mb-[25px]'}>
+                <label className="block text-16-m mb-[12px]">
+                    임보견 이름<span className={'text-[#E17364] text-16-m'}>*</span>
+                </label>
+                <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => onFormDataChange('name', e.target.value)}
+                    placeholder="임보견 이름을 입력해주세요"
+                    className={`w-full ${inputStyle} ${
+                        errors.name ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                />
+                <div className={'relative'}>
+                {errors.name && (
+                    <p className="text-xs text-red-500 mt-1">{errors.name}</p>
+                )}
+                <p className="absolute top-[4px] right-[5px] text-text-800 text-12-l">
+                    {formData.title?.name || 0}/20
+                </p>
+                </div>
+            </div>
+            {/* 강아지 사진 */}
+            <PhotoUpload
+                photoPreview={photoPreview}
+                onPhotoChange={onPhotoChange}
+                onPhotoRemove={onPhotoRemove}
+                error={errors.photo}
+            />
 
-      {/* 강아지 이름 */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          강아지 이름 *
-        </label>
-        <input
-          type="text"
-          value={formData.name}
-          onChange={(e) => onFormDataChange('name', e.target.value)}
-          placeholder="강아지 이름을 입력해주세요"
-          className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-colors ${
-            errors.name ? 'border-red-500' : 'border-gray-300'
-          }`}
-        />
-        {errors.name && (
-          <p className="text-xs text-red-500 mt-1">{errors.name}</p>
-        )}
-      </div>
+            {/* 강아지 크기 */}
+            <div>
+                <label className="block text-16-m mb-[6px]">
+                    사이즈<span className={'text-[#E17364] text-16-m'}>*</span>
+                </label>
+                <p className={'mb-[15px] text-[#676767] text-12-r'}>소형견 7kg 미만 | 중소형견 7kg ~ 10kg | 중형견 10kg ~ 20kg | 대형견
+                    20kg 초과</p>
+                <div className={`${inputStyle} w-full px-[8px] py-[8px] gap-x-[8px] flex bg-gray-100 overflow-x-scroll`}>
+                    {sizeOptions.map((option) => (
+                        <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => onFormDataChange('size', option.value)}
+                            className={`w-auto rounded-full py-[8px] text-16-m focus:outline-none flex-1 ${
+                                formData.size === option.value
+                                    ? 'bg-brand-main text-black'
+                                    : 'bg-text-300 text-text-800'
+                            }`}
+                        >
+                            {option.label}
+                        </button>
+                    ))}
+                </div>
+                {errors.size && (
+                    <p className="text-xs text-red-500 mt-1">{errors.size}</p>
+                )}
+            </div>
 
-      {/* 강아지 크기 */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          강아지 크기 *
-        </label>
-        <div className="space-y-2">
-          {sizeOptions.map((option) => (
-            <label key={option.value} className="flex items-center">
-              <input
-                type="radio"
-                name="size"
-                value={option.value}
-                checked={formData.size === option.value}
-                onChange={(e) => onFormDataChange('size', e.target.value)}
-                className="mr-3 text-yellow-500 focus:ring-yellow-500"
-              />
-              <span className="text-sm text-gray-700">{option.label}</span>
-            </label>
-          ))}
+            {/* 견종 */}
+            <div className={'flex flex-col'}>
+                <label htmlFor={'breed'} className="block text-16-m mb-[12px]">
+                    견종
+                </label>
+                <input
+                    id={'breed'}
+                    type="text"
+                    maxLength={20}
+                    value={formData.breed}
+                    onChange={(e) => onFormDataChange('breed', e.target.value)}
+                    placeholder="견종을 입력해주세요 (선택사항)"
+                    className={`${inputStyle} w-full`}
+                />
+                <div className={'relative'}>
+                    <p className="absolute top-[4px] right-[5px] text-text-800 text-12-l">
+                        {formData.breed?.length ?? 0}/20
+                    </p>
+                </div>
+            </div>
         </div>
-        {errors.size && (
-          <p className="text-xs text-red-500 mt-1">{errors.size}</p>
-        )}
-      </div>
-
-      {/* 견종 */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          견종
-        </label>
-        <input
-          type="text"
-          value={formData.breed}
-          onChange={(e) => onFormDataChange('breed', e.target.value)}
-          placeholder="견종을 입력해주세요 (선택사항)"
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-colors"
-        />
-      </div>
-
-      {/* 안내 메시지 */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <h4 className="text-sm font-medium text-yellow-900 mb-2">강아지 정보 입력 안내</h4>
-        <ul className="text-sm text-yellow-800 space-y-1">
-          <li>• 강아지 사진은 이동 시 식별에 도움이 됩니다</li>
-          <li>• 크기 정보는 이동 방법 결정에 중요합니다</li>
-          <li>• 견종 정보는 선택사항입니다</li>
-        </ul>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default Step2;

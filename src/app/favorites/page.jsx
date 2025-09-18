@@ -174,26 +174,26 @@ export default function FavoritesPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-brand-main">
+    <div className="min-h-screen bg-[#FFDB6F]">
       {/* 헤더 - 노란색 배경 */}
-      <div className="w-full px-[23px] pt-[15px] pb-4">
-        <h1 className="text-[22px] font-bold text-gray-900 mx-6 py-8">
+      <div className="w-full px-[30px] pt-[15px]">
+        <h1 className="text-22-m text-black pt-[30px] pb-[40px]">
           도움을 기다리는 친구들{' '}
           <span className="text-[#F36C5E]">{loading ? '...' : activeFavorites.length}</span>
         </h1>
       </div>
 
       {/* 메인 콘텐츠 - 흰색 카드 */}
-      <main className="w-full bg-[#F9F9F5] rounded-t-[40px] px-[23px] pt-6 pb-6 min-h-[calc(100vh-120px)]">
+      <main className="w-full bg-[#F9F9F5] rounded-t-[30px] px-[30px] pt-6 pb-6 min-h-[calc(100vh-120px)]">
 
         {/* 탭 메뉴 */}
-        <div className="flex border-gray-200 mb-4 mx-4">
+        <div className="flex border-gray-200 mb-4">
           <button
             onClick={() => handleTabChange('active')}
-            className={`py-3 text-center text-base relative mr-8 ${
+            className={`py-3 text-center text-base relative mr-[10px] ${
               activeTab === 'active'
-                ? 'font-black text-gray-900'
-                : 'font-medium text-gray-500'
+                ? 'font-black text-brand-icon'
+                : 'font-medium text-[#8b8b8b]'
             }`}
           >
             모집중
@@ -202,8 +202,8 @@ export default function FavoritesPage() {
             onClick={() => handleTabChange('completed')}
             className={`py-3 text-center text-base relative ${
               activeTab === 'completed'
-                ? 'font-black text-gray-900'
-                : 'font-medium text-gray-500'
+                ? 'font-black text-brand-icon'
+                : 'font-medium text-[#8b8b8b]'
             }`}
           >
             모집종료

@@ -62,7 +62,7 @@ const VolunteerCreate = () => {
   }, []);
 
   // 현재 단계 상태
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(2);
 
   // 폼 데이터 상태
   const [formData, setFormData] = useState({
@@ -136,7 +136,7 @@ const VolunteerCreate = () => {
       if (!formData.description.trim()) {
         newErrors.description = '설명을 입력해주세요.';
       } else if (formData.description.length > 1000) {
-        newErrors.description = '설명은 1000자 이하로 입력해주세요.';
+        newErrors.description = '설명은 800자 이하로 입력해주세요.';
       }
 
       if (!formData.departureAddress.trim()) {
@@ -486,28 +486,25 @@ const VolunteerCreate = () => {
     switch (currentStep) {
       case 1:
         return {
-          title: '이동 봉사 정보',
-          description: '봉사 활동에 대한 기본 정보를 입력해주세요'
+          title: '이동 봉사 정보'
         };
       case 2:
         return {
-          title: '강아지 정보',
-          description: '이동할 강아지의 정보를 입력해주세요'
+          title: '임보견 정보'
         };
       case 3:
         return {
-          title: '추가 정보',
-          description: '관련 게시글 링크 등 추가 정보를 입력해주세요'
+          title: '추가 정보'
         };
       default:
         return {
-          title: '이동 봉사 요청',
-          description: '봉사 활동을 등록해주세요'
+          title: '이동 봉사 요청'
         };
     }
   };
 
   const stepInfo = getStepInfo();
+  const inputStyle = 'h-[52px] px-[18px] border rounded-[15px] text-text-800 focus:text-brand-yellow-dark focus:bg-brand-sub focus:outline-none focus:ring-1 focus:ring-[#FFD044] focus:border-transparent transition-colors'
 
   // 미리보기 단계인 경우
   if (currentStep === 4) {
@@ -549,18 +546,18 @@ const VolunteerCreate = () => {
 
   return (
     <FormStep
-      title={stepInfo.title}
-      description={stepInfo.description}
+      title={'이동 봉사 요청'}
       stepNumber={currentStep}
       totalSteps={3}
       onBack={handleGoBack}
       onNext={handleNext}
       isNextDisabled={isNextDisabled()}
-      nextButtonText={currentStep < 3 ? '다음' : '미리보기'}
+      nextButtonText={currentStep < 3 ? '다음으로' : '미리보기'}
       showNextButton={true}
     >
       {currentStep === 1 && (
         <Step1
+          title={stepInfo.title}
           formData={formData}
           errors={errors}
           addressValidation={addressValidation}
@@ -573,14 +570,17 @@ const VolunteerCreate = () => {
           isSearchingArrival={isSearchingArrival}
           onSelectDepartureAddress={handleSelectDepartureAddress}
           onSelectArrivalAddress={handleSelectArrivalAddress}
+          inputStyle={inputStyle}
         />
       )}
 
       {currentStep === 2 && (
         <Step2
+          title={stepInfo.title}
           formData={formData}
           errors={errors}
           photoPreview={photoPreview}
+          inputStyle={inputStyle}
           onFormDataChange={updateFormData}
           onPhotoChange={(base64) => {
             setPhotoPreview(base64);
@@ -598,9 +598,11 @@ const VolunteerCreate = () => {
 
       {currentStep === 3 && (
         <Step3
+          title={stepInfo.title}
           formData={formData}
           errors={errors}
           onFormDataChange={updateFormData}
+          inputStyle={inputStyle}
         />
       )}
     </FormStep>

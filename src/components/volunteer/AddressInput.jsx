@@ -12,7 +12,8 @@ const AddressInput = ({
   error,
   searchResults = [],
   isSearching = false,
-  onSelectAddress
+  onSelectAddress,
+  inputStyle
 }) => {
   const isSearchDisabled = !value.trim() || validation.isValid === true;
   const inputBorderColor = validation.isValid === true
@@ -52,17 +53,18 @@ const AddressInput = ({
 
   return (
     <div className="relative">
-      <label className="block text-sm font-medium text-gray-700 mb-2">
+      <label htmlFor={value} className="block text-sm font-medium text-gray-700 mb-2">
         {label}
       </label>
       <div className="flex gap-2">
         <input
+          id={value}
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyPress={handleKeyPress}
           placeholder={placeholder}
-          className={`flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-colors ${inputBorderColor}`}
+          className={`w-full ${inputStyle} ${inputBorderColor}`}
         />
         <button
           type="button"
@@ -71,7 +73,7 @@ const AddressInput = ({
           className={`px-4 py-3 rounded-lg transition-colors whitespace-nowrap flex items-center justify-center ${
             isSearchDisabled || isSearching
               ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              : 'bg-yellow-500 text-white hover:bg-yellow-600'
+              : 'bg-brand-main text-black'
           }`}
         >
           {isSearching ? (
@@ -83,7 +85,7 @@ const AddressInput = ({
               검색중...
             </>
           ) : (
-            '검색'
+              `${label} 검색`
           )}
         </button>
       </div>
