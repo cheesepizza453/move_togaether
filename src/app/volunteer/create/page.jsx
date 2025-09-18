@@ -62,7 +62,7 @@ const VolunteerCreate = () => {
   }, []);
 
   // 현재 단계 상태
-  const [currentStep, setCurrentStep] = useState(2);
+  const [currentStep, setCurrentStep] = useState(1);
 
   // 폼 데이터 상태
   const [formData, setFormData] = useState({
