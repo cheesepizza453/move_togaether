@@ -149,15 +149,27 @@ const Preview = ({
       {/* 제출 버튼 */}
       <div className="pt-4">
         <button
-          onClick={onSubmit}
+          onClick={(e) => {
+            e.preventDefault();
+            if (!loading) {
+              onSubmit();
+            }
+          }}
           disabled={loading}
           className={`w-full py-4 px-6 rounded-lg font-medium transition-colors ${
             loading
               ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              : 'bg-green-500 text-white hover:bg-green-600'
+              : 'bg-green-500 text-white hover:bg-green-600 active:bg-green-700'
           }`}
         >
-          {loading ? '등록 중...' : '이동 봉사 등록하기'}
+          {loading ? (
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+              등록 중...
+            </div>
+          ) : (
+            '이동 봉사 등록하기'
+          )}
         </button>
       </div>
     </div>

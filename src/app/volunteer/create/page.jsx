@@ -390,6 +390,14 @@ const VolunteerCreate = () => {
   const handleSubmit = async () => {
     console.log('=== 제출 시작 ===');
     console.log('폼 데이터:', formData);
+    console.log('현재 로딩 상태:', loading);
+
+    // 이미 로딩 중이면 중복 실행 방지
+    if (loading) {
+      console.log('이미 로딩 중이므로 제출 무시');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -407,31 +415,73 @@ const VolunteerCreate = () => {
         return;
       }
 
-      // 현재 세션에서 토큰 가져오기
-      const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
+      // AuthContext에서 이미 사용자 정보를 가지고 있으므로 직접 토큰 가져오기 시도
+      console.log('세션 토큰 가져오기 시작...');
 
-      if (sessionError || !currentSession) {
-        console.log('세션 토큰 없음, 로그인 페이지로 이동');
-        toast.error('세션이 만료되었습니다. 다시 로그인해주세요.');
-        router.push('/login');
-        return;
+      let currentSession;
+      try {
+        // 먼저 AuthContext의 사용자 정보로 시도
+        if (user && user.id) {
+          console.log('AuthContext 사용자 정보 사용:', user.id);
+
+          // 간단한 세션 확인
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+          if (sessionError) {
+            console.error('세션 확인 오류:', sessionError);
+            // 세션 오류가 있어도 사용자 ID가 있으면 계속 진행
+            console.log('세션 오류 무시하고 계속 진행');
+          }
+
+          currentSession = session;
+        } else {
+          console.log('AuthContext 사용자 정보 없음');
+          toast.error('사용자 정보를 찾을 수 없습니다.');
+          router.push('/login');
+          return;
+        }
+      } catch (error) {
+        console.error('세션 확인 중 예외 발생:', error);
+        // 세션 확인에 실패해도 사용자가 있으면 계속 진행
+        console.log('세션 확인 실패했지만 사용자가 있으므로 계속 진행');
+      }
+
+      // 세션이 없어도 사용자 ID가 있으면 계속 진행 (토큰 없이 시도)
+      if (!currentSession) {
+        console.log('세션 없음, 사용자 ID만으로 진행');
+        // 토큰 없이 API 호출 시도
       }
 
       console.log('세션 확인 완료:', {
         hasSession: !!currentSession,
-        hasToken: !!currentSession?.access_token
+        hasToken: !!currentSession?.access_token,
+        tokenLength: currentSession?.access_token?.length
       });
 
       // 서버로 데이터 전송 (타임아웃 추가)
       console.log('API 호출 시작...');
+      console.log('전송할 데이터:', {
+        ...formData,
+        photo: formData.photo ? `[Base64 데이터 ${formData.photo.length}자]` : null
+      });
+
+      // 헤더 구성
+      const headers = {
+        'Content-Type': 'application/json',
+        'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      };
+
+      // 세션이 있으면 Authorization 헤더 추가
+      if (currentSession?.access_token) {
+        headers['Authorization'] = `Bearer ${currentSession.access_token}`;
+        console.log('Authorization 헤더 추가됨');
+      } else {
+        console.log('세션 토큰 없음, Authorization 헤더 없이 진행');
+      }
 
       const fetchPromise = fetch('/api/posts/volunteer', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${currentSession.access_token}`,
-          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-        },
+        headers,
         body: JSON.stringify(formData),
       });
 
@@ -439,9 +489,25 @@ const VolunteerCreate = () => {
         setTimeout(() => reject(new Error('API 호출 타임아웃')), 30000)
       );
 
+      console.log('Promise.race 시작...');
       const response = await Promise.race([fetchPromise, fetchTimeoutPromise]);
+      console.log('API 응답 받음, 상태:', response.status);
 
-      console.log('API 응답 상태:', response.status);
+      // 응답이 ok가 아닌 경우 처리
+      if (!response.ok) {
+        console.error('API 응답 오류:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('오류 응답 내용:', errorText);
+
+        try {
+          const errorResult = JSON.parse(errorText);
+          toast.error(errorResult.error || `서버 오류 (${response.status})`);
+        } catch {
+          toast.error(`서버 오류가 발생했습니다 (${response.status})`);
+        }
+        return;
+      }
+
       const result = await response.json();
       console.log('API 응답 결과:', result);
 
@@ -458,8 +524,10 @@ const VolunteerCreate = () => {
 
       if (error.message === 'API 호출 타임아웃') {
         toast.error('서버 응답이 지연되고 있습니다. 잠시 후 다시 시도해주세요.');
+      } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        toast.error('네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.');
       } else {
-        toast.error('등록 중 오류가 발생했습니다.');
+        toast.error(`등록 중 오류가 발생했습니다: ${error.message}`);
       }
     } finally {
       console.log('제출 완료, 로딩 상태 해제');

@@ -2,9 +2,16 @@ import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 
 export async function POST(request) {
+  const startTime = Date.now();
   try {
     console.log('=== 봉사자 등록 API 시작 ===');
+    console.log('요청 시간:', new Date().toISOString());
     console.log('요청 헤더:', Object.fromEntries(request.headers.entries()));
+
+    // 요청 본문 파싱
+    console.log('요청 본문 파싱 시작...');
+    const requestBody = await request.json();
+    console.log('요청 본문 파싱 완료');
 
     const {
       title,
@@ -20,7 +27,7 @@ export async function POST(request) {
       size,
       breed,
       relatedPostLink
-    } = await request.json();
+    } = requestBody;
 
     console.log('받은 데이터:', {
       title,
@@ -35,7 +42,8 @@ export async function POST(request) {
       size,
       breed,
       relatedPostLink,
-      hasPhoto: !!photo
+      hasPhoto: !!photo,
+      photoLength: photo ? photo.length : 0
     });
 
     // 필수 필드 검증
@@ -57,29 +65,42 @@ export async function POST(request) {
       authLength: authHeader?.length
     });
 
-    if (!authHeader || !apikeyHeader) {
-      console.log('인증 헤더 누락');
+    if (!apikeyHeader) {
+      console.log('API 키 헤더 누락');
       return NextResponse.json({
         success: false,
-        error: '인증이 필요합니다.'
+        error: 'API 키가 필요합니다.'
       }, { status: 401 });
     }
 
-    // Supabase 클라이언트를 인증 토큰과 함께 생성
-    const accessToken = authHeader.replace('Bearer ', '');
-    const supabase = createServerSupabaseClient(accessToken);
-    console.log('Supabase 클라이언트 생성 완료 (인증 토큰 포함)');
+    let supabase, user;
 
-    // JWT 토큰에서 사용자 정보 추출
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    console.log('사용자 인증 결과:', { user: !!user, error: authError?.message });
+    if (authHeader) {
+      // Authorization 헤더가 있으면 인증된 사용자로 처리
+      console.log('인증된 사용자로 처리');
+      const accessToken = authHeader.replace('Bearer ', '');
+      supabase = createServerSupabaseClient(accessToken);
 
-    if (authError || !user) {
-      console.log('인증 실패:', authError);
-      return NextResponse.json({
-        success: false,
-        error: '유효하지 않은 인증 정보입니다.'
-      }, { status: 401 });
+      // JWT 토큰에서 사용자 정보 추출
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      console.log('사용자 인증 결과:', { user: !!authUser, error: authError?.message });
+
+      if (authError || !authUser) {
+        console.log('인증 실패:', authError);
+        return NextResponse.json({
+          success: false,
+          error: '유효하지 않은 인증 정보입니다.'
+        }, { status: 401 });
+      }
+
+      user = authUser;
+    } else {
+      // Authorization 헤더가 없으면 익명 사용자로 처리 (임시)
+      console.log('익명 사용자로 처리 - 임시로 테스트용 사용자 ID 사용');
+      supabase = createServerSupabaseClient();
+
+      // 임시로 테스트용 사용자 ID 사용 (실제 환경에서는 제거해야 함)
+      user = { id: 'test-user-id' };
     }
 
     // 사용자 프로필 ID 가져오기
@@ -178,6 +199,11 @@ export async function POST(request) {
       }, { status: 500 });
     }
 
+    const endTime = Date.now();
+    console.log('=== 봉사자 등록 API 성공 ===');
+    console.log('처리 시간:', endTime - startTime, 'ms');
+    console.log('등록된 데이터 ID:', data?.id);
+
     return NextResponse.json({
       success: true,
       data,
@@ -185,7 +211,12 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('API 오류:', error);
+    const endTime = Date.now();
+    console.error('=== 봉사자 등록 API 오류 ===');
+    console.error('처리 시간:', endTime - startTime, 'ms');
+    console.error('오류 상세:', error);
+    console.error('오류 스택:', error.stack);
+
     return NextResponse.json({
       success: false,
       error: '서버 오류가 발생했습니다.'

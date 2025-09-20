@@ -452,7 +452,7 @@ const ShelterMapPage = () => {
                 <figure className="relative w-[80px] h-[80px] overflow-hidden bg-gray-200 rounded-[15px] shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]">
                   <img
                     className="w-full h-full object-cover"
-                    src={selectedPost?.dog?.image || "/img/dummy_thumbnail.jpg"}
+                    src={selectedPost.images && selectedPost?.images.length > 0 ? selectedPost?.images[0] : "/img/dummy_thumbnail.jpg"}
                     alt={selectedPost?.dog?.name || '강아지 사진'}
                   />
                 </figure>
