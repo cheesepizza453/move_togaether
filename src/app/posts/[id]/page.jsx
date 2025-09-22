@@ -70,17 +70,27 @@ export default function PostDetailPage() {
 
       setPost(formattedPost);
 
-      // 즐겨찾기 상태 확인
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: favoriteData } = await supabase
-          .from('favorites')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('post_id', postId)
-          .single();
+      // 즐겨찾기 상태 확인 (API를 통해)
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          const response = await fetch(`/api/favorites/check?postId=${postId}`, {
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+            }
+          });
 
-        setIsFavorite(!!favoriteData);
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success) {
+              setIsFavorite(result.isFavorite);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('즐겨찾기 상태 확인 오류:', error);
+        // 오류가 발생해도 게시물은 계속 표시
       }
     } catch (err) {
       console.error('게시물 조회 중 오류:', err);
@@ -105,37 +115,54 @@ export default function PostDetailPage() {
 
   const handleFavoriteToggle = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      // 세션 확인
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
         setShowLoginDialog(true);
         return;
       }
 
+      const headers = {
+        'Authorization': `Bearer ${session.access_token}`,
+        'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json'
+      };
+
       if (isFavorite) {
         // 즐겨찾기 제거
-        const { error } = await supabase
-          .from('favorites')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('post_id', postId);
+        const response = await fetch(`/api/favorites?post_id=${postId}`, {
+          method: 'DELETE',
+          headers
+        });
 
-        if (error) throw error;
-        setIsFavorite(false);
+        if (response.ok) {
+          setIsFavorite(false);
+          toast.success('즐겨찾기에서 제거되었습니다.');
+        } else {
+          const errorData = await response.json();
+          console.error('즐겨찾기 제거 오류:', errorData);
+          toast.error('즐겨찾기 제거에 실패했습니다.');
+        }
       } else {
         // 즐겨찾기 추가
-        const { error } = await supabase
-          .from('favorites')
-          .insert({
-            user_id: user.id,
-            post_id: postId
-          });
+        const response = await fetch('/api/favorites', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ post_id: postId })
+        });
 
-        if (error) throw error;
-        setIsFavorite(true);
+        if (response.ok) {
+          setIsFavorite(true);
+          toast.success('즐겨찾기에 추가되었습니다.');
+        } else {
+          const errorData = await response.json();
+          console.error('즐겨찾기 추가 오류:', errorData);
+          toast.error('즐겨찾기 추가에 실패했습니다.');
+        }
       }
     } catch (err) {
       console.error('즐겨찾기 처리 오류:', err);
-      // 에러는 콘솔에만 기록
+      toast.error('오류가 발생했습니다.');
     }
   };
 

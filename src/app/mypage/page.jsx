@@ -35,8 +35,7 @@ const MyPage = () => {
       setDataLoading(true);
       setError(null);
 
-      const session = await supabase.auth.getSession();
-      if (!session.data.session) {
+      if (!user) {
         throw new Error('로그인이 필요합니다.');
       }
 
