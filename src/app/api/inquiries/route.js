@@ -24,6 +24,20 @@ export async function POST(request) {
       );
     }
 
+    // 사용자 프로필 ID 조회
+    const { data: userProfile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('auth_user_id', user.id)
+      .single();
+
+    if (profileError || !userProfile) {
+      return NextResponse.json(
+        { error: '사용자 프로필을 찾을 수 없습니다.' },
+        { status: 404 }
+      );
+    }
+
     // 포스트 존재 확인
     const { data: post, error: postError } = await supabase
       .from('posts')
@@ -38,41 +52,57 @@ export async function POST(request) {
       );
     }
 
-    // 자신의 게시물에 문의하는지 확인
-    if (post.user_id === user.id) {
+    // 자신의 게시물에 신청하는지 확인
+    if (post.user_id === userProfile.id) {
       return NextResponse.json(
-        { error: '자신의 게시물에는 문의할 수 없습니다.' },
+        { error: '자신의 게시물에는 신청할 수 없습니다.' },
         { status: 400 }
       );
     }
 
-    // 문의 저장
-    const { data: inquiry, error: inquiryError } = await supabase
-      .from('inquiries')
+    // 중복 신청 확인
+    const { data: existingApplication } = await supabase
+      .from('applications')
+      .select('id')
+      .eq('post_id', post_id)
+      .eq('user_id', userProfile.id)
+      .eq('is_deleted', false)
+      .single();
+
+    if (existingApplication) {
+      return NextResponse.json(
+        { error: '이미 신청한 게시물입니다.' },
+        { status: 400 }
+      );
+    }
+
+    // 신청 저장
+    const { data: application, error: applicationError } = await supabase
+      .from('applications')
       .insert({
         post_id,
-        user_id: user.id,
+        user_id: userProfile.id,
         message: message.trim(),
         status: 'pending'
       })
       .select()
       .single();
 
-    if (inquiryError) {
-      console.error('문의 저장 오류:', inquiryError);
+    if (applicationError) {
+      console.error('신청 저장 오류:', applicationError);
       return NextResponse.json(
-        { error: '문의 저장에 실패했습니다.' },
+        { error: '신청 저장에 실패했습니다.' },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      inquiry
+      application
     });
 
   } catch (error) {
-    console.error('문의 API 오류:', error);
+    console.error('신청 API 오류:', error);
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }
@@ -93,41 +123,59 @@ export async function GET(request) {
       );
     }
 
+    // 사용자 프로필 ID 조회
+    const { data: userProfile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('auth_user_id', user.id)
+      .single();
+
+    if (profileError || !userProfile) {
+      return NextResponse.json(
+        { error: '사용자 프로필을 찾을 수 없습니다.' },
+        { status: 404 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const post_id = searchParams.get('post_id');
 
     let query = supabase
-      .from('inquiries')
+      .from('applications')
       .select(`
         *,
-        user_profiles!inquiries_user_id_fkey (
+        user_profiles!applications_user_id_fkey (
           display_name,
           phone
         )
       `)
-      .eq('user_id', user.id);
+      .eq('is_deleted', false);
 
     if (post_id) {
+      // 특정 포스트의 신청자 목록 (작성자만 조회 가능)
       query = query.eq('post_id', post_id);
+    } else {
+      // 내가 신청한 목록
+      query = query.eq('user_id', userProfile.id);
     }
 
-    const { data: inquiries, error } = await query.order('created_at', { ascending: false });
+    const { data: applications, error } = await query.order('created_at', { ascending: false });
 
     if (error) {
-      console.error('문의 조회 오류:', error);
+      console.error('신청 조회 오류:', error);
       return NextResponse.json(
-        { error: '문의 조회에 실패했습니다.' },
+        { error: '신청 조회에 실패했습니다.' },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      inquiries
+      applications
     });
 
   } catch (error) {
-    console.error('문의 조회 API 오류:', error);
+    console.error('신청 조회 API 오류:', error);
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }

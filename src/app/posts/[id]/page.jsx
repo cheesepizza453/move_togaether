@@ -220,8 +220,8 @@ export default function PostDetailPage() {
     try {
       const response = await fetch(`/api/inquiries?post_id=${postId}`);
       if (response.ok) {
-        const { inquiries } = await response.json();
-        setApplicants(inquiries || []);
+        const { applications } = await response.json();
+        setApplicants(applications || []);
       }
     } catch (err) {
       console.error('지원자 목록 조회 오류:', err);
