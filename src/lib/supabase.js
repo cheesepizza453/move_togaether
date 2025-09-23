@@ -48,7 +48,12 @@ export const createServerSupabaseClient = (accessToken) => {
 
 // 관리자 기능용 Supabase 인스턴스 (서비스 롤 키 사용)
 export const createAdminSupabaseClient = () => {
-  return createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY)
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!serviceRoleKey) {
+    console.warn('SUPABASE_SERVICE_ROLE_KEY not found, using anon key instead')
+    return createClient(supabaseUrl, supabaseAnonKey)
+  }
+  return createClient(supabaseUrl, serviceRoleKey)
 }
 
 // 인증 상태 확인 함수 (클라이언트용)

@@ -47,11 +47,10 @@ export default function FavoritesPage() {
     return moment(deadline).format('YY/MM/DD');
   };
 
-  // 로그인 상태 확인
+  // 로그인 상태 확인 (AuthContext 사용)
   const checkAuthStatus = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
+      if (user) {
         setIsLoggedIn(true);
         return true;
       } else {
@@ -71,8 +70,7 @@ export default function FavoritesPage() {
       setLoading(true);
       setError(null);
 
-      const session = await supabase.auth.getSession();
-      if (!session.data.session) {
+      if (!user) {
         setShowLoginDialog(true);
         return;
       }

@@ -184,29 +184,40 @@ const EditProfilePage = () => {
     try {
       setSaving(true);
 
-      const session = await supabase.auth.getSession();
-      if (!session.data.session) {
+      if (!user) {
         toast.error('로그인이 필요합니다.');
         return;
       }
 
-      const { error } = await supabase
-        .from('user_profiles')
-        .update({
+      // 세션에서 토큰 가져오기
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error('인증 토큰을 찾을 수 없습니다.');
+        return;
+      }
+
+      const response = await fetch('/api/mypage/profile', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
           display_name: formData.nickname,
           bio: formData.introduction,
           phone: formData.phone,
           profile_image: formData.profileImage,
           instagram: contactChannels.instagram ? channelInputs.instagram : null,
           naver_cafe: contactChannels.naverCafe ? channelInputs.naverCafe : null,
-          kakao_openchat: contactChannels.kakaoOpenChat ? channelInputs.kakaoOpenChat : null,
-          updated_at: new Date().toISOString()
+          kakao_openchat: contactChannels.kakaoOpenChat ? channelInputs.kakaoOpenChat : null
         })
-        .eq('auth_user_id', user.id);
+      });
 
-      if (error) {
-        console.error('프로필 업데이트 오류:', error);
-        toast.error('프로필 업데이트 중 오류가 발생했습니다.');
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('프로필 업데이트 오류:', errorData);
+        toast.error(errorData.error || '프로필 업데이트 중 오류가 발생했습니다.');
         return;
       }
 
