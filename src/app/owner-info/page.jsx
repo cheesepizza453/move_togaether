@@ -1,6 +1,5 @@
 import {IconChannelInstagram, IconChannelNaverCafe, IconChannelKakaoTalk} from "@/components/icon/IconChannel";
 import PostCardInfo from "@/components/PostCardInfo";
-import PostCard from "@/components/PostCard";
 
 const OwnerInfo = () => {
     // 목업 데이터 (실제로는 API에서 가져올 데이터)
@@ -60,7 +59,7 @@ const OwnerInfo = () => {
             <div className={'bg-brand-main px-[30px] pt-[23px] pb-[46px]'}>
                 <div className={'flex items-center gap-x-[18px]'}>
                     <figure className={'relative shrink-0 w-[70px] h-[70px] rounded-full bg-brand-bg overflow-hidden shadow-[0_0_9px_0px_rgba(0,0,0,0.2)]'}>
-                        <img src={'/img/default_profile.jpg'} className={'absolute top-1/2 left-1/2 max-w-full max-h-full -translate-x-1/2 -translate-y-1/2 object-contain'} alt={'profile'}/>
+                        <img src={'/img/default_profile.jpg'} className={'absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover'} alt={'profile'}/>
                     </figure>
                     <div>
                         <p><strong className={'name text-18-b'}>부천 000보호소</strong></p>

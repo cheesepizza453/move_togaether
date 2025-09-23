@@ -31,7 +31,9 @@ module.exports = {
         'spoqa': ['Spoqa Han Sans Neo', 'sans-serif'],
       },
       fontSize:{
+        '22-b': ['22px', { lineHeight: '1', 'letterSpacing': '-0.41px', fontWeight: '800' }],
         '18-b': ['18px', { lineHeight: '1', 'letterSpacing': '-0.41px', fontWeight: '800' }],
+        '16-b': ['16px', { lineHeight: '1', 'letterSpacing': '-0.41px', fontWeight: '800' }],
         '14-b': ['14px', { lineHeight: '1', 'letterSpacing': '-0.41px', fontWeight: '800' }],
         '12-b': ['12px', { lineHeight: '1', 'letterSpacing': '-0.41px', fontWeight: '800' }],
         '22-m': ['22px', { lineHeight: '1', 'letterSpacing': '-0.41px', fontWeight: '700' }],
