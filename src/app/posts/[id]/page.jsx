@@ -19,6 +19,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import IconRightArrow from "../../../../public/img/icon/IconRightArrow";
+import IconHeart from "../../../../public/img/icon/IconHeart";
 
 export default function PostDetailPage() {
   const params = useParams();
@@ -341,211 +343,273 @@ export default function PostDetailPage() {
     <div className="min-h-screen bg-gray-50">
       {/* 헤더 */}
       <div className="bg-white">
+        <div className={'flex flex-col items-center justify-between'}>
         {/* 네비게이션 */}
-        <div className="flex items-center justify-between px-4 py-3 border-b">
-          <Button
-            variant="ghost"
-            onClick={() => window.history.back()}
-            className="p-2"
-          >
-            ←
-          </Button>
-          <h1 className="text-lg font-semibold">
-            {isOwner ? '작성한 게시물' : '정보'}
-          </h1>
-          {!isOwner && (
-            <Button
-              variant="ghost"
-              onClick={handleFavoriteToggle}
-              className={`p-2 ${
-                isFavorite ? 'text-red-500' : 'text-gray-500'
-              }`}
+        <div className="w-full h-[72px] flex items-center justify-between px-[30px] py-[28px]">
+          <div className={'flex items-center'}>
+            <button
+              onClick={() => window.history.back()}
+              className={'p-[12px] pl-0 outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none'}
             >
-              <Heart className={`h-5 w-5 ${isFavorite ? 'fill-current' : ''}`} />
-            </Button>
+              <svg xmlns="http://www.w3.org/2000/svg" width="9" height="16" viewBox="0 0 9 16" fill="none">
+                <path d="M8 15L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
+                      strokeLinecap="round"/>
+                <path d="M8 0.999999L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
+                      strokeLinecap="round"/>
+              </svg>
+            </button>
+            <h1 className="text-22-m text-black">
+              {isOwner ? '작성한 게시물' : '정보'}
+            </h1>
+          </div>
+          {!isOwner && (
+            <button
+              onClick={handleFavoriteToggle}
+              className={'p-0 outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none'}
+            >
+              <figure className="mt-[2px]">
+                <IconHeart className={'size-[30px] block'} fill={isFavorite ? '#F36C5E' : '#D2D2D2'}/>
+              </figure>
+            </button>
           )}
         </div>
 
         {/* 탭 (작성자인 경우만) */}
         {isOwner && (
-          <div className="flex border-b">
+          <div className="flex w-full h-[55px] px-[30px] gap-x-[16px] shadow-[0_6px_6px_0px_rgba(0,0,0,0.05)]">
             <button
               onClick={() => setActiveTab('post')}
-              className={`flex-1 py-3 text-center font-medium ${
+              className={`text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none ${
                 activeTab === 'post'
-                  ? 'text-black border-b-2 border-black'
-                  : 'text-gray-500'
+                  ? 'text-black text-16-b'
+                  : 'text-text-800 text-16-m'
               }`}
             >
               게시물
             </button>
             <button
               onClick={() => setActiveTab('applicants')}
-              className={`flex-1 py-3 text-center font-medium ${
-                activeTab === 'applicants'
-                  ? 'text-black border-b-2 border-black'
-                  : 'text-gray-500'
+              className={`text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none ${
+                activeTab === 'applicants' 
+                  ? 'text-black text-16-b'
+                  : 'text-text-800'
               }`}
             >
-              지원자 {applicants.length}
+              지원자<span className={`ml-[2px] ${activeTab === 'applicants' ? 'text-brand-yellow-dark text-16-m' : 'text-text-800 text-16-r'}`}>{applicants.length}</span>
             </button>
           </div>
         )}
       </div>
+      </div>
 
       {/* 메인 콘텐츠 */}
-      <div className="bg-white min-h-screen">
+
+      {/* 작성자 정보 */}
+      {!isOwner &&
+      <div className={'relative w-full h-[92px] px-[25px] rounded-b-[15px] bg-white z-10'}>
+        <div className="pt-[10px] flex items-center justify-between">
+          {/* 링크 추가 */}
+          <a className={'flex items-center gap-[9px]'} href={'/'}>
+            <div className="relative w-[56px] h-[56px] rounded-full overflow-hidden flex items-center justify-center">
+              {/* 프로필 이미지 추가 */}
+              <img src={'/img/default_profile.jpg'} alt={'이미지'} className={'absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover'}/>
+            </div>
+            <div>
+              <p className="pr-[30px] mb-[2px] text-18-b">{post.user_profiles?.display_name || '익명'}</p>
+              {/* 전화번호 추가 */}
+              <p className="text-14-l text-[#6c6c6c]">010-0000-0000</p>
+            </div>
+          </a>
+          {/* 링크 추가 */}
+          <a className={''} href={'/'}>
+            <figure className={'h-[14px]'}>
+              <IconRightArrow fill={'black'}/>
+            </figure>
+          </a>
+        </div>
+      </div>
+      }
+      <div className={`${isOwner && 'mt-[-15px]'}`}>
         {/* 게시물 탭 */}
         {activeTab === 'post' && (
-          <div>
-            {/* 강아지 이미지 */}
-            <div className="relative">
-              <img
-                src={post.dog_image || '/img/dummy_thumbnail.jpg'}
-                alt="강아지 이미지"
-                className="w-full h-64 object-cover"
-              />
-            </div>
-
-            {/* 게시물 정보 */}
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="bg-red-500 text-white text-sm px-2 py-1 rounded">
-                  {post.dday}일 남았어요!
-                </span>
-                <span className="text-sm text-gray-500">{post.created_at} 작성</span>
+            <div>
+              {/* 강아지 이미지 */}
+              <div className="relative w-full aspect-[402/343]">
+                <img
+                    src={post.dog_image || '/img/dummy_thumbnail.jpg'}
+                    alt="강아지 이미지"
+                    className={'absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover'}
+                />
               </div>
 
-              <h1 className="text-lg font-bold mb-2">{post.title}</h1>
-              <p className="text-sm text-gray-600 mb-6">{post.dog_name} {post.dogSize}</p>
-              {/* 찾아오는 길 섹션 */}
-              <div className="bg-gray-100 rounded-lg p-4 mb-4">
-                <h3 className="text-base font-semibold mb-3">찾아오는 길</h3>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="bg-red-500 text-white text-xs px-2 py-1 rounded">출발지</span>
-                    <span className="text-sm">{post.departure_address}</span>
+              {/* 게시물 정보 */}
+              <div className="px-[28px] py-[20px] bg-white">
+                <div className={`flex items-center justify-between mb-[8px]`}>
+                  <div>
+                    {post.dday < 0 ?
+                        <p className={'text-14-m'}>마감되었습니다</p>
+                        :
+                        <p className={'text-brand-point text-14-m'}><strong className={'text-16-b'}>{post.dday}</strong>일
+                          남았어요!</p>}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded">도착지</span>
-                    <span className="text-sm">{post.arrival_address}</span>
+                  <div className="flex items-center gap-4 text-sm text-gray-600">
+                    <p className="text-12-r text-[#8a8a8a]">
+                      {post.deadline} 작성
+                    </p>
                   </div>
-                  <div className="flex gap-2 mt-3">
-                    <button
-                      onClick={handleNaverMap}
-                      className="bg-gray-200 hover:bg-gray-300 text-gray-600 text-xs px-3 py-1 rounded transition-colors"
-                    >
-                      네이버 길찾기
-                    </button>
-                    <button
-                      onClick={handleKakaoMap}
-                      className="bg-gray-200 hover:bg-gray-300 text-gray-600 text-xs px-3 py-1 rounded transition-colors"
-                    >
-                      카카오톡 길찾기
-                    </button>
-                  </div>
+                </div>
+                <h1 className="text-18-b mb-[10px]">{post.title}</h1>
+                <div className={'flex gap-x-[4px] text-14-r'}>
+                  <p>{post.dog_name || '미입력'}</p>
+                  <p className={' text-text-800'}>{post.dogSize}</p>
+                  <p className={'text-text-800'}>{post.dog_breed || '미입력'}</p>
                 </div>
               </div>
 
-              {/* 설명글 섹션 */}
-              <div className="bg-gray-100 rounded-lg p-4">
-                <h3 className="text-base font-semibold mb-3">설명글</h3>
-                <p className="text-sm text-gray-700">{post.description}</p>
+              <div className={'py-[24px] px-[22px] space-y-6 bg-brand-bg'}>
+                {/* 찾아오는 길 섹션 */}
+                <div className="">
+                  <h3 className="text-16-b mb-[10px]">찾아오는 길</h3>
+                  <div className="flex flex-col p-[18px] bg-white rounded-[15px] shadow-[0_0_12px_0px_rgba(0,0,0,0.1)]">
+                    <div className="flex items-center gap-x-[10px] mb-[4px]">
+                    <span
+                        className="px-[6px] py-[4px] rounded-full text-12-m inline-flex bg-brand-point text-white">출발지</span>
+                      <p className="text-16-m">{post.departure_address}</p>
+                    </div>
+                    <div className="mb-[12px] flex items-center gap-x-[10px]">
+                    <span
+                        className="px-[6px] py-[5px] rounded-full text-12-m inline-flex bg-brand-point text-white">도착지</span>
+                      <p className="text-16-m">{post.arrival_address}</p>
+                    </div>
+                    <div className={'flex gap-x-[4px]'}>
+                      {/* 길찾기 버튼 */}
+                      <button onClick={handleNaverMap} className={'p-[5px] bg-[#E4E6EB] text-[#808288] text-12-r rounded-[4px]'}>네이버 길찾기</button>
+                      <button onClick={handleKakaoMap} className={'p-[5px] bg-[#E4E6EB] text-[#808288] text-12-r rounded-[4px]'}>카카오톡 길찾기
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 설명글 섹션 */}
+                {post.description && (
+                  <div>
+                    <h3 className="text-16-b mb-[10px]">상세 설명</h3>
+                    <div className={'flex flex-col p-[18px] min-h-[115px] bg-white rounded-[15px] shadow-[0_0_12px_0px_rgba(0,0,0,0.1)]'}>
+                      <p className="text-text-800 text-16-r whitespace-pre-wrap">{post.description}</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
         )}
 
         {/* 지원자 탭 */}
         {activeTab === 'applicants' && (
-          <div className="p-4">
-            {isRecruitmentComplete ? (
-              <div className="text-center py-12">
-                <p className="text-red-600 text-lg">
-                  모집이 종료되어 신청자 정보를 확인할 수 없습니다.
-                </p>
-              </div>
-            ) : applicants.length === 0 ? (
-              <div className="text-center py-12">
-                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">아직 지원자가 없습니다.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {applicants.map((applicant) => (
-                  <div key={applicant.id} className="bg-white border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                          <User className="h-5 w-5 text-gray-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">{applicant.user_profiles?.display_name || '익명'}</p>
-                          <p className="text-xs text-gray-600">{applicant.user_profiles?.phone || '연락처 없음'}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs text-gray-500">
-                          {moment(applicant.created_at).format('YY.MM.DD HH:mm')}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="mb-4">
-                      <p className="text-sm text-gray-700 line-clamp-3">
-                        {applicant.message}
-                      </p>
-                      <button
-                        onClick={() => handleApplicantClick(applicant)}
-                        className="text-blue-600 text-xs mt-2 hover:underline"
-                      >
-                        전체보기
-                      </button>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleCall(applicant.user_profiles?.phone)}
-                        className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black text-sm py-2 px-4 rounded"
-                      >
-                        전화하기
-                      </button>
-                      <button
-                        onClick={() => handleSMS(applicant.user_profiles?.phone)}
-                        className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm py-2 px-4 rounded"
-                      >
-                        문자하기
-                      </button>
-                    </div>
+            <div className="p-4">
+              {isRecruitmentComplete ? (
+                  <div className="text-center py-12">
+                    <p className="mt-[20vh] text-18-m leading-[1.44]">
+                      <strong className={'text-brand-point'}>모집이 종료</strong>되어<br/> 신청자 정보를 확인할 수 없습니다.
+                    </p>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+              ) : applicants.length === 0 ? (
+                  <div className="mt-[20vh]">
+                    <Users className="h-12 w-12 text-gray-400 mx-auto mb-4"/>
+                    <p className="text-text-800 text-18-m text-center">아직 지원자가 없습니다.</p>
+                  </div>
+              ) : (
+                  <div className="space-y-[10px]">
+                    {applicants.map((applicant) => (
+                        <div key={applicant.id}
+                             className="py-[30px] px-[24px] bg-white rounded-[15px] shadow-[0_0_12px_0px_rgba(0,0,0,0.1)]">
+                          <div className="mb-[12px] flex items-start justify-between">
+                            <div className="flex flex-col">
+                              <div className={'mb-[4px] flex items-center text-[#535353] gap-x-[5px]'}>
+                                <p className="text-18-b">{applicant.user_profiles?.display_name || '익명'}</p>
+                                |
+                                <p className="text-16-r text-text-800">{applicant.user_profiles?.phone || '연락처 없음'}</p>
+                              </div>
+                              <p className="text-12-r text-[#8a8a8a]">
+                                {moment(applicant.created_at).format('YY.MM.DD HH:mm')}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="mb-4">
+                            <div className={'flex items-center gap-x-[18px]'}>
+                              <p className="text-16-r text-brand-icon leading-[1.1] line-clamp-4">
+                                {applicant.message}
+                              </p>
+                              <div className="bg-gray-200 rounded-full flex items-center justify-center">
+                                <figure className={'relative w-[54px] h-[54px] rounded-full overflow-hidden shrink-0'}>
+                                  <img src={'/img/default_profile.jpg'} alt={'썸네일 이미지'}
+                                       className={'absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover'}/>
+                                </figure>
+                              </div>
+                            </div>
+                            <div className={'mt-[10px] pb-[16px] border-b border-[#d9d9d9]'}>
+                              <button
+                                  onClick={() => handleApplicantClick(applicant)}
+                                  className="text-blue-500 text-12-r"
+                              >
+                                전체보기
+                              </button>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                                onClick={() => handleCall(applicant.user_profiles?.phone)}
+                                className="flex-1 h-[44px] bg-[#fbf1b4] text-16-m text-[#d4a108] py-2 px-4 rounded-[7px] shadow-[0_0_5px_0px_rgba(0,0,0,0.1)]"
+                            >
+                              전화하기
+                            </button>
+                            <button
+                                onClick={() => handleSMS(applicant.user_profiles?.phone)}
+                                className="flex-1 h-[44px] bg-[#fbf1b4] text-16-m text-[#d4a108] py-2 px-4 rounded-[7px] shadow-[0_0_5px_0px_rgba(0,0,0,0.1)]"
+                            >
+                              문자하기
+                            </button>
+                          </div>
+                        </div>
+                    ))}
+                  </div>
+              )}
+            </div>
         )}
 
         {/* 액션 버튼 */}
         {!isOwner && (
-          <div className="sticky bottom-0 bg-white border-t p-4 mt-4">
-            <Button
-              onClick={handleInquiry}
-              className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-medium py-3"
-            >
-              문의하기
-            </Button>
-          </div>
+            <div className={'fixed bottom-[86px] left-0 right-0 px-[22px] pt-[15px] pb-[24px] bg-brand-bg'}>
+              <div className="sticky bottom-4 z-50">
+                <div className="">
+                  <div className="flex gap-3">
+                    <Button
+                        onClick={handleInquiry}
+                        className="rounded-[15px] text-16-m h-[54px] flex-1 bg-brand-main"
+                    >
+                      문의하기
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
         )}
 
         {/* 작성자용 액션 버튼 */}
         {isOwner && (
-          <div className="sticky bottom-0 bg-white border-t p-4 mt-4">
-            <Button
-              onClick={handleRecruitmentComplete}
-              disabled={isRecruitmentComplete}
-              className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-medium py-3"
-            >
-              {isRecruitmentComplete ? '모집 완료됨' : '모집 완료'}
-            </Button>
+          <div className={'fixed bottom-[86px] left-0 right-0 px-[22px] pt-[15px] pb-[24px] bg-brand-bg'}>
+            <div className="sticky bottom-4 z-50">
+              <div className="">
+                <div className="flex gap-3">
+                  <Button
+                      onClick={handleRecruitmentComplete}
+                      disabled={isRecruitmentComplete}
+                      className="rounded-[15px] text-16-m h-[54px] flex-1 bg-brand-main"
+                  >
+                    {isRecruitmentComplete ? '모집 완료됨' : '모집 완료'}
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>

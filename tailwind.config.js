@@ -38,6 +38,7 @@ module.exports = {
         '12-b': ['12px', { lineHeight: '1', 'letterSpacing': '-0.41px', fontWeight: '800' }],
         '22-m': ['22px', { lineHeight: '1', 'letterSpacing': '-0.41px', fontWeight: '700' }],
         '20-m': ['20px', { lineHeight: '1', 'letterSpacing': '-0.41px', fontWeight: '700' }],
+        '18-m': ['18px', { lineHeight: '1', 'letterSpacing': '-0.41px', fontWeight: '700' }],
         '16-m': ['16px', { lineHeight: '1', 'letterSpacing': '-0.41px', fontWeight: '700' }],
         '14-m': ['14px', { lineHeight: '1', 'letterSpacing': '-0.41px', fontWeight: '700' }],
         '12-m': ['12px', { lineHeight: '1', 'letterSpacing': '-0.41px', fontWeight: '700' }],
