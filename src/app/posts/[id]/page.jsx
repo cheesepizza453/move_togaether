@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Calendar, Clock, User, Phone, Heart, MessageCircle, Users, X } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,17 +50,58 @@ export default function PostDetailPage() {
 
   useEffect(() => {
     if (user && post) {
-      const isOwnerCheck = user.id === post.user_id;
-      console.log('작성자 확인:', {
-        userId: user.id,
-        postUserId: post.user_id,
+      let isOwnerCheck = false;
+
+      // 1차 검증: auth.users.id와 user_profiles.auth_user_id 비교
+      if (post.user_profiles?.auth_user_id) {
+        const authUserId = String(user.id);
+        const postAuthUserId = String(post.user_profiles.auth_user_id);
+        isOwnerCheck = authUserId === postAuthUserId;
+
+        console.log('Auth ID로 작성자 확인:', {
+          authUserId: authUserId,
+          postAuthUserId: postAuthUserId,
+          isOwner: isOwnerCheck
+        });
+      }
+
+      // 2차 검증: user_profiles.id와 posts.user_id 비교 (1차가 실패한 경우)
+      if (!isOwnerCheck && profile?.id) {
+        const profileId = String(profile.id);
+        const postUserId = String(post.user_id);
+        isOwnerCheck = profileId === postUserId;
+
+        console.log('Profile ID로 작성자 확인:', {
+          profileId: profileId,
+          postUserId: postUserId,
+          isOwner: isOwnerCheck
+        });
+      }
+
+      // 3차 검증: 직접 auth.users.id와 posts.user_id 비교 (마지막 시도)
+      if (!isOwnerCheck) {
+        const userId = String(user.id);
+        const postUserId = String(post.user_id);
+        isOwnerCheck = userId === postUserId;
+
+        console.log('직접 ID 비교로 작성자 확인:', {
+          userId: userId,
+          postUserId: postUserId,
+          isOwner: isOwnerCheck
+        });
+      }
+
+      console.log('최종 작성자 확인 결과:', {
         isOwner: isOwnerCheck,
         userEmail: user.email,
-        postTitle: post.title
+        postTitle: post.title,
+        postUserProfile: post.user_profiles,
+        currentUserProfile: profile
       });
+
       setIsOwner(isOwnerCheck);
     }
-  }, [user, post]);
+  }, [user, post, profile]);
 
   useEffect(() => {
     if (isOwner && postId) {

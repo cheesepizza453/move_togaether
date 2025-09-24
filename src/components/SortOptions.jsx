@@ -2,8 +2,11 @@
 
 import { useState } from 'react';
 
-const SortOptions = ({ onSortChange }) => {
-  const [activeSort, setActiveSort] = useState('latest');
+const SortOptions = ({ onSortChange, activeSort: externalActiveSort }) => {
+  const [internalActiveSort, setInternalActiveSort] = useState('latest');
+
+  // 외부에서 전달받은 activeSort가 있으면 사용, 없으면 내부 상태 사용
+  const activeSort = externalActiveSort || internalActiveSort;
 
   const sortOptions = [
     { id: 'latest', label: '최신순' },
@@ -12,7 +15,10 @@ const SortOptions = ({ onSortChange }) => {
   ];
 
   const handleSortClick = (sortId) => {
-    setActiveSort(sortId);
+    // 외부에서 activeSort를 관리하는 경우 내부 상태는 업데이트하지 않음
+    if (!externalActiveSort) {
+      setInternalActiveSort(sortId);
+    }
     if (onSortChange) {
       onSortChange(sortId);
     }

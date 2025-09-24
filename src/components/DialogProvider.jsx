@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -25,6 +25,20 @@ export const useDialogContext = () => {
 export const DialogProvider = ({ children }) => {
   const dialogHook = useDialog();
 
+  // Dialog가 열릴 때 body 스크롤 방지
+  useEffect(() => {
+    if (dialogHook.dialog.isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    // 컴포넌트 언마운트 시 스크롤 복원
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [dialogHook.dialog.isOpen]);
+
   const getButtonStyles = (type) => {
     // 모든 타입에 대해 노란색 계열 사용
     return 'bg-yellow-500 hover:bg-yellow-600 text-black';
@@ -34,7 +48,10 @@ export const DialogProvider = ({ children }) => {
     <DialogContext.Provider value={dialogHook}>
       {children}
       <Dialog open={dialogHook.dialog.isOpen} onOpenChange={dialogHook.closeDialog}>
-        <DialogContent className="max-w-xs w-full bg-white border border-gray-200 shadow-xl">
+        <DialogContent
+          className="max-w-xs w-full bg-white border border-gray-200 shadow-xl"
+          showCloseButton={false}
+        >
           <DialogHeader className="text-center">
             <DialogTitle className="text-lg text-center font-bold text-gray-900">
               {dialogHook.dialog.title}

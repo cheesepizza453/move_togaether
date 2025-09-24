@@ -9,15 +9,25 @@ import SortOptions from '../components/SortOptions';
 import PostCard from '../components/PostCard';
 import Footer from '../components/common/Footer';
 import BottomNavigation from '../components/common/BottomNavigation';
+import LocationSearchDialog from '../components/LocationSearchDialog';
 import { postsAPI, favoritesAPI, handleAPIError } from '@/lib/api-client';
+import { useAuth } from '@/hooks/useAuth';
+import { useDialogContext } from '@/components/DialogProvider';
 
 export default function Home() {
+  const { user } = useAuth();
+  const { showConfirm } = useDialogContext();
+
   const [sortOption, setSortOption] = useState('latest');
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [favoritePostIds, setFavoritePostIds] = useState(new Set());
   const [favoritesLoading, setFavoritesLoading] = useState(false);
+
+  // 위치 기반 정렬 관련 상태
+  const [showLocationDialog, setShowLocationDialog] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState(null);
 
   // 무한 스크롤 관련 상태
   const [page, setPage] = useState(1);
@@ -270,16 +280,142 @@ export default function Home() {
     });
   }, []);
 
+  // 위치 기반 정렬을 위한 함수
+  const fetchPostsByDistance = async (latitude, longitude, pageNum = 1, isLoadMore = false) => {
+    if (isFetching) {
+      console.log('이미 데이터를 가져오는 중입니다. 중복 호출 방지');
+      return;
+    }
+
+    try {
+      setIsFetching(true);
+
+      if (isLoadMore) {
+        setIsLoadingMore(true);
+      } else {
+        setLoading(true);
+        setError(null);
+        setPage(1);
+        setHasMore(true);
+        setPosts([]);
+      }
+
+      const response = await fetch('/api/posts/sort-by-distance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          latitude,
+          longitude,
+          page: pageNum,
+          limit: 10
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('거리 기반 정렬에 실패했습니다.');
+      }
+
+      const { posts: distancePosts, pagination } = await response.json();
+
+      // 데이터 포맷팅
+      const formattedPosts = distancePosts.map(post => ({
+        id: post.id,
+        title: post.title,
+        dogName: post.dog_name,
+        dogSize: convertDogSize(post.dog_size),
+        dogBreed: post.dog_breed,
+        departureAddress: post.departure_address,
+        arrivalAddress: post.arrival_address,
+        deadline: formatDeadline(post.deadline),
+        images: post.images || [],
+        status: post.status,
+        dday: post.deadline ? moment(post.deadline).diff(moment(), 'days') : 0,
+        distance: post.distance_km
+      }));
+
+      const hasMoreData = pagination?.hasMore ?? (formattedPosts.length === 10);
+      setHasMore(hasMoreData);
+
+      if (isLoadMore) {
+        setPosts(prevPosts => [...prevPosts, ...formattedPosts]);
+        setPage(prevPage => prevPage + 1);
+      } else {
+        setPosts(formattedPosts);
+        setPage(2);
+      }
+
+    } catch (err) {
+      console.error('거리 기반 정렬 중 오류:', err);
+      setError('거리 기반 정렬에 실패했습니다.');
+      if (!isLoadMore) {
+        setPosts([]);
+      }
+      setHasMore(false);
+    } finally {
+      setLoading(false);
+      setIsLoadingMore(false);
+      setIsFetching(false);
+    }
+  };
+
   const handleSortChange = (sortId) => {
     setSortOption(sortId);
     setPage(1);
     setHasMore(true);
-    setPosts([]); // 기존 데이터 초기화
-    setError(null); // 에러 상태 초기화
+    setPosts([]);
+    setError(null);
     console.log('정렬 옵션 변경:', sortId);
 
-    // 정렬 옵션 변경 시 즉시 새 데이터 가져오기
+    // 가까운순 선택 시 로그인 체크
+    if (sortId === 'distance') {
+      if (!user) {
+        showConfirm({
+          title: '로그인 후 이용하실 수 있습니다.',
+          description: '가까운순 정렬을 사용하려면 로그인이 필요합니다.',
+          onConfirm: () => {
+            window.location.href = '/login';
+          }
+        });
+        // 로그인 다이얼로그 표시 시 정렬 옵션을 이전 상태로 되돌림
+        setSortOption('latest');
+        return;
+      }
+
+      // 위치 다이얼로그 표시
+      setShowLocationDialog(true);
+      return;
+    }
+
+    // 다른 정렬 옵션은 기존 로직 사용
     fetchPosts(sortId, 1, false);
+  };
+
+  const handleLocationConfirm = (location) => {
+    setCurrentLocation(location);
+    // 위치 정보를 저장하고 거리 기반 정렬 시작
+    // 실제로는 좌표 정보가 필요하므로 다시 위치를 가져와야 함
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        fetchPostsByDistance(latitude, longitude, 1, false);
+      },
+      (error) => {
+        console.error('위치 정보 가져오기 실패:', error);
+        setError('위치 정보를 가져올 수 없습니다.');
+        // 위치 가져오기 실패 시 기존 정렬 방식으로 되돌림
+        setSortOption('latest');
+        fetchPosts('latest', 1, false);
+      }
+    );
+  };
+
+  const handleLocationDialogClose = () => {
+    setShowLocationDialog(false);
+    // 위치 다이얼로그를 닫을 때 기존 정렬 방식으로 되돌림
+    setSortOption('latest');
+    fetchPosts('latest', 1, false);
   };
 
   const allPosts = [...mockPosts, ...posts];
@@ -295,7 +431,7 @@ export default function Home() {
 
         {/* 정렬 옵션 */}
         <section className="mb-6">
-          <SortOptions onSortChange={handleSortChange} />
+          <SortOptions onSortChange={handleSortChange} activeSort={sortOption} />
         </section>
 
         {/* 게시물 목록 */}
@@ -340,6 +476,12 @@ export default function Home() {
         </section>
       </main>
 
+      {/* 위치 검색 다이얼로그 */}
+      <LocationSearchDialog
+        isOpen={showLocationDialog}
+        onClose={handleLocationDialogClose}
+        onLocationConfirm={handleLocationConfirm}
+      />
     </div>
   );
 }

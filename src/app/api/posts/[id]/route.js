@@ -11,7 +11,13 @@ export async function GET(request, { params }) {
       .from('posts')
       .select(`
         *,
-        user_profiles!posts_user_id_fkey(display_name, phone_visible, phone)
+        user_profiles!posts_user_id_fkey(
+          id,
+          auth_user_id,
+          display_name,
+          phone_visible,
+          phone
+        )
       `)
       .eq('id', id)
       .eq('is_deleted', false)

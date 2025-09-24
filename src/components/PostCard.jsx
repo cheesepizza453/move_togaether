@@ -23,7 +23,8 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle }) => {
     deadline,
     images = [],
     status = 'active',
-    dday
+    dday,
+    distance
   } = post;
 
 
@@ -165,6 +166,18 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle }) => {
               {deadline}
             </div>
           </div>
+
+          {/* 거리 정보 (가까운순 정렬 시에만 표시) */}
+          {distance !== undefined && (
+            <div className="flex justify-between items-center text-text-800">
+              <div className="text-10-r text-text-600">
+                출발지: {departureAddress}
+              </div>
+              <div className="text-10-r text-brand-point font-medium">
+                {distance}km
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
