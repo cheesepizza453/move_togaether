@@ -300,11 +300,21 @@ export default function Home() {
         setPosts([]);
       }
 
+      // 인증 토큰 가져오기
+      const { data: { session } } = await supabase.auth.getSession();
+
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+        headers['apikey'] = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      }
+
       const response = await fetch('/api/posts/sort-by-distance', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           latitude,
           longitude,
@@ -361,11 +371,6 @@ export default function Home() {
   };
 
   const handleSortChange = (sortId) => {
-    setSortOption(sortId);
-    setPage(1);
-    setHasMore(true);
-    setPosts([]);
-    setError(null);
     console.log('정렬 옵션 변경:', sortId);
 
     // 가까운순 선택 시 로그인 체크
@@ -379,9 +384,15 @@ export default function Home() {
           }
         });
         // 로그인 다이얼로그 표시 시 정렬 옵션을 이전 상태로 되돌림
-        setSortOption('latest');
         return;
       }
+
+      // 가까운순 선택 시 정렬 옵션을 먼저 업데이트
+      setSortOption(sortId);
+      setPage(1);
+      setHasMore(true);
+      setPosts([]);
+      setError(null);
 
       // 위치 다이얼로그 표시
       setShowLocationDialog(true);
@@ -389,34 +400,23 @@ export default function Home() {
     }
 
     // 다른 정렬 옵션은 기존 로직 사용
+    setSortOption(sortId);
+    setPage(1);
+    setHasMore(true);
+    setPosts([]);
+    setError(null);
     fetchPosts(sortId, 1, false);
   };
 
-  const handleLocationConfirm = (location) => {
-    setCurrentLocation(location);
-    // 위치 정보를 저장하고 거리 기반 정렬 시작
-    // 실제로는 좌표 정보가 필요하므로 다시 위치를 가져와야 함
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        fetchPostsByDistance(latitude, longitude, 1, false);
-      },
-      (error) => {
-        console.error('위치 정보 가져오기 실패:', error);
-        setError('위치 정보를 가져올 수 없습니다.');
-        // 위치 가져오기 실패 시 기존 정렬 방식으로 되돌림
-        setSortOption('latest');
-        fetchPosts('latest', 1, false);
-      }
-    );
+  const handleLocationConfirm = (locationData) => {
+    setCurrentLocation(locationData.address);
+    setShowLocationDialog(false); // 위치 다이얼로그 닫기
+
+    // 좌표 정보를 직접 사용하여 거리 기반 정렬 시작
+    const { latitude, longitude } = locationData.coordinates;
+    fetchPostsByDistance(latitude, longitude, 1, false);
   };
 
-  const handleLocationDialogClose = () => {
-    setShowLocationDialog(false);
-    // 위치 다이얼로그를 닫을 때 기존 정렬 방식으로 되돌림
-    setSortOption('latest');
-    fetchPosts('latest', 1, false);
-  };
 
   const allPosts = [...mockPosts, ...posts];
   return (
@@ -479,7 +479,7 @@ export default function Home() {
       {/* 위치 검색 다이얼로그 */}
       <LocationSearchDialog
         isOpen={showLocationDialog}
-        onClose={handleLocationDialogClose}
+        onClose={() => setShowLocationDialog(false)}
         onLocationConfirm={handleLocationConfirm}
       />
     </div>

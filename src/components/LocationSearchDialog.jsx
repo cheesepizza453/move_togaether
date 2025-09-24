@@ -13,26 +13,32 @@ import { MapPin, Loader2 } from 'lucide-react';
 
 const LocationSearchDialog = ({ isOpen, onClose, onLocationConfirm }) => {
   const [currentLocation, setCurrentLocation] = useState('');
+  const [currentCoordinates, setCurrentCoordinates] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Dialog가 열릴 때 body 스크롤 방지
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
+  // Dialog가 열릴 때 body 스크롤 방지 (Radix UI 기본 동작만 사용)
+  // useEffect(() => {
+  //   if (isOpen) {
+  //     // 단순히 overflow만 hidden으로 설정
+  //     document.body.style.overflow = 'hidden';
+  //   } else {
+  //     // 스크롤 복원
+  //     document.body.style.overflow = 'unset';
+  //   }
 
-    // 컴포넌트 언마운트 시 스크롤 복원
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen]);
+  //   // 컴포넌트 언마운트 시 스크롤 복원
+  //   return () => {
+  //     document.body.style.overflow = 'unset';
+  //   };
+  // }, [isOpen]);
 
   // 다이얼로그가 열릴 때 현재 위치 가져오기
   useEffect(() => {
     if (isOpen) {
+      setCurrentLocation('');
+      setCurrentCoordinates(null);
+      setError(null);
       getCurrentLocation();
     }
   }, [isOpen]);
@@ -66,6 +72,7 @@ const LocationSearchDialog = ({ isOpen, onClose, onLocationConfirm }) => {
       const address = await getAddressFromCoordinates(latitude, longitude);
 
       setCurrentLocation(address);
+      setCurrentCoordinates({ latitude, longitude });
     } catch (err) {
       console.error('위치 가져오기 오류:', err);
       setError('현재 위치를 가져올 수 없습니다. 위치 권한을 확인해주세요.');
@@ -80,15 +87,14 @@ const LocationSearchDialog = ({ isOpen, onClose, onLocationConfirm }) => {
 
   const getAddressFromCoordinates = async (lat, lng) => {
     try {
-      // 카카오맵 API를 사용한 좌표 → 주소 변환
-      const response = await fetch(
-        `https://dapi.kakao.com/v2/local/geo/coord2address.json?x=${lng}&y=${lat}`,
-        {
-          headers: {
-            'Authorization': `KakaoAK ${process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY}`
-          }
-        }
-      );
+      // 서버사이드 API를 사용한 좌표 → 주소 변환
+      const response = await fetch('/api/coord2address', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ lat, lng })
+      });
 
       if (!response.ok) {
         throw new Error('주소 변환에 실패했습니다.');
@@ -96,9 +102,8 @@ const LocationSearchDialog = ({ isOpen, onClose, onLocationConfirm }) => {
 
       const data = await response.json();
 
-      if (data.documents && data.documents.length > 0) {
-        const address = data.documents[0].address;
-        return `${address.region_1depth_name} ${address.region_2depth_name} ${address.region_3depth_name}`;
+      if (data.success && data.address) {
+        return data.address;
       } else {
         return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
       }
@@ -109,16 +114,30 @@ const LocationSearchDialog = ({ isOpen, onClose, onLocationConfirm }) => {
   };
 
   const handleSearch = () => {
-    if (currentLocation) {
-      onLocationConfirm(currentLocation);
+    if (currentLocation && currentCoordinates) {
+      onLocationConfirm({
+        address: currentLocation,
+        coordinates: currentCoordinates
+      });
       onClose();
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={onClose}
+      modal={false}
+    >
+      {/* 커스텀 오버레이 */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-[9998] bg-black/60"
+          onClick={onClose}
+        />
+      )}
       <DialogContent
-        className="sm:max-w-md z-[9999]"
+        className="sm:max-w-md z-[9999] bg-white"
         showCloseButton={false}
       >
         <DialogHeader>

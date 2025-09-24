@@ -3,11 +3,25 @@ import { createServerSupabaseClient } from '@/lib/supabase';
 
 export async function POST(request) {
   try {
-    const supabase = createServerSupabaseClient();
+    // Authorization 헤더에서 토큰 추출
+    const authHeader = request.headers.get('authorization');
+    let supabase, user;
 
-    // 인증 확인
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
+    if (authHeader) {
+      // Authorization 헤더가 있으면 인증된 사용자로 처리
+      const accessToken = authHeader.replace('Bearer ', '');
+      supabase = createServerSupabaseClient(accessToken);
+
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      if (authError || !authUser) {
+        return NextResponse.json(
+          { error: '인증이 필요합니다.' },
+          { status: 401 }
+        );
+      }
+      user = authUser;
+    } else {
+      // Authorization 헤더가 없으면 익명 사용자로 처리
       return NextResponse.json(
         { error: '인증이 필요합니다.' },
         { status: 401 }
