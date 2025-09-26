@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
@@ -8,6 +8,33 @@ import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ProfileEditForm from '@/components/ProfileEditForm';
 import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
+import { cn } from "@/lib/utils";
+
+// 커스텀 AlertDialogContent (오버레이 없이)
+const CustomAlertDialogContent = React.forwardRef(({ className, ...props }, ref) => (
+  <AlertDialogPrimitive.Portal>
+    <AlertDialogPrimitive.Content
+      ref={ref}
+      className={cn(
+        "fixed left-[50%] top-[50%] z-[9999] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-90 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
+        className
+      )}
+      {...props}
+    />
+  </AlertDialogPrimitive.Portal>
+));
+CustomAlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName;
 
 const EditProfilePage = () => {
   const { user, profile, loading, checkNicknameDuplicate } = useAuth();
@@ -34,6 +61,7 @@ const EditProfilePage = () => {
   const [saving, setSaving] = useState(false);
   const [nicknameValidation, setNicknameValidation] = useState(null);
   const [nicknameChecking, setNicknameChecking] = useState(false);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   // 로그인 상태 확인
   useEffect(() => {
@@ -286,12 +314,7 @@ const EditProfilePage = () => {
         <div className="bottom-0 left-0 right-0 bg-white p-4 mt-4">
           <div className="text-right mb-8">
             <button
-              onClick={() => {
-                if (confirm('정말 로그아웃하시겠습니까?')) {
-                  // 로그아웃 로직 (useAuth의 signOut 사용)
-                  router.push('/logout');
-                }
-              }}
+              onClick={() => setShowLogoutDialog(true)}
               className="text-sm text-[#DBA913] underline font-bold"
             >
               로그아웃
@@ -315,6 +338,34 @@ const EditProfilePage = () => {
           </div>
         </div>
       </div>
+
+      {/* 로그아웃 확인 다이얼로그 */}
+      <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+        {/* 커스텀 오버레이 */}
+        {showLogoutDialog && (
+          <div
+            className="fixed inset-0 z-[9998] bg-black/60"
+            onClick={() => setShowLogoutDialog(false)}
+          />
+        )}
+        <CustomAlertDialogContent className="z-[9999] bg-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>로그아웃</AlertDialogTitle>
+            <AlertDialogDescription>
+              정말 로그아웃하시겠습니까?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex flex-row gap-3">
+            <AlertDialogCancel className="mt-0 flex-1">취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => router.push('/logout')}
+              className="flex-1"
+            >
+              로그아웃
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </CustomAlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
