@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import moment from 'moment';
@@ -9,19 +9,37 @@ import BottomNavigation from '@/components/common/BottomNavigation';
 import FavoriteCard from '@/components/FavoriteCard';
 import { Button } from '@/components/ui/button';
 import { favoritesAPI, handleAPIError } from '@/lib/api-client';
+import { useAuth } from '@/hooks/useAuth';
 import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
-  AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
+import { cn } from "@/lib/utils";
+
+// 커스텀 AlertDialogContent (오버레이 없이)
+const CustomAlertDialogContent = React.forwardRef(({ className, ...props }, ref) => (
+  <AlertDialogPrimitive.Portal>
+    <AlertDialogPrimitive.Content
+      ref={ref}
+      className={cn(
+        "fixed left-[50%] top-[50%] z-[9999] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-90 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
+        className
+      )}
+      {...props}
+    />
+  </AlertDialogPrimitive.Portal>
+));
+CustomAlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName;
 
 export default function FavoritesPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [allFavorites, setAllFavorites] = useState([]);
   const [activeFavorites, setActiveFavorites] = useState([]);
@@ -258,20 +276,27 @@ export default function FavoritesPage() {
 
       {/* 로그인 필요 다이얼로그 */}
       <AlertDialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
-        <AlertDialogContent>
+        {/* 커스텀 오버레이 */}
+        {showLoginDialog && (
+          <div
+            className="fixed inset-0 z-[9998] bg-black/60"
+            onClick={() => setShowLoginDialog(false)}
+          />
+        )}
+        <CustomAlertDialogContent className="z-[9999] bg-white">
           <AlertDialogHeader>
             <AlertDialogTitle>로그인이 필요합니다</AlertDialogTitle>
             <AlertDialogDescription>
               즐겨찾기 기능을 사용하려면 로그인해주세요.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>취소</AlertDialogCancel>
-            <AlertDialogAction onClick={handleLogin}>
+          <AlertDialogFooter className="flex flex-row gap-3">
+            <AlertDialogCancel className="mt-0 flex-1">취소</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogin} className="flex-1">
               로그인하기
             </AlertDialogAction>
           </AlertDialogFooter>
-        </AlertDialogContent>
+        </CustomAlertDialogContent>
       </AlertDialog>
     </div>
   );

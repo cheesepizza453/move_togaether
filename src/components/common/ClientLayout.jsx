@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import Header from '@/components/common/Header';
 import Footer from '@/components/common/Footer';
 import BottomNavigation from '@/components/common/BottomNavigation';
-import { AuthProvider } from '@/contexts/AuthContext';
+import { AuthProvider } from '@/hooks/useAuth';
 import { Toaster } from 'sonner';
 
 const ClientLayout = ({ children }) => {

@@ -270,7 +270,10 @@ export const AuthProvider = ({ children }) => {
   // 로그인
   const signIn = async ({ email, password }) => {
     try {
+      console.log('=== 로그인 시작 ===');
       console.log('useAuth signIn 시작:', { email, password: '***' });
+      console.log('현재 Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
+      console.log('현재 Supabase Anon Key 존재:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
       setLoading(true);
 
       // Supabase 클라이언트에서 직접 로그인 (세션 유지를 위해)
@@ -279,6 +282,8 @@ export const AuthProvider = ({ children }) => {
         email,
         password
       });
+
+      console.log('Supabase 로그인 응답:', { data: !!data, error: !!error });
 
       if (error) {
         console.log('Supabase 로그인 에러:', error);
@@ -299,13 +304,19 @@ export const AuthProvider = ({ children }) => {
       }
 
       console.log('Supabase 로그인 성공:', data.user.id);
+      console.log('사용자 정보:', { id: data.user.id, email: data.user.email });
 
       // 사용자 정보 설정
+      console.log('setUser 호출 전');
       setUser(data.user);
+      console.log('setUser 호출 완료');
 
       // 프로필 정보 조회
+      console.log('프로필 조회 시작');
       await fetchProfile(data.user.id);
+      console.log('프로필 조회 완료');
 
+      console.log('=== 로그인 성공 ===');
       return {
         success: true,
         message: '로그인이 완료되었습니다.',
@@ -326,18 +337,23 @@ export const AuthProvider = ({ children }) => {
   // 로그아웃
   const signOut = async () => {
     try {
-      console.log('로그아웃 시작...');
+      console.log('=== 로그아웃 시작 ===');
+      console.log('현재 사용자 상태:', { user: !!user, profile: !!profile });
 
       // 1. 즉시 로컬 상태 초기화 (사용자 경험 개선)
+      console.log('로컬 상태 초기화 중...');
       setUser(null);
       setProfile(null);
       setLoading(false);
+      console.log('로컬 상태 초기화 완료');
 
       // 2. 클라이언트 사이드에서 Supabase 세션 정리
       console.log('클라이언트 사이드 로그아웃...');
       const { error: clientError } = await supabase.auth.signOut();
       if (clientError) {
         console.error('클라이언트 로그아웃 오류:', clientError);
+      } else {
+        console.log('클라이언트 로그아웃 성공');
       }
 
       // 3. 서버 사이드 로그아웃 (백업)
@@ -350,10 +366,11 @@ export const AuthProvider = ({ children }) => {
         // 서버 오류는 무시하고 클라이언트 로그아웃만으로 처리
       }
 
-      console.log('로그아웃 완료');
+      console.log('=== 로그아웃 완료 ===');
       return { success: true };
     } catch (error) {
-      console.error('로그아웃 중 전체 오류:', error);
+      console.error('=== 로그아웃 중 전체 오류 ===');
+      console.error('오류 상세:', error);
       // 오류가 발생해도 로컬 상태는 초기화
       setUser(null);
       setProfile(null);
