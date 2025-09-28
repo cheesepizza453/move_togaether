@@ -10,6 +10,7 @@ import FavoriteCard from '@/components/FavoriteCard';
 import { Button } from '@/components/ui/button';
 import { favoritesAPI, handleAPIError } from '@/lib/api-client';
 import { useAuth } from '@/hooks/useAuth';
+import { convertDogSize, formatDeadline } from '@/lib/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,21 +50,6 @@ export default function FavoritesPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeTab, setActiveTab] = useState('active');
 
-  // 강아지 크기 변환 함수
-  const convertDogSize = (size) => {
-    const sizeMap = {
-      'small': '소형견',
-      'medium': '중형견',
-      'large': '대형견'
-    };
-    return sizeMap[size] || size;
-  };
-
-  // 날짜 형식 변환 함수
-  const formatDeadline = (deadline) => {
-    if (!deadline) return '';
-    return moment(deadline).format('YY/MM/DD');
-  };
 
   // 로그인 상태 확인 (AuthContext 사용)
   const checkAuthStatus = async () => {

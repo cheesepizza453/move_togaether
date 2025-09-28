@@ -1,109 +1,31 @@
-import { clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { type ClassValue, clsx } from "clsx"
+import { twMerge } from "tailwind-merge"
 
-// Tailwind CSS 클래스 병합 유틸리티
-export function cn(...inputs) {
-  return twMerge(clsx(inputs));
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
 }
 
-// 모바일 디바이스 감지
-export function isMobile() {
-  if (typeof window === "undefined") return false;
-  return window.innerWidth < 768;
-}
-
-// 태블릿 디바이스 감지
-export function isTablet() {
-  if (typeof window === "undefined") return false;
-  return window.innerWidth >= 768 && window.innerWidth < 1024;
-}
-
-// 데스크톱 디바이스 감지
-export function isDesktop() {
-  if (typeof window === "undefined") return false;
-  return window.innerWidth >= 1024;
-}
-
-// 로컬 스토리지 유틸리티
-export const storage = {
-  get: (key) => {
-    if (typeof window === "undefined") return null;
-    try {
-      const item = window.localStorage.getItem(key);
-      return item ? JSON.parse(item) : null;
-    } catch (error) {
-      console.error("Error reading from localStorage:", error);
-      return null;
-    }
-  },
-
-  set: (key, value) => {
-    if (typeof window === "undefined") return;
-    try {
-      window.localStorage.setItem(key, JSON.stringify(value));
-    } catch (error) {
-      console.error("Error writing to localStorage:", error);
-    }
-  },
-
-  remove: (key) => {
-    if (typeof window === "undefined") return;
-    try {
-      window.localStorage.removeItem(key);
-    } catch (error) {
-      console.error("Error removing from localStorage:", error);
-    }
-  },
+/**
+ * 강아지 크기를 한글로 변환하는 함수
+ * @param {string} size - 강아지 크기 (small, medium, large)
+ * @returns {string} 한글 크기 (소형견, 중형견, 대형견)
+ */
+export const convertDogSize = (size) => {
+  const sizeMap = {
+    'small': '소형견',
+    'medium': '중형견',
+    'large': '대형견'
+  };
+  return sizeMap[size] || size;
 };
 
-// 디바운스 유틸리티
-export function debounce(func, wait) {
-  let timeout;
-  return function executedFunction(...args) {
-    const later = () => {
-      clearTimeout(timeout);
-      func(...args);
-    };
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-  };
-}
-
-// 스로틀 유틸리티
-export function throttle(func, limit) {
-  let inThrottle;
-  return (...args) => {
-    if (!inThrottle) {
-      func(...args);
-      inThrottle = true;
-      setTimeout(() => inThrottle = false, limit);
-    }
-  };
-}
-
-// 날짜 포맷팅
-export function formatDate(date, options = {}) {
-  const defaultOptions = {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    ...options,
-  };
-
-  return new Intl.DateTimeFormat("ko-KR", defaultOptions).format(date);
-}
-
-// 숫자 포맷팅
-export function formatNumber(number, locale = "ko-KR") {
-  return new Intl.NumberFormat(locale).format(number);
-}
-
-// URL 파라미터 파싱
-export function parseQueryParams(queryString) {
-  const params = new URLSearchParams(queryString);
-  const result = {};
-  for (const [key, value] of params) {
-    result[key] = value;
-  }
-  return result;
-}
+/**
+ * 날짜를 YY/MM/DD 형식으로 포맷하는 함수
+ * @param {string|Date} deadline - 날짜
+ * @returns {string} 포맷된 날짜
+ */
+export const formatDeadline = (deadline) => {
+  if (!deadline) return '';
+  const moment = require('moment');
+  return moment(deadline).format('YY/MM/DD');
+};

@@ -20,7 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
-import { cn } from "@/lib/utils";
+import { cn, convertDogSize, formatDeadline } from "@/lib/utils";
 import IconRightArrow from "../../../../public/img/icon/IconRightArrow";
 import IconHeart from "../../../../public/img/icon/IconHeart";
 
@@ -198,18 +198,7 @@ export default function PostDetailPage() {
     }
   };
 
-  const convertDogSize = (size) => {
-    const sizeMap = {
-      'small': '소형견',
-      'medium': '중형견',
-      'large': '대형견'
-    };
-    return sizeMap[size] || size;
-  };
 
-  const formatDeadline = (deadline) => {
-    return moment(deadline).format('YY/MM/DD');
-  };
 
   const handleFavoriteToggle = async () => {
     try {
@@ -467,19 +456,19 @@ export default function PostDetailPage() {
       <div className={'relative w-full h-[92px] px-[25px] rounded-b-[15px] bg-white z-10'}>
         <div className="pt-[10px] flex items-center justify-between">
           {/* 링크 추가 */}
-          <a className={'flex items-center gap-[9px]'} href={'/'}>
+          <a className={'flex items-center gap-[9px]'} href={`/authors/${post.user_id}`}>
             <div className="relative w-[56px] h-[56px] rounded-full overflow-hidden flex items-center justify-center">
               {/* 프로필 이미지 추가 */}
               <img src={'/img/default_profile.jpg'} alt={'이미지'} className={'absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover'}/>
             </div>
             <div>
               <p className="pr-[30px] mb-[2px] text-18-b">{post.user_profiles?.display_name || '익명'}</p>
-              {/* 전화번호 추가 */}
-              <p className="text-14-l text-[#6c6c6c]">010-0000-0000</p>
+              {/* 실제 전화번호 표시 */}
+              <p className="text-14-l text-[#6c6c6c]">{post.user_profiles?.phone || '연락처 없음'}</p>
             </div>
           </a>
           {/* 링크 추가 */}
-          <a className={''} href={'/'}>
+          <a className={''} href={`/authors/${post.user_id}`}>
             <figure className={'h-[14px]'}>
               <IconRightArrow fill={'black'}/>
             </figure>
