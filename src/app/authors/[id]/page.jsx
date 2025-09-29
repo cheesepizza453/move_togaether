@@ -5,12 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import moment from 'moment';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { MapPin, Calendar, Clock, User, Phone, Heart, MessageCircle, Users, X } from 'lucide-react';
-import { toast } from 'sonner';
-import { convertDogSize } from '@/lib/utils';
-import IconRightArrow from "../../../../public/img/icon/IconRightArrow";
-import IconHeart from "../../../../public/img/icon/IconHeart";
+import PostTimeline from '@/components/PostTimeline';
 
 export default function AuthorDetailPage() {
   const params = useParams();
@@ -69,34 +64,6 @@ export default function AuthorDetailPage() {
     router.push(`/posts/${postId}`);
   };
 
-  const getDdayColor = (dday) => {
-    if (dday <= 3) return 'bg-[#F36C5E]';
-    if (dday <= 7) return 'bg-[#FF8C42]';
-    return 'bg-[#FFD700]';
-  };
-
-  const getDdayText = (dday) => {
-    if (dday < 0) return `D+${Math.abs(dday)}`;
-    if (dday === 0) return 'D-Day';
-    return `D-${dday}`;
-  };
-
-
-  const getButtonInfo = (post) => {
-    if (post.status !== 'active') {
-      return {
-        text: '모집 완료',
-        className: 'w-full bg-gray-400 text-white py-3 px-4 rounded-[20px] font-medium text-sm cursor-not-allowed',
-        disabled: true
-      };
-    } else {
-      return {
-        text: '문의하기',
-        className: 'w-full bg-[#FFE066] text-gray-900 py-3 px-4 rounded-[20px] font-medium text-sm hover:bg-[#FFD700] transition-colors',
-        disabled: false
-      };
-    }
-  };
 
   if (loading) {
     return (
@@ -243,119 +210,23 @@ export default function AuthorDetailPage() {
 
         {/* 콘텐츠 */}
         {activeTab === 'active' ? (
-          activePosts.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="text-gray-500 text-center mb-4">
-                <p className="text-lg font-medium">현재 모집 중인 게시물이 없습니다</p>
-                <p className="text-sm mt-2">작성자가 새로운 게시물을 올리면 여기에 표시됩니다</p>
-              </div>
-            </div>
-          ) : (
-            <div>
-              {activePosts.map((post) => {
-                const buttonInfo = getButtonInfo(post);
-                return (
-                  <div key={post.id} className="bg-white rounded-[30px] px-8 py-6 mb-6 shadow-sm border border-gray-100">
-                    <div className="flex items-start gap-4">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2">
-                          {post.title}
-                        </h3>
-                        <p className="text-xs text-gray-500 mb-3">
-                          {post.dog_name} / {convertDogSize(post.dog_size)}
-                        </p>
-                      </div>
-
-                      <div className="relative flex-shrink-0">
-                        <div className="w-20 h-20 rounded-[20px] overflow-hidden bg-gray-100">
-                          {post.images && post.images.length > 0 ? (
-                            <img
-                              src={post.images[0]}
-                              alt={post.dog_name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                              이미지 없음
-                            </div>
-                          )}
-                        </div>
-
-                        <div className={`absolute -top-3 -right-2 px-2 py-1 rounded-full text-xs font-bold text-white ${getDdayColor(post.dday)}`}>
-                          {getDdayText(post.dday)}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-4">
-                      <button
-                        onClick={() => handlePostClick(post.id)}
-                        className={buttonInfo.className}
-                        disabled={buttonInfo.disabled}
-                      >
-                        {buttonInfo.text}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )
+          <PostTimeline
+            posts={activePosts}
+            onPostClick={handlePostClick}
+            emptyMessage={{
+              title: '현재 모집 중인 게시물이 없습니다',
+              description: '작성자가 새로운 게시물을 올리면 여기에 표시됩니다'
+            }}
+          />
         ) : (
-          completedPosts.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="text-gray-500 text-center mb-4">
-                <p className="text-lg font-medium">모집이 종료된 게시물이 없습니다</p>
-                <p className="text-sm mt-2">완료된 봉사활동이 여기에 표시됩니다</p>
-              </div>
-            </div>
-          ) : (
-            <div>
-              {completedPosts.map((post) => {
-                const buttonInfo = getButtonInfo(post);
-                return (
-                  <div key={post.id} className="bg-white rounded-[30px] px-8 py-6 mb-6 shadow-sm border border-gray-100">
-                    <div className="flex items-start gap-4">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2">
-                          {post.title}
-                        </h3>
-                        <p className="text-xs text-gray-500 mb-3">
-                          {post.dog_name} / {convertDogSize(post.dog_size)}
-                        </p>
-                      </div>
-
-                      <div className="relative flex-shrink-0">
-                        <div className="w-20 h-20 rounded-[20px] overflow-hidden bg-gray-100">
-                          {post.images && post.images.length > 0 ? (
-                            <img
-                              src={post.images[0]}
-                              alt={post.dog_name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                              이미지 없음
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-4">
-                      <button
-                        onClick={() => handlePostClick(post.id)}
-                        className={buttonInfo.className}
-                        disabled={buttonInfo.disabled}
-                      >
-                        {buttonInfo.text}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )
+          <PostTimeline
+            posts={completedPosts}
+            onPostClick={handlePostClick}
+            emptyMessage={{
+              title: '모집이 종료된 게시물이 없습니다',
+              description: '완료된 봉사활동이 여기에 표시됩니다'
+            }}
+          />
         )}
       </main>
     </div>

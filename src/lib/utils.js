@@ -1,7 +1,8 @@
-import { type ClassValue, clsx } from "clsx"
+import { clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
+import moment from "moment"
 
-export function cn(...inputs: ClassValue[]) {
+export function cn(...inputs) {
   return twMerge(clsx(inputs))
 }
 
@@ -26,6 +27,5 @@ export const convertDogSize = (size) => {
  */
 export const formatDeadline = (deadline) => {
   if (!deadline) return '';
-  const moment = require('moment');
   return moment(deadline).format('YY/MM/DD');
 };
