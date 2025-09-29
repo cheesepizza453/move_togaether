@@ -17,9 +17,9 @@ const Header = (props) => {
                     </div>
 
                     {/* 위치 선택기 */}
-                    <div className="w-full">
+                    {/* <div className="w-full">
                         <LocationSelector />
-                    </div>
+                    </div> */}
                 </div>
             </header>
         )
@@ -31,10 +31,8 @@ const Header = (props) => {
                 <a href="">
                     <figure>
                         <svg xmlns="http://www.w3.org/2000/svg" width="9" height="16" viewBox="0 0 9 16" fill="none">
-                            <path d="M8 15L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
-                                  strokeLinecap="round"/>
-                            <path d="M8 0.999999L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
-                                  strokeLinecap="round"/>
+                            <path d="M8 15L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10" strokeLinecap="round"/>
+                            <path d="M8 0.999999L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10" strokeLinecap="round"/>
                         </svg>
                     </figure>
                     <p>{props.title}</p>
