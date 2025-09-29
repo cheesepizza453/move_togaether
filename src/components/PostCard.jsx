@@ -1,55 +1,148 @@
 'use client';
 
-import React from 'react';
-import moment from 'moment';
+import { useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth';
+import IconHeart from "../../public/img/icon/IconHeart";
+import { favoritesAPI, handleAPIError } from '@/lib/api-client';
+import { useDialogContext } from '@/components/DialogProvider';
 import { convertDogSize } from '@/lib/utils';
+import moment from 'moment';
 
-const PostCard = ({
-  post,
-  showTimeline = false,
-  isFirst = false,
-  isLast = false,
-  onPostClick
-}) => {
-  const getDdayColor = (dday) => {
-    if (dday <= 3) return 'bg-[#F36C5E]';
-    if (dday <= 7) return 'bg-[#FF8C42]';
-    return 'bg-[#FFD700]';
-  };
+const PostCard = ({ post, isFavorite = false, onFavoriteToggle, showTimeline = false }) => {
+  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+  const { showConfirm, showSuccess, showError } = useDialogContext();
 
-  const getDdayText = (dday) => {
-    if (dday < 0) return `D+${Math.abs(dday)}`;
-    if (dday === 0) return 'D-Day';
-    return `D-${dday}`;
-  };
+  const {
+    id,
+    title,
+    dogName,
+    dogSize,
+    dogBreed,
+    departureAddress,
+    arrivalAddress,
+    deadline,
+    images = [],
+    status = 'active',
+    dday,
+    distance,
+  } = post;
 
-  const getButtonInfo = (post) => {
-    if (post.status !== 'active') {
-      return {
-        text: '모집 완료',
-        className: 'w-full bg-gray-400 text-white py-3 px-4 rounded-[20px] font-medium text-sm cursor-not-allowed',
-        disabled: true
-      };
+
+  const toggleFavorite = async (e) => {
+    e.stopPropagation();
+
+    if (loading) return;
+
+    // AuthContext에서 사용자 정보 확인
+    if (!user) {
+      showConfirm(
+        '로그인이 필요한 서비스입니다.\n로그인하시겠습니까?',
+        '로그인 필요',
+        {
+          confirmText: '로그인',
+          cancelText: '취소',
+          onConfirm: () => {
+            window.location.href = '/login';
+          }
+        }
+      );
+      return;
+    }
+
+    if (isFavorite) {
+      // 즐겨찾기 제거 확인
+      showConfirm(
+        '즐겨찾기에서 제거하시겠습니까?',
+        '즐겨찾기 제거',
+        {
+          confirmText: '제거',
+          cancelText: '취소',
+          onConfirm: async () => {
+            await performFavoriteToggle();
+          }
+        }
+      );
     } else {
-      return {
-        text: '문의하기',
-        className: 'w-full bg-[#FFE066] text-gray-900 py-3 px-4 rounded-[20px] font-medium text-sm hover:bg-[#FFD700] transition-colors',
-        disabled: false
-      };
+      // 즐겨찾기 추가
+      await performFavoriteToggle();
     }
   };
 
-  const createdDate = moment(post.created_at).format('YYYY/MM/DD');
-  const buttonInfo = getButtonInfo(post);
+  const performFavoriteToggle = async () => {
+    try {
+      setLoading(true);
+
+      if (isFavorite) {
+        // 즐겨찾기 제거
+        await favoritesAPI.remove(id);
+        onFavoriteToggle?.(id, false);
+        showSuccess('즐겨찾기에서 제거되었습니다.');
+      } else {
+        // 즐겨찾기 추가
+        await favoritesAPI.add(id);
+        onFavoriteToggle?.(id, true);
+        showSuccess('즐겨찾기에 추가되었습니다.');
+      }
+    } catch (error) {
+      console.error('즐겨찾기 처리 오류:', error);
+      showError('처리 중 오류가 발생했습니다.\n다시 시도해주세요.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCardClick = () => {
+    // 게시물 상세 페이지로 이동
+    window.location.href = `/posts/${id}`;
+  };
+
+  // D-day 배지 색상 결정
+  const getDdayColor = (dday) => {
+    if (dday <= 7) return 'bg-brand-point text-white';
+    if (dday <= 14) return 'bg-brand-main text-white';
+    return 'bg-[#FFE889] text-brand-yellow-dark';
+  };
 
   if (showTimeline) {
+    const getButtonInfo = (post) => {
+      if (post.status !== 'active') {
+        return {
+          text: '모집 완료',
+          className: 'w-full bg-gray-400 text-white py-3 px-4 rounded-[20px] font-medium text-sm cursor-not-allowed',
+          disabled: true
+        };
+      } else {
+        return {
+          text: '문의하기',
+          className: 'w-full bg-[#FFE066] text-gray-900 py-3 px-4 rounded-[20px] font-medium text-sm hover:bg-[#FFD700] transition-colors',
+          disabled: false
+        };
+      }
+    };
+
+    const createdDate = moment(post.created_at).format('YYYY/MM/DD');
+    const buttonInfo = getButtonInfo(post);
+    const getDdayText = (dday) => {
+      if (dday < 0) return `D+${Math.abs(dday)}`;
+      if (dday === 0) return 'D-Day';
+      return `D-${dday}`;
+    };
+
     return (
       <div className="relative flex items-start gap-6 mb-6 pl-6">
         {/* 타임라인 점 */}
-        <div className="absolute left-0 top-0 w-3 h-3 bg-[#FFD700] rounded-full" style={{ transform: 'translateX(-50%)' }}></div>
+        <div
+          className="absolute left-0 top-0 w-3 h-3 bg-[#FFD700] rounded-full"
+          style={{
+            transform: 'translateX(-50%)',
+            boxShadow: '0 0 0 4px rgba(255, 215, 0, 0.3), 0 0 0 8px rgba(255, 215, 0, 0.1)'
+          }}
+        ></div>
 
         {/* 날짜 표시 - 노란원과 같은 높이 */}
-        <div className="absolute top-0 left-6 text-[#FFD700] text-sm font-medium" style={{ transform: 'translateY(-50%)' }}>
+        <div className="absolute top-0 left-6 text-sm font-medium" style={{ transform: 'translateY(-50%)' }}>
           {createdDate}
         </div>
 
@@ -102,49 +195,84 @@ const PostCard = ({
     );
   }
 
-  // 일반 카드 스타일 (타임라인 없음)
   return (
-    <div className="bg-white rounded-[30px] px-8 py-6 mb-6 shadow-sm border border-gray-100">
-      <div className="flex items-start gap-4">
-        <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2">
-            {post.title}
-          </h3>
-          <p className="text-xs text-gray-500 mb-3">
-            {post.dog_name} / {convertDogSize(post.dog_size)}
-          </p>
+    <div
+      className="bg-white rounded-[15px] px-[18px] py-[16px] cursor-pointer relative shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]"
+      onClick={handleCardClick}
+    >
+      {/* 상단 영역: D-day 배지와 찜 버튼 */}
+      <div className="flex justify-end items-start">
+        {/* D-day 배지 - border 위에 겹쳐서 표시 */}
+        <div className="absolute -top-3 left-[-5px] z-10">
+          <span className={`flex items-center justify-center px-[13px] h-[24px] rounded-[7px] text-12-b font-bold ${getDdayColor(dday)}`}>
+            D-{dday}
+          </span>
         </div>
+      </div>
 
-        <div className="relative flex-shrink-0">
-          <div className="w-20 h-20 rounded-[20px] overflow-hidden bg-gray-100">
-            {post.images && post.images.length > 0 ? (
+      <div className="flex space-x-[30px]">
+        {/* 왼쪽 이미지 영역 */}
+        <div className="flex-shrink-0 relative">
+          {/* 강아지 이미지 */}
+          <figure className="relative w-[80px] h-[80px] overflow-hidden bg-gray-200 rounded-[15px] shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]">
               <img
-                src={post.images[0]}
-                alt={post.dog_name}
-                className="w-full h-full object-cover"
+                className={'w-full h-full object-cover'}
+                src={images && images.length > 0 ? images[0] : "/img/dummy_thumbnail.jpg"}
+                alt={dogName || '강아지 사진'}
               />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                이미지 없음
-              </div>
-            )}
+          </figure>
+        </div>
+
+        {/* 오른쪽 텍스트 영역 */}
+        <div className="min-w-0 h-[70px] mt-[10px] flex flex-col justify-between w-full">
+          {/* 찜하기 버튼 */}
+          <div className="absolute top-[10px] right-[10px]">
+            <button
+              onClick={toggleFavorite}
+              disabled={loading}
+              className="p-0 rounded-full disabled:opacity-50 flex items-center justify-center"
+            >
+              {loading ? (
+                <div className="w-[16px] h-[14px] flex items-center justify-center">
+                  <div className="w-3 h-3 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                </div>
+              ) : (
+                <figure className={'w-[16px] h-[14px]'}>
+                  <IconHeart fill={isFavorite ? '#F36C5E' : '#D2D2D2'}/>
+                </figure>
+              )}
+            </button>
           </div>
 
-          <div className={`absolute -top-3 -right-2 px-2 py-1 rounded-full text-xs font-bold text-white ${getDdayColor(post.dday)}`}>
-            {getDdayText(post.dday)}
+          {/* 제목 */}
+          <h3 className="text-list-1 mb-2 leading-tight line-clamp-2 text-14-m">
+            {title}
+          </h3>
+
+          {/* 강아지 정보와 날짜 */}
+          <div className="flex justify-between items-end text-text-800 mb-[6px]">
+            <div className="text-name-breed text-12-r">
+              {dogName} / {dogSize}
+            </div>
+            <div className="text-post-date text-text-600 text-9-r font-light">
+              {deadline}
+            </div>
           </div>
+
+          {/* 거리 정보 (가까운순 정렬 시에만 표시) */}
+          {distance !== undefined && (
+            <div className="flex justify-between items-center text-text-800">
+              <div className="text-10-r text-text-600">
+                출발지: {departureAddress}
+              </div>
+              <div className="text-10-r text-brand-point font-medium">
+                {distance}km
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="mt-4">
-        <button
-          onClick={() => onPostClick(post.id)}
-          className={buttonInfo.className}
-          disabled={buttonInfo.disabled}
-        >
-          {buttonInfo.text}
-        </button>
-      </div>
     </div>
   );
 };

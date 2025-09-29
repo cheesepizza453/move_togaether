@@ -50,6 +50,7 @@ export default function PostDetailPage() {
   const [error, setError] = useState(null);
   const [isFavorite, setIsFavorite] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [loginDialogContext, setLoginDialogContext] = useState('favorite'); // 'favorite' or 'inquiry'
   const [showApplyDialog, setShowApplyDialog] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [activeTab, setActiveTab] = useState('post');
@@ -205,6 +206,7 @@ export default function PostDetailPage() {
       // 세션 확인
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
+        setLoginDialogContext('favorite');
         setShowLoginDialog(true);
         return;
       }
@@ -260,6 +262,7 @@ export default function PostDetailPage() {
   const handleInquiry = () => {
     if (!user) {
       setShowLoginDialog(true);
+      setLoginDialogContext('inquiry');
       return;
     }
     router.push(`/posts/${postId}/inquiry`);
@@ -674,7 +677,10 @@ export default function PostDetailPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>로그인이 필요합니다</AlertDialogTitle>
             <AlertDialogDescription>
-              찜 기능을 사용하려면 로그인해주세요.
+              {loginDialogContext === 'favorite'
+                ? '찜 기능을 사용하려면 로그인해주세요.'
+                : '문의하기 기능을 사용하려면 로그인해주세요.'
+              }
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex flex-row gap-3">

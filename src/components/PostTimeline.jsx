@@ -14,18 +14,20 @@ const PostTimeline = ({ posts, onPostClick, emptyMessage }) => {
       </div>
     );
   }
+  console.log(posts);
 
   return (
     <div className="relative">
       {posts.map((post, index) => (
-        <div key={post.id} className="relative">
+        <div key={post.id} className="relative mb-10">
           {/* 각 카드마다 개별 타임라인 바 - 노란원에서 카드 하단까지 */}
           <div
-            className="absolute left-0 w-1 bg-[#FFD700]"
+            className="absolute left-0 bg-[#FFD700]"
             style={{
               transform: 'translateX(-50%)',
-              top: index === 0 ? '12px' : '0px',
-              height: index === 0 ? 'calc(100% - 12px)' : '100%'
+              top: '24px',
+              height: 'calc(100% - 24px)',
+              width: '0.5px',
             }}
           ></div>
 
