@@ -10,6 +10,7 @@ import moment from 'moment';
 import { ChevronLeft, Edit } from 'lucide-react';
 import { myPageAPI, handleAPIError } from '@/lib/api-client';
 import MyPageCard from '@/components/MyPageCard';
+import { convertDogSize } from '@/lib/utils';
 
 const MyPage = () => {
   const { user, profile, loading, signOut } = useAuth();
@@ -18,6 +19,55 @@ const MyPage = () => {
   const [activeSubTab, setActiveSubTab] = useState('진행중'); // 작성 탭의 하위 탭
   const [myPosts, setMyPosts] = useState([]);
   const [appliedPosts, setAppliedPosts] = useState([]);
+
+  // D-day 계산 함수
+  const getDday = (deadline) => {
+    if (!deadline) return 0;
+    return moment(deadline).diff(moment(), 'days');
+  };
+
+  // 상태 배지 생성 함수
+  const getStatusBadge = (status, deadline) => {
+    const dday = getDday(deadline);
+
+    if (status === 'completed') {
+      return {
+        text: '완료',
+        className: 'bg-gray-500 text-white'
+      };
+    } else if (status === 'cancelled') {
+      return {
+        text: '취소',
+        className: 'bg-red-500 text-white'
+      };
+    } else if (dday < 0) {
+      return {
+        text: '마감',
+        className: 'bg-gray-400 text-white'
+      };
+    } else if (dday <= 3) {
+      return {
+        text: '긴급',
+        className: 'bg-red-500 text-white'
+      };
+    } else if (dday <= 7) {
+      return {
+        text: '마감임박',
+        className: 'bg-orange-500 text-white'
+      };
+    } else {
+      return {
+        text: '진행중',
+        className: 'bg-green-500 text-white'
+      };
+    }
+  };
+
+  // 날짜 포맷팅 함수
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    return moment(dateString).format('YYYY.MM.DD');
+  };
   const [dataLoading, setDataLoading] = useState(false);
   const [error, setError] = useState(null);
   const [loadedTabs, setLoadedTabs] = useState(new Set());
