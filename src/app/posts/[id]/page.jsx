@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
+import { useDialogContext } from '@/components/DialogProvider';
 import moment from 'moment';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,7 +43,9 @@ CustomAlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName;
 export default function PostDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, profile } = useAuth();
+  const dialog = useDialogContext();
   const postId = params.id;
 
   const [post, setPost] = useState(null);
@@ -53,11 +56,25 @@ export default function PostDetailPage() {
   const [loginDialogContext, setLoginDialogContext] = useState('favorite'); // 'favorite' or 'inquiry'
   const [showApplyDialog, setShowApplyDialog] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
-  const [activeTab, setActiveTab] = useState('post');
+  const [activeTab, setActiveTab] = useState(() => {
+    // URL 쿼리 파라미터에서 tab 값을 확인하여 초기 탭 설정
+    const tab = searchParams.get('tab');
+    return tab === 'applicants' ? 'applicants' : 'post';
+  });
   const [applicants, setApplicants] = useState([]);
   const [selectedApplicant, setSelectedApplicant] = useState(null);
   const [showApplicantModal, setShowApplicantModal] = useState(false);
   const [isRecruitmentComplete, setIsRecruitmentComplete] = useState(false);
+
+  // URL 쿼리 파라미터 변경 시 탭 업데이트
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'applicants') {
+      setActiveTab('applicants');
+    } else {
+      setActiveTab('post');
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (postId) {
@@ -199,8 +216,6 @@ export default function PostDetailPage() {
     }
   };
 
-
-
   const handleFavoriteToggle = async () => {
     try {
       // 세션 확인
@@ -270,10 +285,25 @@ export default function PostDetailPage() {
 
   const fetchApplicants = async () => {
     try {
-      const response = await fetch(`/api/inquiries?post_id=${postId}`);
+      // 세션 토큰 가져오기
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        console.error('세션 토큰이 없습니다.');
+        return;
+      }
+
+      const response = await fetch(`/api/inquiries?post_id=${postId}`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+        }
+      });
+
       if (response.ok) {
         const { applications } = await response.json();
         setApplicants(applications || []);
+      } else {
+        console.error('지원자 목록 조회 실패:', response.status);
       }
     } catch (err) {
       console.error('지원자 목록 조회 오류:', err);
@@ -285,22 +315,49 @@ export default function PostDetailPage() {
     setShowApplicantModal(true);
   };
 
-  const handleRecruitmentComplete = async () => {
+  const handleRecruitmentComplete = () => {
+    dialog.showConfirm(
+      '모집 완료 시 상태를 변경할 수 없습니다.\n완료 하시겠습니까?',
+      '모집 완료 확인',
+      {
+        confirmText: '확인',
+        cancelText: '취소',
+        onConfirm: confirmRecruitmentComplete
+      }
+    );
+  };
+
+  const confirmRecruitmentComplete = async () => {
     try {
+      // 세션 토큰 가져오기
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        dialog.showError('로그인이 필요합니다.', '인증 오류');
+        return;
+      }
+
       const response = await fetch(`/api/posts/${postId}/complete`, {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+          'Content-Type': 'application/json'
+        }
       });
 
       if (response.ok) {
         setIsRecruitmentComplete(true);
         setApplicants([]);
-        alert('모집이 완료되었습니다.');
+        dialog.closeDialog();
+        toast.success('모집이 완료되었습니다.');
       } else {
-        alert('모집 완료 처리에 실패했습니다.');
+        const errorData = await response.json();
+        console.error('모집 완료 API 오류:', errorData);
+        dialog.showError('모집 완료 처리에 실패했습니다.', '오류');
       }
     } catch (err) {
       console.error('모집 완료 오류:', err);
-      alert('모집 완료 처리 중 오류가 발생했습니다.');
+      dialog.showError('모집 완료 처리 중 오류가 발생했습니다.', '오류');
     }
   };
 
@@ -394,62 +451,62 @@ export default function PostDetailPage() {
       {/* 헤더 */}
       <div className="bg-white">
         <div className={'flex flex-col items-center justify-between'}>
-        {/* 네비게이션 */}
-        <div className="w-full h-[72px] flex items-center justify-between px-[30px] py-[28px]">
-          <div className={'flex items-center'}>
-            <button
-              onClick={() => window.history.back()}
-              className={'p-[12px] pl-0 outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none'}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="9" height="16" viewBox="0 0 9 16" fill="none">
-                <path d="M8 15L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
-                      strokeLinecap="round"/>
-                <path d="M8 0.999999L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
-                      strokeLinecap="round"/>
-              </svg>
-            </button>
-            <h1 className="text-22-m text-black">
-              {isOwner ? '작성한 게시물' : '정보'}
-            </h1>
+          {/* 네비게이션 */}
+          <div className="w-full h-[72px] flex items-center justify-between px-[30px] py-[28px]">
+            <div className={'flex items-center'}>
+              <button
+                onClick={() => window.history.back()}
+                className={'p-[12px] pl-0 outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none'}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="9" height="16" viewBox="0 0 9 16" fill="none">
+                  <path d="M8 15L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
+                        strokeLinecap="round"/>
+                  <path d="M8 0.999999L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
+                        strokeLinecap="round"/>
+                </svg>
+              </button>
+              <h1 className="text-22-m text-black">
+                {isOwner ? '작성한 게시물' : '정보'}
+              </h1>
+            </div>
+            {!isOwner && (
+              <button
+                onClick={handleFavoriteToggle}
+                className={'p-0 outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none'}
+              >
+                <figure className="mt-[2px]">
+                  <IconHeart className={'size-[30px] block'} fill={isFavorite ? '#F36C5E' : '#D2D2D2'}/>
+                </figure>
+              </button>
+            )}
           </div>
-          {!isOwner && (
-            <button
-              onClick={handleFavoriteToggle}
-              className={'p-0 outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none'}
-            >
-              <figure className="mt-[2px]">
-                <IconHeart className={'size-[30px] block'} fill={isFavorite ? '#F36C5E' : '#D2D2D2'}/>
-              </figure>
-            </button>
+
+          {/* 탭 (작성자인 경우만) */}
+          {isOwner && (
+            <div className="flex w-full h-[55px] px-[30px] gap-x-[16px] shadow-[0_6px_6px_0px_rgba(0,0,0,0.05)]">
+              <button
+                onClick={() => setActiveTab('post')}
+                className={`text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none ${
+                  activeTab === 'post'
+                    ? 'text-black text-16-b'
+                    : 'text-text-800 text-16-m'
+                }`}
+              >
+                게시물
+              </button>
+              <button
+                onClick={() => setActiveTab('applicants')}
+                className={`text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none ${
+                  activeTab === 'applicants'
+                    ? 'text-black text-16-b'
+                    : 'text-text-800'
+                }`}
+              >
+                지원자<span className={`ml-[2px] ${activeTab === 'applicants' ? 'text-brand-yellow-dark text-16-m' : 'text-text-800 text-16-r'}`}>{applicants.length}</span>
+              </button>
+            </div>
           )}
         </div>
-
-        {/* 탭 (작성자인 경우만) */}
-        {isOwner && (
-          <div className="flex w-full h-[55px] px-[30px] gap-x-[16px] shadow-[0_6px_6px_0px_rgba(0,0,0,0.05)]">
-            <button
-              onClick={() => setActiveTab('post')}
-              className={`text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none ${
-                activeTab === 'post'
-                  ? 'text-black text-16-b'
-                  : 'text-text-800 text-16-m'
-              }`}
-            >
-              게시물
-            </button>
-            <button
-              onClick={() => setActiveTab('applicants')}
-              className={`text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none ${
-                activeTab === 'applicants'
-                  ? 'text-black text-16-b'
-                  : 'text-text-800'
-              }`}
-            >
-              지원자<span className={`ml-[2px] ${activeTab === 'applicants' ? 'text-brand-yellow-dark text-16-m' : 'text-text-800 text-16-r'}`}>{applicants.length}</span>
-            </button>
-          </div>
-        )}
-      </div>
       </div>
 
       {/* 메인 콘텐츠 */}
@@ -504,7 +561,7 @@ export default function PostDetailPage() {
                   </div>
                   <div className="flex items-center gap-4 text-sm text-gray-600">
                     <p className="text-12-r text-[#8a8a8a]">
-                      {post.deadline} 작성
+                      {post.created_at} 작성
                     </p>
                   </div>
                 </div>
@@ -555,12 +612,20 @@ export default function PostDetailPage() {
 
         {/* 지원자 탭 */}
         {activeTab === 'applicants' && (
-            <div className="p-4">
+            <div className="p-4 mt-4">
               {isRecruitmentComplete ? (
                   <div className="text-center py-12">
-                    <p className="mt-[20vh] text-18-m leading-[1.44]">
-                      <strong className={'text-brand-point'}>모집이 종료</strong>되어<br/> 신청자 정보를 확인할 수 없습니다.
-                    </p>
+                    <div className="bg-white rounded-[15px] p-6 shadow-[0_0_12px_0px_rgba(0,0,0,0.1)]">
+                      <div className="text-center">
+                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <Users className="h-8 w-8 text-gray-400" />
+                        </div>
+                        <p className="text-18-m leading-[1.44] text-gray-700">
+                          <strong className="text-brand-point">모집이 종료</strong>되어<br/>
+                          신청자 정보를 확인하실 수 없습니다.
+                        </p>
+                      </div>
+                    </div>
                   </div>
               ) : applicants.length === 0 ? (
                   <div className="mt-[20vh]">
@@ -570,8 +635,7 @@ export default function PostDetailPage() {
               ) : (
                   <div className="space-y-[10px]">
                     {applicants.map((applicant) => (
-                        <div key={applicant.id}
-                             className="py-[30px] px-[24px] bg-white rounded-[15px] shadow-[0_0_12px_0px_rgba(0,0,0,0.1)]">
+                        <div key={applicant.id} className="py-[30px] px-[24px] bg-white rounded-[15px] shadow-[0_0_12px_0px_rgba(0,0,0,0.1)]">
                           <div className="mb-[12px] flex items-start justify-between">
                             <div className="flex flex-col">
                               <div className={'mb-[4px] flex items-center text-[#535353] gap-x-[5px]'}>
@@ -770,6 +834,7 @@ export default function PostDetailPage() {
           </div>
         </div>
       )}
+
     </div>
   );
 }

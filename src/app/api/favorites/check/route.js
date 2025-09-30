@@ -55,9 +55,10 @@ export async function GET(request) {
     // 즐겨찾기 상태 확인
     const { data: favoriteData, error: favoriteError } = await supabase
       .from('favorites')
-      .select('id')
+      .select('user_id, post_id')
       .eq('user_id', userProfile.id)
       .eq('post_id', postId)
+      .eq('is_deleted', false)
       .single();
 
     if (favoriteError && favoriteError.code !== 'PGRST116') {
@@ -81,4 +82,3 @@ export async function GET(request) {
     }, { status: 500 });
   }
 }
-

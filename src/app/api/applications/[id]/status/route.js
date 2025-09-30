@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server'
 import { withAuth } from '@/lib/auth-middleware'
 
 // PUT: 봉사 신청 상태 변경 (수락/거절)
-export const PUT = withAuth(async (request) => {
+export const PUT = withAuth(async (request, { params }) => {
   try {
-    const { id } = request.params
+    const { id } = await params
     const body = await request.json()
     const { status, message } = body
 

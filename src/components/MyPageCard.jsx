@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import moment from 'moment';
 
 const MyPageCard = ({
@@ -9,6 +10,7 @@ const MyPageCard = ({
   activeSubTab,
   onFavoriteToggle
 }) => {
+  const router = useRouter();
   // 유틸리티 함수들
   const convertDogSize = (size) => {
     const sizeMap = {
@@ -132,7 +134,13 @@ const MyPageCard = ({
       {/* 서브탭별 하단 버튼 */}
       {activeSubTab === '진행중' && (
         <div className="mt-3">
-          <button className="w-full bg-yellow-400 text-gray-800 py-2 px-4 rounded-xl text-sm font-medium hover:bg-yellow-500 transition-colors">
+          <button
+            onClick={() => {
+              // 지원자 정보 페이지로 이동 (applicants 탭으로)
+              router.push(`/posts/${post.id}?tab=applicants`);
+            }}
+            className="w-full bg-yellow-400 text-gray-800 py-2 px-4 rounded-xl text-sm font-medium hover:bg-yellow-500 transition-colors"
+          >
             지원자 {post.applicant_count || 0}
           </button>
         </div>
@@ -141,8 +149,8 @@ const MyPageCard = ({
         <div className="mt-3">
           <button
             onClick={() => {
-              // 종료된 게시물 재업로드 기능
-              console.log('재업로드:', post.id);
+              // 작성 페이지로 이동 (재업로드)
+              router.push('/volunteer/create');
             }}
             className="w-full bg-red-500 text-white py-2 px-4 rounded-xl text-sm font-medium hover:bg-red-600 transition-colors"
           >

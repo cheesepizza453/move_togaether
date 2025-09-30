@@ -81,13 +81,15 @@ const MyPage = () => {
       return; // 이미 로드된 탭은 다시 로드하지 않음
     }
 
+    // 로딩 중이거나 사용자가 없으면 함수 종료
+    if (loading || !user) {
+      console.log('fetchTabData 건너뜀:', { loading, user: !!user });
+      return;
+    }
+
     try {
       setDataLoading(true);
       setError(null);
-
-      if (!user) {
-        throw new Error('로그인이 필요합니다.');
-      }
 
       let posts;
       if (tabType === '지원') {
@@ -134,7 +136,7 @@ const MyPage = () => {
     } finally {
       setDataLoading(false);
     }
-  }, [loadedTabs]);
+  }, [loadedTabs, loading, user]);
 
   // 로그인 상태 확인
   useEffect(() => {
@@ -149,14 +151,14 @@ const MyPage = () => {
 
   // 활성 탭 변경 시 데이터 조회
   useEffect(() => {
-    if (user && profile && activeTab) {
+    if (!loading && user && profile && activeTab) {
       if (activeTab === '작성') {
         fetchTabData(activeTab, activeSubTab);
       } else {
         fetchTabData(activeTab);
       }
     }
-  }, [activeTab, activeSubTab, user, profile, fetchTabData]);
+  }, [activeTab, activeSubTab, user, profile, loading, fetchTabData]);
 
   // 탭 변경 핸들러
   const handleTabChange = (tab) => {

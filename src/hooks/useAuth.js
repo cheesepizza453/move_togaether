@@ -25,11 +25,42 @@ export const AuthProvider = ({ children }) => {
     // 초기 인증 상태 확인
     const getUser = async () => {
       try {
-        // 먼저 세션을 확인하여 빠른 응답
+        // localStorage에서 캐시된 사용자 정보 확인
+        const cachedUser = localStorage.getItem('supabase.auth.user');
+        const cachedProfile = localStorage.getItem('supabase.auth.profile');
+
+        if (cachedUser && cachedProfile) {
+          try {
+            const userData = JSON.parse(cachedUser);
+            const profileData = JSON.parse(cachedProfile);
+
+            // 캐시된 데이터가 유효한지 확인 (만료 시간 체크)
+            const cacheTime = localStorage.getItem('supabase.auth.cacheTime');
+            const now = Date.now();
+            const CACHE_DURATION = 5 * 60 * 1000; // 5분
+
+            if (cacheTime && (now - parseInt(cacheTime)) < CACHE_DURATION) {
+              console.log('캐시된 사용자 정보 사용');
+              setUser(userData);
+              setProfile(profileData);
+              setLoading(false);
+              return;
+            }
+          } catch (parseError) {
+            console.log('캐시된 데이터 파싱 오류, 서버에서 새로 가져옴');
+          }
+        }
+
+        // 캐시가 없거나 만료된 경우 서버에서 가져오기
+        console.log('서버에서 사용자 정보 조회');
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           setUser(session.user);
           await fetchProfile(session.user.id);
+
+          // 캐시에 저장
+          localStorage.setItem('supabase.auth.user', JSON.stringify(session.user));
+          localStorage.setItem('supabase.auth.cacheTime', Date.now().toString());
           setLoading(false);
           return;
         }
@@ -40,6 +71,9 @@ export const AuthProvider = ({ children }) => {
 
         if (user) {
           await fetchProfile(user.id);
+          // 캐시에 저장
+          localStorage.setItem('supabase.auth.user', JSON.stringify(user));
+          localStorage.setItem('supabase.auth.cacheTime', Date.now().toString());
         }
       } catch (error) {
         console.error('사용자 정보 조회 오류:', error);
@@ -61,6 +95,12 @@ export const AuthProvider = ({ children }) => {
           setUser(null);
           setProfile(null);
           setLoading(false);
+
+          // 캐시 정리
+          localStorage.removeItem('supabase.auth.user');
+          localStorage.removeItem('supabase.auth.profile');
+          localStorage.removeItem('supabase.auth.cacheTime');
+          localStorage.removeItem('supabase.auth.profileCacheTime');
           return;
         }
 
@@ -198,6 +238,25 @@ export const AuthProvider = ({ children }) => {
     try {
       console.log('프로필 조회 시작:', { userId });
 
+      // 캐시된 프로필 확인
+      const cachedProfile = localStorage.getItem('supabase.auth.profile');
+      const cacheTime = localStorage.getItem('supabase.auth.profileCacheTime');
+      const now = Date.now();
+      const CACHE_DURATION = 5 * 60 * 1000; // 5분
+
+      if (cachedProfile && cacheTime && (now - parseInt(cacheTime)) < CACHE_DURATION) {
+        try {
+          const profileData = JSON.parse(cachedProfile);
+          console.log('캐시된 프로필 사용');
+          setProfile(profileData);
+          return;
+        } catch (parseError) {
+          console.log('캐시된 프로필 파싱 오류, 서버에서 새로 가져옴');
+        }
+      }
+
+      // 서버에서 프로필 조회
+      console.log('서버에서 프로필 조회');
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
@@ -217,6 +276,10 @@ export const AuthProvider = ({ children }) => {
       } else {
         console.log('프로필 조회 성공:', data);
         setProfile(data);
+
+        // 프로필 캐시에 저장
+        localStorage.setItem('supabase.auth.profile', JSON.stringify(data));
+        localStorage.setItem('supabase.auth.profileCacheTime', Date.now().toString());
       }
     } catch (error) {
       console.error('프로필 조회 중 오류:', error);
@@ -345,7 +408,13 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       setProfile(null);
       setLoading(false);
-      console.log('로컬 상태 초기화 완료');
+
+      // 캐시 정리
+      localStorage.removeItem('supabase.auth.user');
+      localStorage.removeItem('supabase.auth.profile');
+      localStorage.removeItem('supabase.auth.cacheTime');
+      localStorage.removeItem('supabase.auth.profileCacheTime');
+      console.log('로컬 상태 및 캐시 초기화 완료');
 
       // 2. 클라이언트 사이드에서 Supabase 세션 정리
       console.log('클라이언트 사이드 로그아웃...');

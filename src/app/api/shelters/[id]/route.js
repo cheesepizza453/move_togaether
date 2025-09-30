@@ -5,7 +5,7 @@ import { createServerSupabaseClient } from '@/lib/supabase'
 // GET: 개별 보호소 조회
 export const GET = async (request, { params }) => {
   try {
-    const { id } = params
+    const { id } = await params
 
     // 서버 사이드 Supabase 클라이언트 생성 (anon key 사용)
     const supabase = createServerSupabaseClient()
@@ -31,7 +31,7 @@ export const GET = async (request, { params }) => {
 // PUT: 보호소 정보 수정
 export const PUT = withAuth(async (request, { params }) => {
   try {
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
 
     // 보호소 존재 및 권한 확인

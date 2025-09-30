@@ -5,6 +5,7 @@ import Header from '@/components/common/Header';
 import Footer from '@/components/common/Footer';
 import BottomNavigation from '@/components/common/BottomNavigation';
 import { AuthProvider } from '@/hooks/useAuth';
+import { DialogProvider } from '@/components/DialogProvider';
 import { Toaster } from 'sonner';
 
 const ClientLayout = ({ children }) => {
@@ -14,17 +15,19 @@ const ClientLayout = ({ children }) => {
 
   return (
     <AuthProvider>
-      {/* {!isLoginPage && <Header />} */}
-      <main>{children}</main>
-      {!isLoginPage && <BottomNavigation />}
-      {!isLoginPage && <Footer />}
-      <Toaster
-        position="top-right"
-        expand={true}
-        richColors={true}
-        closeButton={true}
-        duration={5000}
-      />
+      <DialogProvider>
+        {/* {!isLoginPage && <Header />} */}
+        <main>{children}</main>
+        {!isLoginPage && <BottomNavigation />}
+        {!isLoginPage && <Footer />}
+        <Toaster
+          position="top-right"
+          expand={true}
+          richColors={true}
+          closeButton={true}
+          duration={5000}
+        />
+      </DialogProvider>
     </AuthProvider>
   );
 };
