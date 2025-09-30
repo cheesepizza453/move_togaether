@@ -166,7 +166,7 @@ const LocationSearchDialog = ({ isOpen, onClose, onLocationConfirm }) => {
           <Button
             onClick={handleSearch}
             disabled={!currentLocation || isLoading}
-            className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-medium"
+            className="w-full bg-brand-main text-black font-medium"
           >
             <MapPin className="h-4 w-4 mr-2" />
             현재 위치 검색

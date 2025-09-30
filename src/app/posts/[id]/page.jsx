@@ -752,7 +752,7 @@ export default function PostDetailPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleCall(selectedApplicant.user_profiles?.phone)}
-                    className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black text-sm py-2 px-4 rounded flex items-center justify-center gap-2"
+                    className="flex-1 bg-brand-main text-black text-sm py-2 px-4 rounded flex items-center justify-center gap-2"
                   >
                     <Phone className="h-4 w-4" />
                     전화하기

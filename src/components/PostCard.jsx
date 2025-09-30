@@ -87,7 +87,7 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, showTimeline = f
       }
     } catch (error) {
       console.error('즐겨찾기 처리 오류:', error);
-      showError('처리 중 오류가 발생했습니다.\n다시 시도해주세요.');
+      showError('찜하기 처리 중 오류가 발생했습니다.\n다시 시도해주세요.');
     } finally {
       setLoading(false);
     }

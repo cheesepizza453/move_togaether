@@ -392,23 +392,15 @@ const ShelterMapPage = () => {
       <div className="absolute top-0 left-0 right-0 z-10 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center space-x-3">
-            <h1 className="text-lg font-semibold text-gray-900">봉사활동 위치</h1>
-            {mapLoaded && (
-              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                {postsData?.length || 0}개 활동
-              </span>
-            )}
+            <h1 className="text-lg font-semibold text-gray-900">내 주변</h1>
           </div>
-            <div className="text-sm text-gray-600">
-              {profile?.display_name ? `${profile.display_name}님` : user ? '사용자' : '게스트'}
-            </div>
         </div>
       </div>
 
       {/* 선택된 게시물 카드 */}
       {selectedPost && (
-        <div className="absolute bottom-24 left-4 right-4 z-20">
-          <div className="bg-white rounded-[15px] px-[18px] py-[16px] cursor-pointer relative shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]">
+        <div className="absolute bottom-[20px] left-[25px] right-[25px] z-20">
+          <div className="bg-white rounded-[30px] px-[25px] py-[20px] cursor-pointer relative shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]">
             {/* 닫기 버튼 */}
             <button
               onClick={() => {
@@ -420,14 +412,14 @@ const ShelterMapPage = () => {
                 }
                 setSelectedPost(null);
               }}
-              className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-600"
+              className="absolute top-[10px] right-[15px] w-6 h-6 flex items-center justify-center text-gray-400"
             >
               ✕
             </button>
 
             {/* D-day 배지 */}
             <div className="flex justify-end items-start">
-              <div className="absolute -top-3 left-[-5px] z-10">
+              <div className="absolute top-[8px] left-[16px] z-10">
                 {(() => {
                   const today = moment();
                   const deadlineDate = moment(selectedPost?.deadline);
@@ -438,7 +430,7 @@ const ShelterMapPage = () => {
                     return 'bg-[#FFE889] text-brand-yellow-dark';
                   };
                   return (
-                    <span className={`flex items-center justify-center px-[13px] h-[24px] rounded-[7px] text-12-b font-bold ${getDdayColor(diffDays)}`}>
+                    <span className={`flex items-center justify-center px-[9px] h-[22px] rounded-[7px] text-14-b font-bold ${getDdayColor(diffDays)}`}>
                       D-{diffDays > 0 ? diffDays : '마감'}
                     </span>
                   );
@@ -446,7 +438,7 @@ const ShelterMapPage = () => {
               </div>
             </div>
 
-            <div className="flex space-x-[30px]">
+            <div className="flex space-x-[20px]">
               {/* 왼쪽 이미지 영역 */}
               <div className="flex-shrink-0 relative">
                 <figure className="relative w-[80px] h-[80px] overflow-hidden bg-gray-200 rounded-[15px] shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]">

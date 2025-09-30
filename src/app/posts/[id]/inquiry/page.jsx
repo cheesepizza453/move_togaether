@@ -174,7 +174,7 @@ export default function InquiryPage() {
               <Button
                 type="submit"
                 disabled={submitting || !message.trim()}
-                className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-medium"
+                className="w-full bg-brand-main text-black font-medium"
                 size="lg"
               >
                 {submitting ? '전송 중...' : '문의 완료'}
