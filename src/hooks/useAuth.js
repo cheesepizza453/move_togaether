@@ -487,6 +487,26 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // 프로필 업데이트 (캐시 갱신 포함)
+  const updateProfile = async (updatedProfileData) => {
+    try {
+      console.log('프로필 업데이트 시작:', updatedProfileData);
+
+      // 로컬 상태 업데이트
+      setProfile(updatedProfileData);
+
+      // localStorage 캐시 업데이트
+      localStorage.setItem('supabase.auth.profile', JSON.stringify(updatedProfileData));
+      localStorage.setItem('supabase.auth.profileCacheTime', Date.now().toString());
+
+      console.log('프로필 캐시 업데이트 완료');
+      return { success: true };
+    } catch (error) {
+      console.error('프로필 업데이트 중 오류:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
   // 이메일 인증 상태 확인
   const isEmailVerified = user?.email_confirmed_at !== null;
 
@@ -665,6 +685,7 @@ export const AuthProvider = ({ children }) => {
     signOut,
     resendVerification,
     checkNicknameDuplicate,
+    updateProfile,
     testSupabaseConnection,
     createProfileManually,
     signUpWithKakao,

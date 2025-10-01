@@ -232,7 +232,7 @@ const MyPage = () => {
             {/* 프로필 이미지 */}
             <div className="w-20 h-20 rounded-full overflow-hidden bg-white flex-shrink-0 mr-4">
               <Image
-                src={profile?.profile_image_url || '/img/default_profile.jpg'}
+                src={profile?.profile_image || '/img/default_profile.jpg'}
                 alt="프로필"
                 width={80}
                 height={80}
