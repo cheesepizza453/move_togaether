@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, User, Phone } from 'lucide-react';
 
 export default function InquiryPage() {
   const params = useParams();
@@ -104,46 +103,59 @@ export default function InquiryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       {/* 헤더 */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
-          <Button
-            variant="ghost"
-            onClick={() => router.back()}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-                 <h1 className="text-lg font-semibold">문의하기</h1>
+      <div className="bg-white">
+        <div className="w-full h-[72px] flex items-center justify-between px-[30px] py-[28px]">
+          <div className={'flex items-center'}>
+            <button
+                onClick={() => router.back()}
+                className={'p-[12px] pl-0 outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none'}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="9" height="16" viewBox="0 0 9 16" fill="none">
+                <path d="M8 15L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
+                      strokeLinecap="round"/>
+                <path d="M8 0.999999L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
+                      strokeLinecap="round"/>
+              </svg>
+            </button>
+            <h1 className="text-22-m text-black">
+              문의하기
+            </h1>
+          </div>
         </div>
       </div>
 
       {/* 메인 콘텐츠 */}
-      <div className="max-w-4xl mx-auto px-4 py-6">
+      <div className="max-w-4xl mx-auto px-[18px]">
         {/* 포스트 제목 */}
         <div className="mb-6">
-          <h2 className="text-lg font-bold text-gray-900">
+          <h2 className="px-[10px] text-18-b text-black">
             {post.title}
           </h2>
         </div>
 
         {/* 지원자 정보 */}
-        <Card className="mb-6">
+        <Card className="rounded-[15px] mb-[24px] p-[20px] shadow-[0_0_12px_0_rgba(0,0,0,0.07)]">
           <CardHeader>
-            <CardTitle className="text-base font-semibold">지원자 정보</CardTitle>
+            <CardTitle className="text-16-b mb-[4px]">지원자 정보</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="mb-[20px] text-14-r text-[#676767] leading-[1.25]">
               문의자의 연락처가 임보자에게 공개됩니다. 남기신 문의는 삭제할 수 없으며 입양 완료 시 임보자는 지원자의 정보를 확인할 수 없습니다.
             </p>
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                <User className="h-4 w-4 text-gray-600" />
+              <div
+                  className="relative w-[40px] h-[40px] bg-yellow-100 rounded-full overflow-hidden flex items-center justify-center shadow-[0_0_9px_0_rgba(0,0,0,0.2)]">
+{/*                썸네일 이미지 클래스 이걸로 해주세요!
+                     <img src={'/img/default_profile.jpg'}
+                     className={'absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover'}
+                     alt={'profile'}/>
+*/}
               </div>
-              <div>
-                <p className="font-medium">{profile?.display_name || '사용자'}</p>
-                <p className="text-sm text-gray-600">{profile?.phone || '연락처 없음'}</p>
+              <div className={'flex items-center gap-x-[5px]'}>
+                <p className="text-18-b">{profile?.display_name || '사용자'}</p>
+                {profile?.phone && <><span>|</span><p className="text-16-r">{profile?.phone.replace(/(\d{3})(\d{3,4})(\d{4})/, "$1-$2-$3")}</p></>}
               </div>
             </div>
           </CardContent>
@@ -152,37 +164,41 @@ export default function InquiryPage() {
         {/* 문의 폼 */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base font-semibold">전달할 메시지</CardTitle>
+            <CardTitle className="mb-[12px] text-16-b">전달할 메시지</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <Textarea
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="봉사 가능 열정, 이동수단 자차/대중교통 등 추가로 전달할 사항을 적어주세요. 개인 SNS로 미리 연락을 취하셨을 경우 연락한 채널과 마이디를 적어주시면 소통에 도움이 됩니다."
-                  className="min-h-[120px] resize-none"
-                  maxLength={1000}
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder="봉사 가능 일정, 이동수단(자차/대중교통) 등 추가로 전달할 사항을 적어주세요. 개인 SNS로 미리 연락을 취하셨을 경우 연락한 채널과 마이디를 적어주시면 소통에 도움이 됩니다."
+                    className="p-[15px] min-h-[160px] rounded-[15px] text-14-r resize-none bg-text-100 border border-text-300 text-text-800 focus:bg-brand-bg focus:border-brand-main focus:text-brand-yellow-dark"
+                    maxLength={1000}
                 />
-                <div className="flex justify-end mt-2">
-                  <span className="text-sm text-gray-500">
+                <div className="flex justify-end mt-[8px]">
+                  <span className="text-12-l text-text-800">
                     {message.length}/1000
                   </span>
                 </div>
               </div>
-
-              <Button
-                type="submit"
-                disabled={submitting || !message.trim()}
-                className="w-full bg-brand-main text-black font-medium"
-                size="lg"
-              >
-                {submitting ? '전송 중...' : '문의 완료'}
-              </Button>
+              <div
+                  className={'fixed bottom-[86px] left-0 right-0 pt-[15px] pb-[24px] max-w-[550px] mx-auto bg-white'}>
+                <div className="sticky bottom-4 z-50">
+                  <div className="w-full max-w-[550px] mx-auto px-[18px]">
+                    <Button
+                        disabled={submitting || !message.trim()}
+                        className="w-full rounded-[15px] text-16-m h-[54px] flex-1 bg-brand-main"
+                    >
+                      {submitting ? '전송 중...' : '문의 완료'}
+                    </Button>
+                  </div>
+                </div>
+                  </div>
             </form>
           </CardContent>
         </Card>
       </div>
     </div>
-  );
+);
 }
