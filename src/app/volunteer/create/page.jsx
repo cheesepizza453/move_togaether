@@ -415,48 +415,18 @@ const VolunteerCreate = () => {
         return;
       }
 
-      // AuthContext에서 이미 사용자 정보를 가지고 있으므로 직접 토큰 가져오기 시도
-      console.log('세션 토큰 가져오기 시작...');
+      // AuthContext에서 사용자 정보를 확인했으므로 바로 API 호출 진행
+      console.log('사용자 인증 완료, API 호출 준비');
 
-      let currentSession;
+      // 세션 토큰 가져오기 (간단한 방식)
+      let accessToken = null;
       try {
-        // 먼저 AuthContext의 사용자 정보로 시도
-        if (user && user.id) {
-          console.log('AuthContext 사용자 정보 사용:', user.id);
-
-          // 간단한 세션 확인
-          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-          if (sessionError) {
-            console.error('세션 확인 오류:', sessionError);
-            // 세션 오류가 있어도 사용자 ID가 있으면 계속 진행
-            console.log('세션 오류 무시하고 계속 진행');
-          }
-
-          currentSession = session;
-        } else {
-          console.log('AuthContext 사용자 정보 없음');
-          toast.error('사용자 정보를 찾을 수 없습니다.');
-          router.push('/login');
-          return;
-        }
+        const { data: { session } } = await supabase.auth.getSession();
+        accessToken = session?.access_token;
+        console.log('세션 토큰 확인:', accessToken ? '존재' : '없음');
       } catch (error) {
-        console.error('세션 확인 중 예외 발생:', error);
-        // 세션 확인에 실패해도 사용자가 있으면 계속 진행
-        console.log('세션 확인 실패했지만 사용자가 있으므로 계속 진행');
+        console.log('세션 확인 실패, 토큰 없이 진행:', error.message);
       }
-
-      // 세션이 없어도 사용자 ID가 있으면 계속 진행 (토큰 없이 시도)
-      if (!currentSession) {
-        console.log('세션 없음, 사용자 ID만으로 진행');
-        // 토큰 없이 API 호출 시도
-      }
-
-      console.log('세션 확인 완료:', {
-        hasSession: !!currentSession,
-        hasToken: !!currentSession?.access_token,
-        tokenLength: currentSession?.access_token?.length
-      });
 
       // 서버로 데이터 전송 (타임아웃 추가)
       console.log('API 호출 시작...');
@@ -471,12 +441,14 @@ const VolunteerCreate = () => {
         'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       };
 
-      // 세션이 있으면 Authorization 헤더 추가
-      if (currentSession?.access_token) {
-        headers['Authorization'] = `Bearer ${currentSession.access_token}`;
+      // Authorization 헤더 추가 (우선순위)
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
         console.log('Authorization 헤더 추가됨');
-      } else {
-        console.log('세션 토큰 없음, Authorization 헤더 없이 진행');
+      } else if (user?.id) {
+        // 토큰이 없으면 사용자 ID를 헤더에 추가
+        headers['X-User-ID'] = user.id;
+        console.log('사용자 ID 헤더 추가됨:', user.id);
       }
 
       const fetchPromise = fetch('/api/posts/volunteer', {

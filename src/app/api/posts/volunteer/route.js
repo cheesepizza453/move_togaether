@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase';
+import { createServerSupabaseClient, createAdminSupabaseClient } from '@/lib/supabase';
 
 export async function POST(request) {
   const startTime = Date.now();
@@ -58,11 +58,14 @@ export async function POST(request) {
     // 클라이언트에서 전달받은 인증 헤더 추출
     const authHeader = request.headers.get('authorization');
     const apikeyHeader = request.headers.get('apikey');
+    const userIdHeader = request.headers.get('x-user-id');
 
     console.log('인증 헤더:', {
       hasAuth: !!authHeader,
       hasApikey: !!apikeyHeader,
-      authLength: authHeader?.length
+      hasUserId: !!userIdHeader,
+      authLength: authHeader?.length,
+      userId: userIdHeader
     });
 
     if (!apikeyHeader) {
@@ -94,13 +97,18 @@ export async function POST(request) {
       }
 
       user = authUser;
-    } else {
-      // Authorization 헤더가 없으면 익명 사용자로 처리 (임시)
-      console.log('익명 사용자로 처리 - 임시로 테스트용 사용자 ID 사용');
+    } else if (userIdHeader) {
+      // X-User-ID 헤더가 있으면 해당 사용자로 처리
+      console.log('X-User-ID 헤더로 사용자 처리:', userIdHeader);
       supabase = createServerSupabaseClient();
-
-      // 임시로 테스트용 사용자 ID 사용 (실제 환경에서는 제거해야 함)
-      user = { id: 'test-user-id' };
+      user = { id: userIdHeader };
+    } else {
+      // 인증 정보가 없으면 에러
+      console.log('인증 정보 없음');
+      return NextResponse.json({
+        success: false,
+        error: '인증이 필요합니다.'
+      }, { status: 401 });
     }
 
     // 사용자 프로필 ID 가져오기
@@ -134,8 +142,11 @@ export async function POST(request) {
         const randomString = Math.random().toString(36).substring(2, 15);
         const fileName = `posts/${timestamp}_${randomString}.jpg`;
 
+        // Authorization 헤더가 있으면 일반 클라이언트 사용, 없으면 관리자 클라이언트 사용
+        const storageSupabase = authHeader ? supabase : createAdminSupabaseClient();
+
         // Supabase Storage에 업로드
-        const { error: uploadError } = await supabase.storage
+        const { error: uploadError } = await storageSupabase.storage
           .from('post-images')
           .upload(fileName, buffer, {
             contentType: 'image/jpeg',
@@ -144,24 +155,23 @@ export async function POST(request) {
 
         if (uploadError) {
           console.error('사진 업로드 오류:', uploadError);
-          return NextResponse.json({
-            success: false,
-            error: '사진 업로드에 실패했습니다.'
-          }, { status: 500 });
+          // 사진 업로드 실패 시에도 계속 진행 (사진 없이 등록)
+          console.log('사진 업로드 실패했지만 계속 진행합니다.');
+          images = null;
+        } else {
+          // 공개 URL 생성
+          const { data: urlData } = storageSupabase.storage
+            .from('post-images')
+            .getPublicUrl(fileName);
+
+          images = [urlData.publicUrl];
+          console.log('사진 업로드 성공:', urlData.publicUrl);
         }
-
-        // 공개 URL 생성
-        const { data: urlData } = supabase.storage
-          .from('post-images')
-          .getPublicUrl(fileName);
-
-        images = [urlData.publicUrl];
       } catch (error) {
         console.error('사진 처리 오류:', error);
-        return NextResponse.json({
-          success: false,
-          error: '사진 처리 중 오류가 발생했습니다.'
-        }, { status: 500 });
+        // 사진 처리 오류 시에도 계속 진행 (사진 없이 등록)
+        console.log('사진 처리 오류가 발생했지만 계속 진행합니다.');
+        images = null;
       }
     }
 

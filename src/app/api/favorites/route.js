@@ -151,7 +151,7 @@ export async function POST(request) {
     // 중복 확인
     const { data: existingFavorite, error: checkError } = await supabase
       .from('favorites')
-      .select('id')
+      .select('user_id, post_id')
       .eq('post_id', post_id)
       .eq('user_id', profile.id)
       .eq('is_deleted', false)

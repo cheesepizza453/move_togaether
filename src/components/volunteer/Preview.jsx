@@ -11,9 +11,10 @@ const Preview = ({
 }) => {
   const getSizeLabel = (size) => {
     const sizeMap = {
-      small: '소형견 (10kg 이하)',
-      medium: '중형견 (10-25kg)',
-      large: '대형견 (25kg 이상)'
+      small: '소형견 (5kg 이하)',
+      smallMedium: '중소형견 (5.1-8kg)',
+      medium: '중형견 (8.1-20kg)',
+      large: '대형견 (20.1kg 이상)'
     };
     return sizeMap[size] || size;
   };

@@ -15,7 +15,7 @@ const MyPageCard = ({
   const convertDogSize = (size) => {
     const sizeMap = {
       'small': '소형견',
-      'medium-small': '중소형견',
+      'smallMedium': '중소형견',
       'medium': '중형견',
       'large': '대형견'
     };

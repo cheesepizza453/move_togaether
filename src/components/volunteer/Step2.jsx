@@ -62,7 +62,7 @@ const Step2 = ({
                 <label className="block text-16-m mb-[6px]">
                     사이즈<span className={'text-[#E17364] text-16-m'}>*</span>
                 </label>
-                <p className={'mb-[15px] text-[#676767] text-12-r'}>소형견 7kg 미만 | 중소형견 7kg ~ 10kg | 중형견 10kg ~ 20kg | 대형견
+                <p className={'mb-[15px] text-[#676767] text-12-r'}>소형견 ~5kg | 중소형견 5.1~8kg | 중형견 8.1~20kg | 대형견 20.1kg~
                     20kg 초과</p>
                 <div className={`${inputStyle} w-full px-[8px] py-[8px] gap-x-[8px] flex bg-gray-100 overflow-x-scroll`}>
                     {sizeOptions.map((option) => (

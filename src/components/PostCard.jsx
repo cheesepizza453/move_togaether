@@ -8,6 +8,7 @@ import { favoritesAPI, handleAPIError } from '@/lib/api-client';
 import { useDialogContext } from '@/components/DialogProvider';
 import { convertDogSize } from '@/lib/utils';
 import moment from 'moment';
+import { toast } from 'sonner';
 
 const PostCard = ({ post, isFavorite = false, onFavoriteToggle, showTimeline = false }) => {
   const [loading, setLoading] = useState(false);
@@ -51,43 +52,27 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, showTimeline = f
       return;
     }
 
-    if (isFavorite) {
-      // 즐겨찾기 제거 확인
-      showConfirm(
-        '즐겨찾기에서 제거하시겠습니까?',
-        '즐겨찾기 제거',
-        {
-          confirmText: '제거',
-          cancelText: '취소',
-          onConfirm: async () => {
-            await performFavoriteToggle();
-          }
-        }
-      );
-    } else {
-      // 즐겨찾기 추가
-      await performFavoriteToggle();
-    }
+    // 즐겨찾기 토글 (확인 다이얼로그 없이 바로 실행)
+    await performFavoriteToggle();
   };
 
   const performFavoriteToggle = async () => {
     try {
       setLoading(true);
 
-      if (isFavorite) {
-        // 즐겨찾기 제거
-        await favoritesAPI.remove(id);
-        onFavoriteToggle?.(id, false);
-        showSuccess('즐겨찾기에서 제거되었습니다.');
-      } else {
-        // 즐겨찾기 추가
-        await favoritesAPI.add(id);
-        onFavoriteToggle?.(id, true);
-        showSuccess('즐겨찾기에 추가되었습니다.');
+      // 인증 상태 재확인
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error('로그인이 필요합니다.');
+        return;
       }
+
+      // 부모 컴포넌트의 handleFavoriteToggle 호출 (API 호출은 부모에서 처리)
+      // isFavorite이 true면 false로, false면 true로 변경
+      await onFavoriteToggle?.(id, !isFavorite);
     } catch (error) {
       console.error('즐겨찾기 처리 오류:', error);
-      showError('처리 중 오류가 발생했습니다.\n다시 시도해주세요.');
+      toast.error('처리 중 오류가 발생했습니다.\n다시 시도해주세요.');
     } finally {
       setLoading(false);
     }
