@@ -11,12 +11,7 @@ const MainBanner = () => {
       id: 1,
       image: "/img/main_banner_1.jpg",
       alt: "오늘은 특별한 날이에요. 새 가족을 만나러 가요!"
-    },
-    {
-      id: 2,
-      image: "/img/main_banner_1.jpg",
-      alt: "오늘은 특별한 날이에요. 새 가족을 만나러 가요!"
-    },
+    }
   ];
 
   useEffect(() => {
@@ -54,7 +49,6 @@ const MainBanner = () => {
           </figure>
         ))}
       </div>
-
 
       {/* 우측 하단 네비게이션 컨트롤 */}
       <div className="absolute bottom-[10px] right-[16px] flex items-center space-x-[2px]">
