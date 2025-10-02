@@ -184,7 +184,7 @@ export default function InquiryPage() {
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="봉사 가능 일정, 이동수단(자차/대중교통) 등 추가로 전달할 사항을 적어주세요. 개인 SNS로 미리 연락을 취하셨을 경우 연락한 채널과 마이디를 적어주시면 소통에 도움이 됩니다."
-                    className="p-[15px] min-h-[160px] rounded-[15px] text-14-r resize-none bg-text-100 border border-text-300 text-text-800 focus:bg-brand-bg focus:border-brand-main focus:text-brand-yellow-dark"
+                    className="p-[15px] min-h-[160px] rounded-[15px] text-14-r resize-none bg-text-100 border border-text-300 text-text-800 focus:bg-brand-bg focus-visible:ring-0 focus-visible:ring-transparent focus:outline-none focus:border-brand-main focus:text-brand-yellow-dark"
                     maxLength={1000}
                 />
                 <div className="flex justify-end mt-[8px]">

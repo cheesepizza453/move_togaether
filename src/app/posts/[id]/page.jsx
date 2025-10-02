@@ -447,7 +447,7 @@ export default function PostDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       {/* 헤더 */}
       <div className="bg-white">
         <div className={'flex flex-col items-center justify-between'}>
@@ -483,7 +483,7 @@ export default function PostDetailPage() {
 
           {/* 탭 (작성자인 경우만) */}
           {isOwner && (
-            <div className="flex w-full h-[55px] px-[30px] gap-x-[16px] shadow-[0_6px_6px_0px_rgba(0,0,0,0.05)]">
+            <div className="flex w-full h-[55px] px-[30px] gap-x-[16px] shadow-[0_6px_6px_0px_rgba(0,0,0,0.05)] bg-white z-20">
               <button
                 onClick={() => setActiveTab('post')}
                 className={`text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none ${
@@ -513,7 +513,7 @@ export default function PostDetailPage() {
 
       {/* 작성자 정보 */}
       {!isOwner &&
-      <div className={'relative w-full h-[92px] px-[25px] rounded-b-[15px] bg-white z-10'}>
+      <div className={'relative w-full h-[92px] px-[25px] rounded-b-[15px] bg-white z-20 overflow-hidden'}>
         <div className="pt-[10px] flex items-center justify-between">
           {/* 링크 추가 */}
           <a className={'flex items-center gap-[9px]'} href={`/authors/${post.user_id}`}>
@@ -602,7 +602,7 @@ export default function PostDetailPage() {
                   <div>
                     <h3 className="text-16-b mb-[10px]">상세 설명</h3>
                     <div className={'flex flex-col p-[18px] min-h-[115px] bg-white rounded-[15px] shadow-[0_0_12px_0px_rgba(0,0,0,0.1)]'}>
-                      <p className="text-text-800 text-16-r whitespace-pre-wrap">{post.description}</p>
+                      <p className="text-text-800 text-16-r whitespace-pre-wrap leading-[1.25]">{post.description}</p>
                     </div>
                   </div>
                 )}
@@ -612,7 +612,7 @@ export default function PostDetailPage() {
 
         {/* 지원자 탭 */}
         {activeTab === 'applicants' && (
-            <div className="p-4 mt-4">
+            <div className="">
               {isRecruitmentComplete ? (
                   <div className="text-center py-12">
                     <div className="bg-white rounded-[15px] p-6 shadow-[0_0_12px_0px_rgba(0,0,0,0.1)]">
@@ -628,9 +628,9 @@ export default function PostDetailPage() {
                     </div>
                   </div>
               ) : applicants.length === 0 ? (
-                  <div className="mt-[20vh]">
+                  <div className="pt-[200px] bg-white min-h-screen">
                     <Users className="h-12 w-12 text-gray-400 mx-auto mb-4"/>
-                    <p className="text-text-800 text-18-m text-center">아직 지원자가 없습니다.</p>
+                    <p className="text-text-800 text-16-m text-center">아직 지원자가 없습니다.</p>
                   </div>
               ) : (
                   <div className="space-y-[10px]">
@@ -692,13 +692,13 @@ export default function PostDetailPage() {
 
         {/* 액션 버튼 */}
         {!isOwner && (
-            <div className={'fixed bottom-[86px] left-0 right-0 pt-[15px] pb-[24px] max-w-[550px] mx-auto bg-brand-bg'}>
+            <div className={'fixed bottom-0 left-0 right-0 pt-[15px] pb-[110px] max-w-[550px] w-full mx-auto bg-brand-bg/50 backdrop-blur-md'}>
               <div className="sticky bottom-4 z-50">
-                <div className="w-full max-w-[550px] mx-auto px-[44px]">
+                <div className="w-full max-w-[550px] mx-auto px-[23px]">
                   <div className="flex gap-3">
                     <Button
                         onClick={handleInquiry}
-                        className="rounded-[15px] text-16-m h-[54px] flex-1 bg-brand-main"
+                        className="rounded-[15px] text-16-m h-[54px] w-full flex-1 bg-brand-main"
                     >
                       문의하기
                     </Button>
@@ -710,7 +710,7 @@ export default function PostDetailPage() {
 
         {/* 작성자용 액션 버튼 */}
         {isOwner && (
-          <div className={'fixed bottom-[86px] left-0 right-0 pt-[15px] pb-[24px] max-w-[550px] mx-auto bg-brand-bg'}>
+          <div className={'fixed bottom-0 left-0 right-0 pt-[15px] pb-[110px] max-w-[550px] mx-auto bg-brand-bg/50 backdrop-blur-md'}>
             <div className="sticky bottom-4 z-50">
               <div className="w-full max-w-[550px] mx-auto px-[44px]">
                 <div className="flex gap-3">
