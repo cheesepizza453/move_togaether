@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -84,55 +84,59 @@ const SignupSuccessPage = () => {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      {/* 상단 네비게이션 */}
-      <div className="flex items-center justify-between px-4 py-3 bg-white">
-        <button
-          onClick={() => router.back()}
-          className="text-gray-600 text-lg"
-        >
-          <span className="flex items-center">
-            <ChevronLeft size={20} className="text-gray-600 display-inline-block" />
-            <span className="ml-1">회원가입</span>
-          </span>
-        </button>
-        <div className="w-6"></div>
+      {/* 헤더 */}
+      <div className="bg-white">
+        <div className="w-full h-[72px] flex items-center justify-between px-[30px] py-[28px]">
+          <div className={'flex items-center'}>
+            <button
+                onClick={() => router.back()}
+                className={'p-[12px] pl-0 outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none'}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="9" height="16" viewBox="0 0 9 16" fill="none">
+                <path d="M8 15L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
+                      strokeLinecap="round"/>
+                <path d="M8 0.999999L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
+                      strokeLinecap="round"/>
+              </svg>
+            </button>
+            <h1 className="text-22-m text-black">
+              회원가입
+            </h1>
+          </div>
+        </div>
       </div>
 
       {/* 메인 콘텐츠 */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
-        {/* 닉네임 표시 */}
-        <div className="text-center mb-8">
-          <p className="text-gray-600">
-            {nickname ? `${nickname}님` : '회원가입'}
-          </p>
-        </div>
-
+      <div className="flex-1 flex flex-col items-center justify-center mt-[-100px]">
         {/* 가운데 이미지 */}
-        <div className="mb-12">
-          <img
-            src="/img/join_logo.png"
-            alt="회원가입 완료"
-            className="mx-auto"
-          />
+        <div className="">
+          <figure className={'w-[246px]'}>
+            <img
+              src="/img/join_logo.png"
+              alt="회원가입 완료"
+              className="mx-auto"
+            />
+          </figure>
         </div>
 
         {/* 성공 메시지 */}
-        <div className="text-center mb-8">
-          <h2 className="text-xl font-bold text-gray-800 mb-2">
-            회원가입이 <span className="text-orange-500">완료</span>되었습니다!
+        <div className="text-center mt-[-14px] mb-8">
+          <h2 className="text-18-m mb-2">
+            <span className="text-brand-yellow-dark whitespace-pre-line leading-[1.25]">
+              {nickname && `${nickname}님,\n`} 회원가입</span>이 <span className="text-brand-yellow-dark">완료</span>되었습니다!
           </h2>
-          <p className="text-gray-600 text-sm">
-            확인 버튼을 누르시면 메인으로 이동합니다.
+          <p className="text-12-r text-text-800 leading-[1.25]">
+            이메일로 회원가입 하신 경우 메일함에서 인증을 완료해주세요.<br/>
           </p>
         </div>
       </div>
 
       {/* 메인으로 이동 버튼 - 화면 하단 고정 */}
-      <div className="px-4 pb-8">
-        <div className="w-full max-w-sm mx-auto">
+      <div className="px-[23px] pb-[24px]">
+        <div className="w-full">
           <Link
             href="/"
-            className="w-full bg-yellow-400 text-gray-800 py-4 px-6 rounded-lg font-semibold text-center block hover:bg-yellow-500 transition-colors"
+            className="flex justify-center items-center w-full h-[54px] rounded-[15px] bg-brand-main text-16-m text-center"
           >
             메인으로 이동
           </Link>
