@@ -97,14 +97,14 @@ const ProfileEditForm = ({
       {/* 이름 */}
       <div>
         <label className="block text-16-m mb-[12px]">
-          이름<span className="text-brand-point">*</span>
+          닉네임<span className="text-brand-point">*</span>
         </label>
         <input
           type="text"
           value={formData.nickname}
           onChange={(e) => onNicknameChange(e.target.value)}
           onBlur={(e) => onNicknameBlur(e.target.value)}
-          placeholder="이름 또는 보호소명을 입력해주세요."
+          placeholder="닉네임 또는 보호소명을 입력해주세요."
           className={`w-full px-[15px] py-[18px] text-16-r rounded-[15px] border text-text-800 ${
             errors.nickname
               ? 'border-brand-point bg-brand-point-bg text-brand-point focus:border-brand-point focus:ring-brand-point'
