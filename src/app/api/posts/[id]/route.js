@@ -16,7 +16,8 @@ export async function GET(request, { params }) {
           auth_user_id,
           display_name,
           phone_visible,
-          phone
+          phone,
+          profile_image
         )
       `)
       .eq('id', id)

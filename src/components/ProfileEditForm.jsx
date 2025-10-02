@@ -116,17 +116,23 @@ const ProfileEditForm = ({
         />
         <div className="flex justify-between items-center mt-[4px]">
           <span className={`text-9-r ${
-            nicknameValidation?.isValid ? 'text-[#2BA03E]' : 'text-brand-point'
+            errors.nickname
+              ? 'text-brand-point'
+              : nicknameValidation?.isValid
+                ? 'text-[#2BA03E]'
+                : 'text-brand-point'
           }`}>
-            {nicknameChecking ? '확인 중!' : nicknameValidation?.message || ''}
+            {errors.nickname
+              ? errors.nickname
+              : nicknameChecking
+                ? '확인 중!'
+                : nicknameValidation?.message || ''
+            }
           </span>
           <span className="text-12-l text-text-800">
             {formData.nickname.length}/20
           </span>
         </div>
-        {errors.nickname && (
-          <p className="text-9-r text-brand-point mt-[4px]]">{errors.nickname}</p>
-        )}
       </div>
 
       {/* 소개글 */}

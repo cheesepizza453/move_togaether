@@ -99,8 +99,17 @@ const EditProfilePage = () => {
   // 변경사항 감지
   useEffect(() => {
     const hasFormChanges = JSON.stringify(formData) !== JSON.stringify(originalData);
-    setHasChanges(hasFormChanges);
-  }, [formData, originalData]);
+
+    // 소셜 채널 변경사항 확인
+    const originalChannels = {
+      instagram: profile?.instagram || '',
+      naverCafe: profile?.naver_cafe || '',
+      kakaoOpenChat: profile?.kakao_openchat || ''
+    };
+    const hasChannelChanges = JSON.stringify(channelInputs) !== JSON.stringify(originalChannels);
+
+    setHasChanges(hasFormChanges || hasChannelChanges);
+  }, [formData, originalData, channelInputs, profile]);
 
   // 프로필 이미지 변경 핸들러
   const handleProfileImageChange = (imageData) => {

@@ -132,8 +132,8 @@ const LoginPage = () => {
           sessionStorage.removeItem('redirectAfterLogin');
           router.push(redirectPath);
         } else {
-          console.log('기본 경로로 이동: 마이페이지');
-          router.push('/mypage');
+          console.log('기본 경로로 이동: 메인 페이지');
+          router.push('/');
         }
       } else {
         console.log('로그인 실패:', result.error);

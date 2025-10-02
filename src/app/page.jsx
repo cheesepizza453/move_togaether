@@ -291,7 +291,6 @@ export default function Home() {
         }
         return newSet;
       });
-      toast.success(isFavorited ? '즐겨찾기에 추가되었습니다.' : '즐겨찾기에서 제거되었습니다.');
     } catch (error) {
       console.error('찜 상태 변경 오류:', error);
       const errorInfo = handleAPIError(error);
@@ -309,7 +308,6 @@ export default function Home() {
           }
           return newSet;
         });
-        toast.success(isFavorited ? '즐겨찾기에 추가되었습니다.' : '즐겨찾기에서 제거되었습니다.');
       } else if (errorInfo.status === 404) {
         // 404 오류인 경우 (이미 제거된 찜) - 로컬 상태만 업데이트
         console.log('이미 제거된 찜입니다. 로컬 상태를 업데이트합니다.');
@@ -322,10 +320,11 @@ export default function Home() {
           }
           return newSet;
         });
-        toast.success(isFavorited ? '즐겨찾기에 추가되었습니다.' : '즐겨찾기에서 제거되었습니다.');
       } else if (errorInfo.type === 'auth') {
+        // 로그인 필요 시에는 여전히 에러 메시지 표시
         toast.error('로그인이 필요합니다.');
       } else {
+        // 기타 에러 시에는 여전히 에러 메시지 표시
         toast.error('찜 상태 변경에 실패했습니다.');
       }
     }

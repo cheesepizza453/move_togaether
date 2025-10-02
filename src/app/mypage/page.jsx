@@ -362,6 +362,7 @@ const MyPage = () => {
                           </div>
                         </div>
                         <button
+                            onClick={() => router.push(`/posts/${app.post_id}`)}
                             className="w-full bg-yellow-400 text-gray-800 py-2 px-4 rounded-xl text-sm font-medium hover:bg-yellow-500 transition-colors">
                           {formatDate(app.application_date)} 지원
                         </button>

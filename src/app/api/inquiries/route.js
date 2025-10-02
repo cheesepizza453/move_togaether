@@ -159,7 +159,8 @@ export async function GET(request) {
         *,
         user_profiles!applications_user_id_fkey (
           display_name,
-          phone
+          phone,
+          profile_image
         )
       `)
       .eq('is_deleted', false);

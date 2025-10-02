@@ -11,33 +11,8 @@ import { Button } from '@/components/ui/button';
 import { favoritesAPI, handleAPIError } from '@/lib/api-client';
 import { useAuth } from '@/hooks/useAuth';
 import { convertDogSize, formatDeadline } from '@/lib/utils';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
-import { cn } from "@/lib/utils";
+import LoginDialog from '@/components/LoginDialog';
 import IconLoading from "../../../public/img/icon/IconLoading";
-
-// 커스텀 AlertDialogContent (오버레이 없이)
-const CustomAlertDialogContent = React.forwardRef(({ className, ...props }, ref) => (
-  <AlertDialogPrimitive.Portal>
-    <AlertDialogPrimitive.Content
-      ref={ref}
-      className={cn(
-        "fixed left-[50%] top-[50%] z-[9999] grid w-[85vw] rounded-[15px] max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 pt-[36px] shadow-[0_0_6px_0px_rgba(0,0,0,0.25)] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-90 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
-        className
-      )}
-      {...props}
-    />
-  </AlertDialogPrimitive.Portal>
-));
-CustomAlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName;
 
 export default function FavoritesPage() {
   const router = useRouter();
@@ -50,7 +25,6 @@ export default function FavoritesPage() {
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeTab, setActiveTab] = useState('active');
-
 
   // 로그인 상태 확인 (AuthContext 사용)
   const checkAuthStatus = async () => {
@@ -156,11 +130,6 @@ export default function FavoritesPage() {
     return activeTab === 'active' ? activeFavorites : completedFavorites;
   };
 
-  // 로그인 페이지로 이동
-  const handleLogin = () => {
-    router.push('/login');
-  };
-
   // 페이지 로드 시 인증 상태 확인 및 데이터 로드
   useEffect(() => {
     const initializePage = async () => {
@@ -257,30 +226,14 @@ export default function FavoritesPage() {
         )}
       </main>
 
-      {/* 로그인 필요 다이얼로그 */}
-      <AlertDialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
-        {/* 커스텀 오버레이 */}
-        {showLoginDialog && (
-          <div
-            className="fixed inset-0 z-[9998] bg-black/60"
-            onClick={() => setShowLoginDialog(false)}
-          />
-        )}
-        <CustomAlertDialogContent className="z-[9999] bg-white">
-          <AlertDialogHeader>
-            <AlertDialogTitle>로그인이 필요합니다</AlertDialogTitle>
-            <AlertDialogDescription>
-              즐겨찾기 기능을 사용하려면 로그인해주세요.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex flex-row gap-3">
-            <AlertDialogCancel className="mt-0 flex-1">취소</AlertDialogCancel>
-            <AlertDialogAction onClick={handleLogin} className="flex-1">
-              로그인하기
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </CustomAlertDialogContent>
-      </AlertDialog>
+      {/* 로그인 다이얼로그 */}
+      <LoginDialog
+        open={showLoginDialog}
+        onOpenChange={setShowLoginDialog}
+        title="로그인이 필요합니다"
+        description="즐겨찾기 기능을 사용하려면 로그인해주세요."
+        redirectPath="/favorites"
+      />
     </div>
   );
 }

@@ -63,7 +63,6 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, showTimeline = f
       // 인증 상태 재확인
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
-        toast.error('로그인이 필요합니다.');
         return;
       }
 
@@ -72,7 +71,6 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, showTimeline = f
       await onFavoriteToggle?.(id, !isFavorite);
     } catch (error) {
       console.error('즐겨찾기 처리 오류:', error);
-      toast.error('처리 중 오류가 발생했습니다.\n다시 시도해주세요.');
     } finally {
       setLoading(false);
     }

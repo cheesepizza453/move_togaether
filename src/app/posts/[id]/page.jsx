@@ -9,7 +9,7 @@ import moment from 'moment';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Calendar, Clock, User, Phone, Heart, MessageCircle, Users, X } from 'lucide-react';
+import { MapPin, Calendar, Clock, User, Phone, Heart, MessageCircle, Users, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -52,6 +52,7 @@ export default function PostDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [loginDialogContext, setLoginDialogContext] = useState('favorite'); // 'favorite' or 'inquiry'
   const [showApplyDialog, setShowApplyDialog] = useState(false);
@@ -218,6 +219,8 @@ export default function PostDetailPage() {
 
   const handleFavoriteToggle = async () => {
     try {
+      setFavoriteLoading(true);
+
       // 세션 확인
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
@@ -241,11 +244,11 @@ export default function PostDetailPage() {
 
         if (response.ok) {
           setIsFavorite(false);
-          toast.success('즐겨찾기에서 제거되었습니다.');
+          //toast.success('즐겨찾기에서 제거되었습니다.');
         } else {
           const errorData = await response.json();
           console.error('즐겨찾기 제거 오류:', errorData);
-          toast.error('즐겨찾기 제거에 실패했습니다.');
+          //toast.error('즐겨찾기 제거에 실패했습니다.');
         }
       } else {
         // 즐겨찾기 추가
@@ -257,16 +260,18 @@ export default function PostDetailPage() {
 
         if (response.ok) {
           setIsFavorite(true);
-          toast.success('즐겨찾기에 추가되었습니다.');
+          //toast.success('즐겨찾기에 추가되었습니다.');
         } else {
           const errorData = await response.json();
           console.error('즐겨찾기 추가 오류:', errorData);
-          toast.error('즐겨찾기 추가에 실패했습니다.');
+          //toast.error('즐겨찾기 추가에 실패했습니다.');
         }
       }
     } catch (err) {
       console.error('즐겨찾기 처리 오류:', err);
       toast.error('오류가 발생했습니다.');
+    } finally {
+      setFavoriteLoading(false);
     }
   };
 
@@ -469,16 +474,19 @@ export default function PostDetailPage() {
                 {isOwner ? '작성한 게시물' : '정보'}
               </h1>
             </div>
-            {!isOwner && (
-              <button
-                onClick={handleFavoriteToggle}
-                className={'p-0 outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none'}
-              >
-                <figure className="mt-[2px]">
+            <button
+              onClick={handleFavoriteToggle}
+              disabled={favoriteLoading}
+              className={'p-0 outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed'}
+            >
+              <figure className="mt-[2px]">
+                {favoriteLoading ? (
+                  <Loader2 className="size-[30px] animate-spin text-gray-400" />
+                ) : (
                   <IconHeart className={'size-[30px] block'} fill={isFavorite ? '#F36C5E' : '#D2D2D2'}/>
-                </figure>
-              </button>
-            )}
+                )}
+              </figure>
+            </button>
           </div>
 
           {/* 탭 (작성자인 경우만) */}
@@ -518,8 +526,15 @@ export default function PostDetailPage() {
           {/* 링크 추가 */}
           <a className={'flex items-center gap-[9px]'} href={`/authors/${post.user_id}`}>
             <div className="relative w-[56px] h-[56px] rounded-full overflow-hidden flex items-center justify-center">
-              {/* 프로필 이미지 추가 */}
-              <img src={'/img/default_profile.jpg'} alt={'이미지'} className={'absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover'}/>
+              {/* 프로필 이미지 */}
+              <img
+                src={post.user_profiles?.profile_image || '/img/default_profile.jpg'}
+                alt={'프로필 이미지'}
+                className={'absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover'}
+                onError={(e) => {
+                  e.target.src = '/img/default_profile.jpg';
+                }}
+              />
             </div>
             <div>
               <p className="pr-[30px] mb-[2px] text-18-b">{post.user_profiles?.display_name || '익명'}</p>
@@ -543,9 +558,12 @@ export default function PostDetailPage() {
               {/* 강아지 이미지 */}
               <div className="relative w-full aspect-[402/343]">
                 <img
-                    src={post.dog_image || '/img/dummy_thumbnail.jpg'}
+                    src={post.images?.[0] || '/img/dummy_thumbnail.jpg'}
                     alt="강아지 이미지"
                     className={'absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover'}
+                    onError={(e) => {
+                      e.target.src = '/img/dummy_thumbnail.jpg';
+                    }}
                 />
               </div>
 
@@ -655,8 +673,14 @@ export default function PostDetailPage() {
                               </p>
                               <div className="bg-gray-200 rounded-full flex items-center justify-center">
                                 <figure className={'relative w-[54px] h-[54px] rounded-full overflow-hidden shrink-0'}>
-                                  <img src={'/img/default_profile.jpg'} alt={'썸네일 이미지'}
-                                       className={'absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover'}/>
+                                  <img
+                                    src={applicant.user_profiles?.profile_image || '/img/default_profile.jpg'}
+                                    alt={'프로필 이미지'}
+                                    className={'absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover'}
+                                    onError={(e) => {
+                                      e.target.src = '/img/default_profile.jpg';
+                                    }}
+                                  />
                                 </figure>
                               </div>
                             </div>
@@ -796,8 +820,17 @@ export default function PostDetailPage() {
 
             <div className="p-4">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                  <User className="h-5 w-5 text-gray-600" />
+                <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
+                  <img
+                    src={selectedApplicant.user_profiles?.profile_image || '/img/default_profile.jpg'}
+                    alt={'프로필 이미지'}
+                    className={'w-full h-full object-cover'}
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'block';
+                    }}
+                  />
+                  <User className="h-5 w-5 text-gray-600" style={{display: 'none'}} />
                 </div>
                 <div>
                   <p className="font-medium text-sm">{selectedApplicant.user_profiles?.display_name || '익명'}</p>
