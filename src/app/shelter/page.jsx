@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import moment from 'moment';
+import IconLoading from "../../../public/img/icon/IconLoading";
 
 
 const ShelterMapPage = () => {
@@ -350,22 +351,24 @@ const ShelterMapPage = () => {
 
   if (loading || loadingData) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">
-            {loading ? '사용자 정보를 불러오는 중...' : '지도를 불러오는 중...'}
-          </p>
-        </div>
-      </div>
+        <>
+          <div className="flex items-center justify-between h-[78px] px-[30px] bg-white">
+            <p className="text-22-m text-black">내 주변</p>
+          </div>
+          <div className="flex pt-[60px] justify-center h-screen bg-gray-50">
+            <div className="w-[120px]">
+              <IconLoading/>
+            </div>
+          </div>
+        </>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="text-center max-w-md mx-auto p-6">
-          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+        <div className="flex items-center justify-center h-screen bg-gray-50">
+          <div className="text-center max-w-md mx-auto p-6">
+            <div className="text-red-500 text-6xl mb-4">⚠️</div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">지도 로드 실패</h2>
           <p className="text-gray-600 mb-4">{error}</p>
           <button

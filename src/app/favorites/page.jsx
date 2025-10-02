@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import { cn } from "@/lib/utils";
+import IconLoading from "../../../public/img/icon/IconLoading";
 
 // 커스텀 AlertDialogContent (오버레이 없이)
 const CustomAlertDialogContent = React.forwardRef(({ className, ...props }, ref) => (
@@ -29,7 +30,7 @@ const CustomAlertDialogContent = React.forwardRef(({ className, ...props }, ref)
     <AlertDialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed left-[50%] top-[50%] z-[9999] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-90 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
+        "fixed left-[50%] top-[50%] z-[9999] grid w-[85vw] rounded-[15px] max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 pt-[36px] shadow-[0_0_6px_0px_rgba(0,0,0,0.25)] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-90 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
         className
       )}
       {...props}
@@ -214,29 +215,25 @@ export default function FavoritesPage() {
 
         {/* 콘텐츠 */}
         {loading ? (
-          <div className="flex justify-center items-center py-8">
-            <div className="text-gray-500">즐겨찾기를 불러오는 중...</div>
+          <div className="flex justify-center items-center">
+            <div className={'w-full flex justify-center pt-[60px]'}>
+              <IconLoading/>
+            </div>
           </div>
         ) : error ? (
-          <div className="flex flex-col items-center justify-center py-8">
+            <div className="flex flex-col items-center justify-center py-8">
             <div className="text-red-500 mb-4">{error}</div>
             <Button onClick={fetchFavorites} variant="outline">
               다시 시도
             </Button>
           </div>
         ) : getCurrentFavorites().length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="text-gray-500 text-center mb-4">
-              <p className="text-lg font-medium">
+          <div className="flex flex-col items-center justify-center pt-[60px]">
+            <div className="text-black text-center mb-4">
+              <p className="text-18-b font-medium">
                 {activeTab === 'active'
-                  ? '모집중인 즐겨찾기가 없습니다'
-                  : '모집종료된 즐겨찾기가 없습니다'
-                }
-              </p>
-              <p className="text-sm mt-2">
-                {activeTab === 'active'
-                  ? '관심 있는 봉사활동을 찜해보세요'
-                  : '완료된 봉사활동이 여기에 표시됩니다'
+                  ? '모집중인 저장 목록이 없어요.'
+                  : '모집종료된 저장 목록이 없어요.'
                 }
               </p>
             </div>

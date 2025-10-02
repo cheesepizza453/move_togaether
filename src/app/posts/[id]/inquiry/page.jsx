@@ -129,8 +129,8 @@ export default function InquiryPage() {
       {/* 메인 콘텐츠 */}
       <div className="max-w-4xl mx-auto px-[18px]">
         {/* 포스트 제목 */}
-        <div className="mb-6">
-          <h2 className="px-[10px] text-18-b text-black">
+        <div className="mb-[30px]">
+          <h2 className="px-[10px] text-18-b text-black leading-[1.25]">
             {post.title}
           </h2>
         </div>
@@ -138,7 +138,7 @@ export default function InquiryPage() {
         {/* 지원자 정보 */}
         <Card className="rounded-[15px] mb-[24px] p-[20px] shadow-[0_0_12px_0_rgba(0,0,0,0.07)]">
           <CardHeader>
-            <CardTitle className="text-16-b mb-[4px]">지원자 정보</CardTitle>
+            <CardTitle className="text-16-b mb-[6px]">지원자 정보</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="mb-[20px] text-14-r text-[#676767] leading-[1.25]">

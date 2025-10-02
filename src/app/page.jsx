@@ -13,6 +13,7 @@ import LocationSearchDialog from '../components/LocationSearchDialog';
 import { postsAPI, favoritesAPI, handleAPIError } from '@/lib/api-client';
 import { useAuth } from '@/hooks/useAuth';
 import { useDialogContext } from '@/components/DialogProvider';
+import IconLoading from "../../public/img/icon/IconLoading";
 
 export default function Home() {
   const { user } = useAuth();
@@ -437,12 +438,14 @@ export default function Home() {
         {/* 게시물 목록 */}
         <section className="pb-6">
           {loading ? (
-            <div className="flex justify-center items-center py-8">
-              <div className="text-gray-500">게시물을 불러오는 중...</div>
-            </div>
+              <div className="flex justify-center items-center py-8">
+                <div className={'w-full flex justify-center pt-[60px]'}>
+                  <IconLoading/>
+                </div>
+              </div>
           ) : error ? (
-            <div className="flex justify-center items-center py-8">
-              <div className="text-red-500">{error}</div>
+              <div className="flex justify-center items-center py-8">
+                <div className="text-red-500">{error}</div>
             </div>
           ) : posts.length === 0 ? (
             <div className="flex justify-center items-center py-8">

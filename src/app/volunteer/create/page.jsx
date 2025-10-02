@@ -579,20 +579,22 @@ const VolunteerCreate = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         {/* 헤더 */}
-        <div className="bg-white border-b border-gray-200 px-4 py-4">
+        <div className="bg-white">
           <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <button
-                onClick={handleGoBack}
-                className="mr-3 p-2 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
+            <div className="flex items-center py-[28px] px-[30px]">
+                  <button
+                      onClick={handleGoBack}
+                      className="mr-[12px]"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="9" height="16" viewBox="0 0 9 16" fill="none">
+                      <path d="M8 15L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
+                            strokeLinecap="round"/>
+                      <path d="M8 0.999999L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
+                            strokeLinecap="round"/>
+                    </svg>
+                  </button>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">이동 봉사 요청 미리보기</h1>
-                <p className="text-sm text-gray-600">입력하신 정보를 확인하고 등록해주세요</p>
+                <h1 className="text-22-m text-black">게시물 미리보기</h1>
               </div>
             </div>
           </div>

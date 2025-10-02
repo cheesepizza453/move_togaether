@@ -10,6 +10,7 @@ import moment from 'moment';
 import { ChevronLeft, Edit } from 'lucide-react';
 import { myPageAPI, handleAPIError } from '@/lib/api-client';
 import MyPageCard from '@/components/MyPageCard';
+import IconLoading from "../../../public/img/icon/IconLoading";
 
 const MyPage = () => {
   const { user, profile, loading, signOut } = useAuth();
@@ -144,12 +145,16 @@ const MyPage = () => {
   // 로딩 중이거나 로그인되지 않은 경우
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">로딩 중...</p>
+        <div className={'bg-white min-h-screen'}>
+          <div className="flex items-center justify-between h-[78px] px-[30px] bg-white">
+            <p className="text-22-m text-black">마이페이지</p>
+            {/*</button>*/}
+            <div className="w-6"></div>
+          </div>
+          <div className={'w-full flex justify-center pt-[60px]'}>
+            <IconLoading/>
+          </div>
         </div>
-      </div>
     );
   }
 
@@ -158,27 +163,23 @@ const MyPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-white">
-        <button
+      <div className="min-h-screen bg-white">
+        {/* Header */}
+        <div className="flex items-center justify-between h-[78px] px-[30px] bg-white">
+          {/* <button
           onClick={() => router.back()}
-          className="text-gray-600 text-lg"
-        >
-          <span className="flex items-center">
-            <ChevronLeft size={20} className="text-gray-600 display-inline-block" />
-            <span className="ml-1">마이페이지</span>
-          </span>
-        </button>
+        >*/}
+          <p className="text-22-m text-black">마이페이지</p>
+        {/*</button>*/}
         <div className="w-6"></div>
       </div>
 
       {/* 프로필 정보 카드 */}
-      <div className="px-4 py-6">
-        <div className="p-6">
+      <div className="px-[23px] pt-[27px]">
+        <div className="">
           <div className="flex items-center">
             {/* 프로필 이미지 */}
-            <div className="w-20 h-20 rounded-full overflow-hidden bg-white flex-shrink-0 mr-4">
+            <div className="w-[70px] h-[70px] mr-[18px] rounded-full overflow-hidden bg-white flex-shrink-0">
               <Image
                 src={profile?.profile_image_url || '/img/default_profile.jpg'}
                 alt="프로필"
@@ -190,13 +191,15 @@ const MyPage = () => {
 
             {/* 사용자 정보 */}
             <div className="flex-1 min-w-0">
-              <h2 className="text-lg font-bold text-gray-800 mb-1">
+              <h2 className="mb-[2px] text-18-b text-black">
                 {profile?.display_name || '사용자'}
               </h2>
-              <p className="text-sm text-gray-600 mb-1">
-                {profile?.phone || '010-0000-0000'}
+              <p className="mb-[5px] text-14-l text-[#535353]">
+                {profile?.phone?.replace(
+                    /(\d{3})(\d{4})(\d{4})/,
+                    "$1-$2-$3") || ''}
               </p>
-              <p className="text-xs text-gray-500 leading-relaxed">
+              <p className="text-12-r text-text-800 leading-relaxed">
                 {profile?.bio || '소개글이 없습니다.'}
               </p>
             </div>
@@ -205,7 +208,7 @@ const MyPage = () => {
           {/* 내 정보 수정 버튼 */}
           <Link
             href="/mypage/edit"
-            className="w-full mt-4 bg-[#FFF6D1] text-[#DBA913] py-3 px-4 rounded-[20px] border border-[#DBA108] font-semibold text-center transition-colors block hover:bg-[#FFF0B3]"
+            className="flex justify-center items-center w-full h-[40px] mt-[12px] bg-[#FFF6D1] text-[#DBA913] rounded-[15px] border border-[#DBA108] text-16-m text-center transition-colors"
           >
             내 정보 수정
           </Link>
@@ -213,24 +216,24 @@ const MyPage = () => {
       </div>
 
       {/* 탭 메뉴 */}
-      <div className="px-[23px] pb-6">
-        <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
+      <div className="mt-[24px] mx-[23px] pb-[12px] border-b border-text-300">
+        <div className="flex gap-x-[16px]">
           <button
             onClick={() => handleTabChange('지원')}
-            className={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors ${
+            className={` ${
               activeTab === '지원'
-                ? 'bg-white text-gray-800 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
+                ? 'text-16-b text-black'
+                : 'text-16-m text-text-800'
             }`}
           >
             지원
           </button>
           <button
             onClick={() => handleTabChange('작성')}
-            className={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors ${
+            className={` ${
               activeTab === '작성'
-                ? 'bg-white text-gray-800 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
+                ? 'text-16-b text-black'
+                : 'text-16-m text-text-800'
             }`}
           >
             작성
@@ -243,107 +246,110 @@ const MyPage = () => {
         {activeTab === '지원' && (
           <div className="space-y-4">
             {dataLoading ? (
-              <div className="flex justify-center items-center py-8">
-                <div className="text-gray-500">지원한 게시물을 불러오는 중...</div>
-              </div>
-            ) : error ? (
-              <div className="flex flex-col items-center justify-center py-8">
-                <div className="text-red-500 mb-4">{error}</div>
-                <button
-                  onClick={() => fetchTabData(activeTab)}
-                  className="bg-yellow-400 text-gray-800 py-2 px-4 rounded-xl text-sm font-medium hover:bg-yellow-500 transition-colors"
-                >
-                  다시 시도
-                </button>
-              </div>
-            ) : appliedPosts.length === 0 ? (
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 text-center">
-                <div className="text-gray-500 mb-4">
-                  <p className="text-lg font-medium mb-2">지원한 게시물이 없습니다</p>
-                  <p className="text-sm">관심 있는 봉사활동에 지원해보세요</p>
+                <div className={'w-full flex justify-center pt-[60px]'}>
+                  <IconLoading/>
                 </div>
-                <Link
-                  href="/"
-                  className="inline-block bg-yellow-400 text-gray-800 py-2 px-4 rounded-xl text-sm font-medium hover:bg-yellow-500 transition-colors"
-                >
-                  봉사활동 보러가기
-                </Link>
-              </div>
+            ) : error ? (
+                <div className="pt-[60px] flex flex-col items-center justify-center py-8">
+                <div className="text-black text-16-m mb-[16px]">{error}</div>
+                  <button
+                      onClick={() => fetchTabData(activeTab)}
+                      className="inline-block text-14-m bg-brand-main py-[10px] px-[20px] rounded-[15px]"
+                  >
+                    다시 시도
+                  </button>
+                </div>
+            ) : appliedPosts.length === 0 ? (
+                <div className="pt-[60px] bg-white text-center">
+                  <div className="text-gray-500 mb-[16px]">
+                    <p className="text-16-m text-black mb-[10px]">지원한 게시물이 없습니다</p>
+                    <p className="text-12-r">관심 있는 봉사활동에 지원해보세요</p>
+                  </div>
+                  <Link
+                      href="/"
+                      className="inline-block text-14-m bg-brand-main py-[10px] px-[20px] rounded-[15px]"
+                  >
+                    봉사활동 보러가기
+                  </Link>
+                </div>
             ) : (
-              appliedPosts.map((app) => {
-                const post = app.post;
-                const dday = getDday(post.deadline);
-                const statusBadge = getStatusBadge(post.status, post.deadline);
+                appliedPosts.map((app) => {
+                  const post = app.post;
+                  const dday = getDday(post.deadline);
+                  const statusBadge = getStatusBadge(post.status, post.deadline);
 
-                return (
-                  <div key={app.application_id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                    <div className="flex items-center mb-3">
-                      <div className="w-12 h-12 bg-gray-100 rounded-lg mr-3 flex-shrink-0 overflow-hidden">
-                        {post.images && post.images.length > 0 ? (
-                          <img
-                            src={post.images[0]}
-                            alt={post.dog_name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                            이미지 없음
+                  return (
+                      <div key={app.application_id}
+                           className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                        <div className="flex items-center mb-3">
+                          <div className="w-12 h-12 bg-gray-100 rounded-lg mr-3 flex-shrink-0 overflow-hidden">
+                            {post.images && post.images.length > 0 ? (
+                                <img
+                                    src={post.images[0]}
+                                    alt={post.dog_name}
+                                    className="w-full h-full object-cover"
+                                />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                                  이미지 없음
+                                </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-medium text-gray-800 mb-1 line-clamp-2">
-                          {post.title}
-                        </h3>
-                        <p className="text-xs text-gray-500 mb-2">{post.dog_name} / {convertDogSize(post.dog_size)}</p>
-                        <p className="text-xs text-gray-400">{formatDate(post.created_at)}</p>
-                      </div>
-                      <div className="ml-2">
-                        <span className={`inline-block text-xs px-2 py-1 rounded-full font-medium ${statusBadge.className}`}>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-sm font-medium text-gray-800 mb-1 line-clamp-2">
+                              {post.title}
+                            </h3>
+                            <p className="text-xs text-gray-500 mb-2">{post.dog_name} / {convertDogSize(post.dog_size)}</p>
+                            <p className="text-xs text-gray-400">{formatDate(post.created_at)}</p>
+                          </div>
+                          <div className="ml-2">
+                        <span
+                            className={`inline-block text-xs px-2 py-1 rounded-full font-medium ${statusBadge.className}`}>
                           {statusBadge.text}
                         </span>
+                          </div>
+                        </div>
+                        <button
+                            className="w-full bg-yellow-400 text-gray-800 py-2 px-4 rounded-xl text-sm font-medium hover:bg-yellow-500 transition-colors">
+                          {formatDate(app.application_date)} 지원
+                        </button>
                       </div>
-                    </div>
-                    <button className="w-full bg-yellow-400 text-gray-800 py-2 px-4 rounded-xl text-sm font-medium hover:bg-yellow-500 transition-colors">
-                      {formatDate(app.application_date)} 지원
-                    </button>
-                  </div>
-                );
-              })
+                  );
+                })
             )}
           </div>
         )}
 
         {activeTab === '작성' && (
-          <div className="space-y-4">
-            {/* 하위 탭 메뉴 */}
-            <div className="flex space-x-6 py-2">
-              <button
-                onClick={() => handleSubTabChange('진행중')}
-                className={`text-sm font-medium transition-colors ${
-                  activeSubTab === '진행중'
-                    ? 'text-yellow-500 font-bold'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                진행중
-              </button>
-              <button
-                onClick={() => handleSubTabChange('종료')}
-                className={`text-sm font-medium transition-colors ${
-                  activeSubTab === '종료'
-                    ? 'text-yellow-500 font-bold'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                종료
-              </button>
-              <button
-                onClick={() => handleSubTabChange('완료')}
-                className={`text-sm font-medium transition-colors ${
-                  activeSubTab === '완료'
-                    ? 'text-yellow-500 font-bold'
-                    : 'text-gray-500 hover:text-gray-700'
+            <div className="space-y-4">
+              {/* 하위 탭 메뉴 */}
+              <div className="flex space-x-[12px] py-2">
+                <button
+                    onClick={() => handleSubTabChange('진행중')}
+                    className={`text-sm font-medium transition-colors outline-none focus:ring-0 ${
+                        activeSubTab === '진행중'
+                            ? 'text-brand-yellow-dark bg-brand-sub px-[6px] py-[2px] rounded-[3px]'
+                            : 'text-14-m text-[#8b8b8b]'
+                    }`}
+                >
+                  진행중
+                </button>
+                <button
+                    onClick={() => handleSubTabChange('종료')}
+                    className={`text-sm font-medium transition-colors outline-none focus:ring-0 ${
+                        activeSubTab === '종료'
+                            ? 'text-brand-yellow-dark bg-brand-sub px-[6px] py-[2px] rounded-[3px]'
+                            : 'text-14-m text-[#8b8b8b]'
+                    }`}
+                >
+                  종료
+                </button>
+                <button
+                    onClick={() => handleSubTabChange('완료')}
+                    className={`text-sm font-medium transition-colors outline-none focus:ring-0 ${
+                        activeSubTab === '완료'
+                            ? 'text-brand-yellow-dark bg-brand-sub px-[6px] py-[2px] rounded-[3px]'
+                    : 'text-14-m text-[#8b8b8b]'
                 }`}
               >
                 완료
@@ -352,50 +358,50 @@ const MyPage = () => {
 
             {/* 하위 탭 콘텐츠 */}
             {dataLoading ? (
-              <div className="flex justify-center items-center py-8">
-                <div className="text-gray-500">{activeSubTab} 게시물을 불러오는 중...</div>
-              </div>
-            ) : error ? (
-              <div className="flex flex-col items-center justify-center py-8">
-                <div className="text-red-500 mb-4">{error}</div>
-                <button
-                  onClick={() => fetchTabData('작성', activeSubTab)}
-                  className="bg-yellow-400 text-gray-800 py-2 px-4 rounded-xl text-sm font-medium hover:bg-yellow-500 transition-colors"
-                >
-                  다시 시도
-                </button>
-              </div>
-            ) : myPosts.length === 0 ? (
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 text-center">
-                <div className="text-gray-500 mb-4">
-                  <p className="text-lg font-medium mb-2">
-                    {activeSubTab === '진행중' && '진행중인 게시글이 없습니다'}
-                    {activeSubTab === '종료' && '종료된 게시글이 없습니다'}
-                    {activeSubTab === '완료' && '완료된 게시글이 없습니다'}
-                  </p>
-                  <p className="text-sm">
-                    {activeSubTab === '진행중' && '새로운 이동봉사 게시글을 작성해보세요'}
-                    {activeSubTab === '종료' && '마감된 게시글을 확인할 수 있습니다'}
-                    {activeSubTab === '완료' && '완료 처리된 게시글을 확인할 수 있습니다'}
-                  </p>
+                <div className={'w-full flex justify-center pt-[60px]'}>
+                  <IconLoading/>
                 </div>
-                {activeSubTab === '진행중' && (
-                  <Link
-                    href="/volunteer/create"
-                    className="inline-block bg-yellow-400 text-gray-800 py-2 px-4 rounded-xl text-sm font-medium hover:bg-yellow-500 transition-colors"
+            ) : error ? (
+                <div className="flex flex-col items-center justify-center py-8">
+                <div className="text-red-500 mb-[20px]">{error}</div>
+                  <button
+                      onClick={() => fetchTabData('작성', activeSubTab)}
+                      className="bg-yellow-400 text-gray-800 py-2 px-4 rounded-xl text-sm font-medium"
                   >
-                    게시글 작성하기
-                  </Link>
-                )}
-              </div>
+                    다시 시도
+                  </button>
+                </div>
+            ) : myPosts.length === 0 ? (
+                <div className="pt-[60px] text-center">
+                  <div className="mb-[16px]">
+                    <p className="text-16-m text-black mb-[10px]">
+                      {activeSubTab === '진행중' && '진행중인 게시글이 없습니다'}
+                      {activeSubTab === '종료' && '종료된 게시글이 없습니다'}
+                      {activeSubTab === '완료' && '완료된 게시글이 없습니다'}
+                    </p>
+                    <p className="text-12-r">
+                      {activeSubTab === '진행중' && '새로운 이동봉사 게시글을 작성해보세요'}
+                      {activeSubTab === '종료' && '마감된 게시글을 확인할 수 있습니다'}
+                      {activeSubTab === '완료' && '완료 처리된 게시글을 확인할 수 있습니다'}
+                    </p>
+                  </div>
+                  {activeSubTab === '진행중' && (
+                      <Link
+                          href="/volunteer/create"
+                          className="inline-block text-14-m bg-brand-main py-[10px] px-[20px] rounded-[15px]"
+                      >
+                        게시글 작성하기
+                      </Link>
+                  )}
+                </div>
             ) : (
-              myPosts.map((post) => (
-                <MyPageCard
-                  key={post.id}
-                  post={post}
-                  activeSubTab={activeSubTab}
-                />
-              ))
+                myPosts.map((post) => (
+                    <MyPageCard
+                        key={post.id}
+                        post={post}
+                        activeSubTab={activeSubTab}
+                    />
+                ))
             )}
           </div>
         )}

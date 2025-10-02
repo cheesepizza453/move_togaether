@@ -207,3 +207,44 @@ button:active, a:active {
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
 }
+
+/* 디폴트 아웃라인 제거 */
+input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+button:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+textarea:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* 로딩 애니메이션 */
+@layer utilities {
+  @keyframes sweep {
+    0% {
+      opacity: 0;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+
+  .animate-sweep {
+    animation: sweep 2s linear infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-sweep {
+      animation: none !important;
+    }
+  }
+}

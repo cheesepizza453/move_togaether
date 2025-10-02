@@ -35,7 +35,7 @@ const Step1 = ({
                     id={'title'}
                     type="text"
                     value={formData.title}
-                    maxLength={20}
+                    maxLength={40}
                     onChange={(e) => {
                         try {
                             onFormDataChange('title', e.target.value);
@@ -55,7 +55,7 @@ const Step1 = ({
                         )}
                     </div>
                     <p className="absolute top-[2px] right-[5px] text-text-800 text-12-l">
-                        {formData.title?.length || 0}/20
+                        {formData.title?.length || 0}/40
                     </p>
                 </div>
             </div>
