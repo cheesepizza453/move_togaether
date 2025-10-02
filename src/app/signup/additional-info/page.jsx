@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
@@ -236,81 +236,85 @@ const AdditionalInfoContent = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* 헤더 */}
-      <div className="px-4 py-3 border-b border-gray-200">
-        <div className="flex items-center">
-          <Link href="/signup" className="mr-4">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M15 18L9 12L15 6" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </Link>
-          <h1 className="text-lg font-semibold">회원가입</h1>
+      <div className="min-h-screen bg-white">
+        {/* 헤더 */}
+        <div className="relative px-[30px] flex items-center h-[78px]">
+          <div className="flex items-center">
+            <Link href="/login" className="mr-[12px]">
+              <svg xmlns="http://www.w3.org/2000/svg" width="9" height="16" viewBox="0 0 9 16" fill="none">
+                <path d="M8 15L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
+                      strokeLinecap="round"/>
+                <path d="M8 0.999999L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
+                      strokeLinecap="round"/>
+              </svg>
+            </Link>
+            <h1 className="text-22-m text-black">회원가입</h1>
+          </div>
+
+          {/* 진행 단계 표시 */}
+          <div className="absolute bottom-[10px] left-[50px] flex justify-start mt-4 space-x-[4px]">
+            <div className="w-2 h-2 rounded-full bg-brand-point"></div>
+            <div className="w-2 h-2 rounded-full bg-brand-point"></div>
+          </div>
         </div>
 
-        {/* 진행 단계 표시 */}
-        <div className="flex justify-center mt-4 space-x-2">
-          <div className="w-2 h-2 rounded-full bg-gray-300"></div>
-          <div className="w-2 h-2 rounded-full bg-red-500"></div>
+
+        {/* 메인 컨텐츠 */}
+        <div className="px-6 py-8">
+          <SignupForm
+              formData={formData}
+              setFormData={setFormData}
+              contactChannels={contactChannels}
+              setContactChannels={setContactChannels}
+              channelInputs={channelInputs}
+              setChannelInputs={setChannelInputs}
+              errors={errors}
+              setErrors={setErrors}
+              nicknameValidation={nicknameValidation}
+              setNicknameValidation={setNicknameValidation}
+              nicknameChecking={nicknameChecking}
+              setNicknameChecking={setNicknameChecking}
+              onNicknameChange={handleNicknameChange}
+              onNicknameBlur={handleNicknameBlur}
+              onChannelChange={handleChannelChange}
+              onChannelInputChange={handleChannelInputChange}
+              showProfileImage={true}
+              showIntroduction={true}
+          />
+
+          {/* 회원가입 완료 버튼 */}
+          <button
+              onClick={handleSignup}
+              disabled={loading}
+              className={`w-full mt-8 py-3 rounded-lg font-semibold transition-colors ${
+                  loading
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-[#FFDD44] text-black hover:bg-yellow-500'
+              }`}
+          >
+            {loading ? '처리 중...' : '가입하기'}
+          </button>
         </div>
       </div>
-
-      {/* 메인 컨텐츠 */}
-      <div className="px-6 py-8">
-        <SignupForm
-          formData={formData}
-          setFormData={setFormData}
-          contactChannels={contactChannels}
-          setContactChannels={setContactChannels}
-          channelInputs={channelInputs}
-          setChannelInputs={setChannelInputs}
-          errors={errors}
-          setErrors={setErrors}
-          nicknameValidation={nicknameValidation}
-          setNicknameValidation={setNicknameValidation}
-          nicknameChecking={nicknameChecking}
-          setNicknameChecking={setNicknameChecking}
-          onNicknameChange={handleNicknameChange}
-          onNicknameBlur={handleNicknameBlur}
-          onChannelChange={handleChannelChange}
-          onChannelInputChange={handleChannelInputChange}
-          showProfileImage={true}
-          showIntroduction={true}
-        />
-
-        {/* 회원가입 완료 버튼 */}
-        <button
-          onClick={handleSignup}
-          disabled={loading}
-          className={`w-full mt-8 py-3 rounded-lg font-semibold transition-colors ${
-            loading
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              : 'bg-[#FFDD44] text-black hover:bg-yellow-500'
-          }`}
-        >
-          {loading ? '처리 중...' : '가입하기'}
-        </button>
-      </div>
-    </div>
   );
 };
 
 // 로딩 컴포넌트
 const LoadingFallback = () => (
-  <div className="min-h-screen bg-white flex items-center justify-center">
-    <div className="text-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mx-auto mb-4"></div>
-      <p className="text-gray-600">로딩 중...</p>
+    <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mx-auto mb-4"></div>
+        <p className="text-gray-600">로딩 중...</p>
+      </div>
     </div>
-  </div>
 );
 
 // 메인 컴포넌트 - Suspense로 감싸기
 const AdditionalInfoPage = () => {
   return (
-    <Suspense fallback={<LoadingFallback />}>
-      <AdditionalInfoContent />
-    </Suspense>
+      <Suspense fallback={<LoadingFallback/>}>
+        <AdditionalInfoContent/>
+      </Suspense>
   );
 };
 

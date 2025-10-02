@@ -394,16 +394,16 @@ const ShelterMapPage = () => {
       {/* 상단 헤더 */}
       <div className="absolute top-0 left-0 right-0 z-10 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm">
         <div className="flex items-center justify-between p-4">
-          <div className="flex items-center space-x-3">
-            <h1 className="text-lg font-semibold text-gray-900">내 주변</h1>
+          <div className="flex items-center justify-between h-[78px] px-[30px] bg-white">
+            <p className="text-22-m text-black">내 주변</p>
           </div>
         </div>
       </div>
 
       {/* 선택된 게시물 카드 */}
       {selectedPost && (
-        <div className="absolute bottom-[20px] left-[25px] right-[25px] z-20">
-          <div className="bg-white rounded-[30px] px-[25px] py-[20px] cursor-pointer relative shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]">
+          <div className="absolute bottom-[20px] left-[25px] right-[25px] z-20">
+            <div className="bg-white rounded-[30px] px-[25px] py-[20px] cursor-pointer relative shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]">
             {/* 닫기 버튼 */}
             <button
               onClick={() => {

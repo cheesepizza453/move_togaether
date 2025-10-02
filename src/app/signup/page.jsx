@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
@@ -273,29 +273,32 @@ const SignupPage = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* 헤더 */}
-      <div className="px-4 py-3 border-b border-gray-200">
+      <div className="relative px-[30px] flex items-center h-[78px]">
         <div className="flex items-center">
-          <Link href="/login" className="mr-4">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M15 18L9 12L15 6" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <Link href="/login" className="mr-[12px]">
+            <svg xmlns="http://www.w3.org/2000/svg" width="9" height="16" viewBox="0 0 9 16" fill="none">
+              <path d="M8 15L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
+                    strokeLinecap="round"/>
+              <path d="M8 0.999999L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
+                    strokeLinecap="round"/>
             </svg>
           </Link>
-          <h1 className="text-lg font-semibold">회원가입</h1>
+          <h1 className="text-22-m text-black">회원가입</h1>
         </div>
 
         {/* 진행 단계 표시 */}
-        <div className="flex justify-center mt-4 space-x-2">
-          <div className="w-2 h-2 rounded-full bg-red-500"></div>
+        <div className="absolute bottom-[10px] left-[50px] flex justify-start mt-4 space-x-[4px]">
+          <div className="w-2 h-2 rounded-full bg-brand-point"></div>
           <div className="w-2 h-2 rounded-full bg-gray-300"></div>
         </div>
       </div>
 
       {/* 메인 컨텐츠 */}
       <div className="px-6 py-8">
-        <div className="space-y-6">
+        <div className="space-y-[24px]">
           {/* 이메일 입력 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block texgt-16-m text-black mb-[10px]">
               이메일
             </label>
             <div className="relative">
@@ -304,15 +307,15 @@ const SignupPage = () => {
                 value={email}
                 onChange={(e) => handleEmailChange(e.target.value)}
                 placeholder="이메일을 입력해주세요."
-                className={`w-full px-4 py-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-colors ${
+                className={`w-full h-[54px] px-[18px] border rounded-[15px] focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-colors ${
                   errors.email
-                    ? 'border-red-500 bg-red-50'
+                    ? 'border-brand-point bg-brand-point-bg'
                     : emailValidation?.isValid
-                    ? 'border-green-500 bg-green-50'
+                    ? 'border-[#2BA03E] bg-green-50'
                     : emailValidation?.isValid === false
-                    ? 'border-red-500 bg-red-50'
+                    ? 'border-brand-point bg-brand-point-bg'
                     : 'border-gray-300'
-                } focus:bg-[#FFDD44] focus:bg-opacity-20`}
+                } focus:bg-[#FFD044] focus:bg-opacity-20`}
               />
 
               {/* 이메일 상태 아이콘 */}
@@ -320,11 +323,11 @@ const SignupPage = () => {
                 {isCheckingEmail ? (
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-yellow-500"></div>
                 ) : emailValidation?.isValid ? (
-                  <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-5 h-5 text-[#2BA03E]" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                 ) : emailValidation?.isValid === false ? (
-                  <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-5 h-5 text-brand-point" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                   </svg>
                 ) : null}
@@ -333,16 +336,13 @@ const SignupPage = () => {
 
             {/* 이메일 상태 메시지 */}
             {errors.email && (
-              <p className="mt-1 text-sm text-red-500">{errors.email}</p>
+              <p className="mt-[6px] text-9-r text-brand-point">{errors.email}</p>
             )}
 
             {emailValidation && !errors.email && (
-              <p className={`mt-1 text-sm flex items-center ${
-                emailValidation.isValid ? 'text-green-500' : 'text-red-500'
+              <p className={`mt-[6px] text-9-r flex items-center ${
+                emailValidation.isValid ? 'text-[#2BA03E]' : 'text-brand-point'
               }`}>
-                <span className={`w-1.5 h-1.5 rounded-full mr-2 ${
-                  emailValidation.isValid ? 'bg-green-500' : 'bg-red-500'
-                }`}></span>
                 {emailValidation.message}
               </p>
             )}
@@ -350,7 +350,7 @@ const SignupPage = () => {
 
           {/* 비밀번호 입력 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block texgt-16-m text-black mb-[10px]">
               비밀번호
             </label>
             <div className="relative">
@@ -359,13 +359,13 @@ const SignupPage = () => {
                 value={password}
                 onChange={(e) => handlePasswordChange(e.target.value)}
                 placeholder="8~12자, 영문+숫자"
-                                className={`w-full px-4 py-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-colors ${
+                                className={`w-full h-[54px] px-[18px] border rounded-[15px] focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-colors ${
                   password && passwordValidation.isValid
                     ? 'border-yellow-400 bg-yellow-50'
                     : password && !passwordValidation.isValid
-                    ? 'border-red-500 bg-red-50'
+                    ? 'border-brand-point bg-brand-point-bg'
                     : 'border-gray-300'
-                } focus:bg-[#FFDD44] focus:bg-opacity-20`}
+                } focus:bg-[#FFD044] focus:bg-opacity-20`}
               />
               <button
                 type="button"
@@ -374,7 +374,7 @@ const SignupPage = () => {
                   password && passwordValidation.isValid
                     ? 'text-yellow-500'
                     : password && !passwordValidation.isValid
-                    ? 'text-red-500'
+                    ? 'text-brand-point'
                     : 'text-gray-400'
                 } hover:opacity-80`}
               >
@@ -386,28 +386,19 @@ const SignupPage = () => {
             {password && (
               <div className="mt-2">
                 <div className="flex items-center space-x-4">
-                  <div className={`text-xs flex items-center ${
-                    passwordValidation.hasEnglish ? 'text-green-500' : 'text-red-500'
+                  <div className={`text-9-r flex items-center ${
+                    passwordValidation.hasEnglish ? 'text-[#2BA03E]' : 'text-brand-point'
                   }`}>
-                    <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
-                      passwordValidation.hasEnglish ? 'bg-green-500' : 'bg-red-500'
-                    }`}></span>
                     영문 포함
                   </div>
-                  <div className={`text-xs flex items-center ${
-                    passwordValidation.hasNumber ? 'text-green-500' : 'text-red-500'
+                  <div className={`text-9-r flex items-center ${
+                    passwordValidation.hasNumber ? 'text-[#2BA03E]' : 'text-brand-point'
                   }`}>
-                    <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
-                      passwordValidation.hasNumber ? 'bg-green-500' : 'bg-red-500'
-                    }`}></span>
                     숫자 포함
                   </div>
-                  <div className={`text-xs flex items-center ${
-                    passwordValidation.hasValidLength ? 'text-green-500' : 'text-red-500'
+                  <div className={`text-9-r flex items-center ${
+                    passwordValidation.hasValidLength ? 'text-[#2BA03E]' : 'text-brand-point'
                   }`}>
-                    <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
-                      passwordValidation.hasValidLength ? 'bg-green-500' : 'bg-red-500'
-                    }`}></span>
                     8~12자
                   </div>
                 </div>
@@ -417,7 +408,7 @@ const SignupPage = () => {
 
           {/* 비밀번호 확인 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block texgt-16-m text-black mb-[10px]">
               비밀번호 확인
             </label>
             <div className="relative">
@@ -426,22 +417,22 @@ const SignupPage = () => {
                 value={confirmPassword}
                 onChange={(e) => handleConfirmPasswordChange(e.target.value)}
                 placeholder="8~12자, 영문+숫자"
-                className={`w-full px-4 py-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-colors ${
+                className={`w-full h-[54px] px-[18px] border rounded-[15px] focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-colors ${
                   confirmPassword && confirmPasswordValidation
-                    ? 'border-green-500 bg-green-50'
+                    ? 'border-[#2BA03E] bg-green-50'
                     : confirmPassword && !confirmPasswordValidation
-                    ? 'border-red-500 bg-red-50'
+                    ? 'border-brand-point bg-brand-point-bg'
                     : 'border-gray-300'
-                } focus:bg-[#FFDD44] focus:bg-opacity-20`}
+                } focus:bg-[#FFD044] focus:bg-opacity-20`}
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className={`absolute right-3 top-1/2 transform -translate-y-1/2 transition-colors ${
                   confirmPassword && confirmPasswordValidation
-                    ? 'text-green-500'
+                    ? 'text-[#2BA03E]'
                     : confirmPassword && !confirmPasswordValidation
-                    ? 'text-red-500'
+                    ? 'text-brand-point'
                     : 'text-gray-400'
                 } hover:opacity-80`}
               >
@@ -451,15 +442,13 @@ const SignupPage = () => {
 
             {/* 비밀번호 확인 메시지 - 실시간 상태 표시 */}
             {confirmPassword && (
-              <div className="mt-1">
+              <div className="mt-[6px]">
                 {confirmPasswordValidation ? (
-                  <p className="text-sm text-green-500 flex items-center">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-2"></span>
+                  <p className="text-9-r text-[#2BA03E] flex items-center">
                     비밀번호가 일치합니다.
                   </p>
                 ) : (
-                  <p className="text-sm text-red-500 flex items-center">
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 mr-2"></span>
+                  <p className="text-9-r text-brand-point flex items-center">
                     동일한 비밀번호를 입력해주세요.
                   </p>
                 )}
@@ -472,9 +461,9 @@ const SignupPage = () => {
         <button
           onClick={handleNext}
           disabled={!email || !emailValidation?.isValid || !passwordValidation.isValid || !confirmPasswordValidation}
-          className={`w-full mt-8 py-3 rounded-lg font-semibold transition-colors ${
+          className={`w-full mt-8 h-[58px] rounded-[15px] text-16-m transition-colors ${
             email && emailValidation?.isValid && passwordValidation.isValid && confirmPasswordValidation
-              ? 'bg-[#FFDD44] text-black hover:bg-yellow-500'
+              ? 'bg-brand-main text-black'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
         >

@@ -108,8 +108,8 @@ export default function AuthorDetailPage() {
   return (
     <div className="min-h-screen bg-[#FFDB6F]">
       {/* 헤더 - 노란색 배경 */}
-      <div className="w-full px-[30px] pt-[15px]">
-        <div className="flex items-center pt-[30px] pb-[40px]">
+      <div className="w-full">
+        <div className="h-[78px] px-[30px] flex items-center">
           <button
             onClick={() => window.history.back()}
             className={'p-[12px] pl-0 outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none'}
@@ -127,7 +127,7 @@ export default function AuthorDetailPage() {
         </div>
 
         {/* 작성자 정보 */}
-        <div className="flex items-center gap-[9px] mb-4">
+        <div className="flex items-center gap-[9px] px-[30px] mb-[40px]">
           <div className="relative w-[56px] h-[56px] rounded-full overflow-hidden flex items-center justify-center">
             <img src={'/img/default_profile.jpg'} alt={'프로필 이미지'} className={'absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover'}/>
           </div>
@@ -148,7 +148,7 @@ export default function AuthorDetailPage() {
 
         {/* 소셜 미디어 링크 */}
         {(author.instagram || author.naver_cafe || author.kakao_openchat) && (
-          <div className="flex gap-2 mb-6">
+          <div className="flex gap-2 mb-[24px]">
             {author.instagram && (
               <button
                 onClick={() => window.open(author.instagram, '_blank')}
