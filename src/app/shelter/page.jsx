@@ -24,7 +24,7 @@ const ShelterMapPage = () => {
     if (!size) return '중형견'; // 기본값 설정
     const sizeMap = {
       'small': '소형견',
-      'medium-small': '중소형견',
+      'smallMedium': '중소형견',
       'medium': '중형견',
       'large': '대형견'
     };

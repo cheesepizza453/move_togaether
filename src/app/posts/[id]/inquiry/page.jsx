@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -53,11 +54,21 @@ export default function InquiryPage() {
     try {
       setSubmitting(true);
 
+      // Supabase 세션에서 토큰 가져오기
+      const { data: { session } } = await supabase.auth.getSession();
+
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+        headers['apikey'] = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      }
+
       const response = await fetch('/api/inquiries', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           post_id: postId,
           message: message.trim(),

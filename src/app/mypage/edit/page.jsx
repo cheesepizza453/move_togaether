@@ -37,7 +37,7 @@ const CustomAlertDialogContent = React.forwardRef(({ className, ...props }, ref)
 CustomAlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName;
 
 const EditProfilePage = () => {
-  const { user, profile, loading, checkNicknameDuplicate } = useAuth();
+  const { user, profile, loading, checkNicknameDuplicate, updateProfile } = useAuth();
   const router = useRouter();
   const [formData, setFormData] = useState({
     nickname: '',
@@ -203,6 +203,98 @@ const EditProfilePage = () => {
     router.push('/mypage');
   };
 
+  // 기존 프로필 이미지 삭제
+  const deleteOldProfileImage = async (imageUrl) => {
+    if (!imageUrl || !imageUrl.includes('user-profiles')) {
+      // user-profiles 버킷의 이미지가 아니면 삭제하지 않음
+      return;
+    }
+
+    try {
+      // URL에서 파일 경로 추출
+      const urlParts = imageUrl.split('/user-profiles/');
+      if (urlParts.length < 2) {
+        console.log('유효하지 않은 프로필 이미지 URL:', imageUrl);
+        return;
+      }
+
+      const filePath = urlParts[1];
+      console.log('기존 프로필 이미지 삭제 시도:', filePath);
+
+      // 세션에서 토큰 가져오기
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        console.log('인증 토큰이 없어서 기존 이미지 삭제를 건너뜁니다.');
+        return;
+      }
+
+      // 기존 이미지 삭제
+      const { error: deleteError } = await supabase.storage
+        .from('user-profiles')
+        .remove([filePath]);
+
+      if (deleteError) {
+        console.error('기존 프로필 이미지 삭제 오류:', deleteError);
+        // 삭제 실패해도 계속 진행 (새 이미지는 업로드됨)
+      } else {
+        console.log('기존 프로필 이미지 삭제 성공:', filePath);
+      }
+    } catch (error) {
+      console.error('기존 프로필 이미지 삭제 중 오류:', error);
+      // 삭제 실패해도 계속 진행
+    }
+  };
+
+  // 프로필 이미지 업로드
+  const uploadProfileImage = async (imageData) => {
+    if (!imageData || imageData.startsWith('http')) {
+      // 이미 URL이거나 빈 값이면 그대로 반환
+      return imageData;
+    }
+
+    try {
+      // Base64 데이터를 Blob으로 변환
+      const base64Data = imageData.split(',')[1];
+      const buffer = Buffer.from(base64Data, 'base64');
+
+      // 파일명 생성 (사용자 ID 폴더 + 타임스탬프)
+      const timestamp = Date.now();
+      const fileName = `${user.id}/profile_${timestamp}.jpg`;
+
+      // 세션에서 토큰 가져오기
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('인증 토큰을 찾을 수 없습니다.');
+      }
+
+      // Supabase Storage에 업로드
+      const { data, error } = await supabase.storage
+        .from('user-profiles')
+        .upload(fileName, buffer, {
+          contentType: 'image/jpeg',
+          upsert: false
+        });
+
+      if (error) {
+        console.error('프로필 이미지 업로드 오류:', error);
+        throw error;
+      }
+
+      // 공개 URL 생성
+      const { data: urlData } = supabase.storage
+        .from('user-profiles')
+        .getPublicUrl(fileName);
+
+      console.log('프로필 이미지 업로드 성공:', urlData.publicUrl);
+      return urlData.publicUrl;
+
+    } catch (error) {
+      console.error('프로필 이미지 업로드 실패:', error);
+      // 업로드 실패 시 원본 데이터 반환 (기본 이미지 등)
+      return imageData;
+    }
+  };
+
   // 프로필 저장
   const handleSave = async () => {
     if (!validateForm()) {
@@ -224,6 +316,20 @@ const EditProfilePage = () => {
         return;
       }
 
+      // 프로필 이미지 업로드 (Base64인 경우)
+      let profileImageUrl = formData.profileImage;
+      if (formData.profileImage && formData.profileImage.startsWith('data:')) {
+        console.log('프로필 이미지 업로드 시작...');
+
+        // 기존 프로필 이미지가 있다면 삭제
+        if (profile?.profile_image) {
+          console.log('기존 프로필 이미지 삭제 시작:', profile.profile_image);
+          await deleteOldProfileImage(profile.profile_image);
+        }
+
+        profileImageUrl = await uploadProfileImage(formData.profileImage);
+      }
+
       const response = await fetch('/api/mypage/profile', {
         method: 'PUT',
         headers: {
@@ -235,7 +341,7 @@ const EditProfilePage = () => {
           display_name: formData.nickname,
           bio: formData.introduction,
           phone: formData.phone,
-          profile_image: formData.profileImage,
+          profile_image: profileImageUrl,
           instagram: contactChannels.instagram ? channelInputs.instagram : null,
           naver_cafe: contactChannels.naverCafe ? channelInputs.naverCafe : null,
           kakao_openchat: contactChannels.kakaoOpenChat ? channelInputs.kakaoOpenChat : null
@@ -247,6 +353,15 @@ const EditProfilePage = () => {
         console.error('프로필 업데이트 오류:', errorData);
         toast.error(errorData.error || '프로필 업데이트 중 오류가 발생했습니다.');
         return;
+      }
+
+      const result = await response.json();
+      console.log('프로필 업데이트 성공:', result);
+
+      // 로컬 캐시 갱신
+      if (result.profile) {
+        await updateProfile(result.profile);
+        console.log('프로필 캐시 갱신 완료');
       }
 
       toast.success('프로필이 성공적으로 업데이트되었습니다.');

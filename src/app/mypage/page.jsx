@@ -10,6 +10,7 @@ import moment from 'moment';
 import { ChevronLeft, Edit } from 'lucide-react';
 import { myPageAPI, handleAPIError } from '@/lib/api-client';
 import MyPageCard from '@/components/MyPageCard';
+import { convertDogSize } from '@/lib/utils';
 import IconLoading from "../../../public/img/icon/IconLoading";
 
 const MyPage = () => {
@@ -19,6 +20,55 @@ const MyPage = () => {
   const [activeSubTab, setActiveSubTab] = useState('진행중'); // 작성 탭의 하위 탭
   const [myPosts, setMyPosts] = useState([]);
   const [appliedPosts, setAppliedPosts] = useState([]);
+
+  // D-day 계산 함수
+  const getDday = (deadline) => {
+    if (!deadline) return 0;
+    return moment(deadline).diff(moment(), 'days');
+  };
+
+  // 상태 배지 생성 함수
+  const getStatusBadge = (status, deadline) => {
+    const dday = getDday(deadline);
+
+    if (status === 'completed') {
+      return {
+        text: '완료',
+        className: 'bg-gray-500 text-white'
+      };
+    } else if (status === 'cancelled') {
+      return {
+        text: '취소',
+        className: 'bg-red-500 text-white'
+      };
+    } else if (dday < 0) {
+      return {
+        text: '마감',
+        className: 'bg-gray-400 text-white'
+      };
+    } else if (dday <= 3) {
+      return {
+        text: '긴급',
+        className: 'bg-red-500 text-white'
+      };
+    } else if (dday <= 7) {
+      return {
+        text: '마감임박',
+        className: 'bg-orange-500 text-white'
+      };
+    } else {
+      return {
+        text: '진행중',
+        className: 'bg-green-500 text-white'
+      };
+    }
+  };
+
+  // 날짜 포맷팅 함수
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    return moment(dateString).format('YYYY.MM.DD');
+  };
   const [dataLoading, setDataLoading] = useState(false);
   const [error, setError] = useState(null);
   const [loadedTabs, setLoadedTabs] = useState(new Set());
@@ -32,13 +82,15 @@ const MyPage = () => {
       return; // 이미 로드된 탭은 다시 로드하지 않음
     }
 
+    // 로딩 중이거나 사용자가 없으면 함수 종료
+    if (loading || !user) {
+      console.log('fetchTabData 건너뜀:', { loading, user: !!user });
+      return;
+    }
+
     try {
       setDataLoading(true);
       setError(null);
-
-      if (!user) {
-        throw new Error('로그인이 필요합니다.');
-      }
 
       let posts;
       if (tabType === '지원') {
@@ -85,7 +137,7 @@ const MyPage = () => {
     } finally {
       setDataLoading(false);
     }
-  }, [loadedTabs]);
+  }, [loadedTabs, loading, user]);
 
   // 로그인 상태 확인
   useEffect(() => {
@@ -100,14 +152,14 @@ const MyPage = () => {
 
   // 활성 탭 변경 시 데이터 조회
   useEffect(() => {
-    if (user && profile && activeTab) {
+    if (!loading && user && profile && activeTab) {
       if (activeTab === '작성') {
         fetchTabData(activeTab, activeSubTab);
       } else {
         fetchTabData(activeTab);
       }
     }
-  }, [activeTab, activeSubTab, user, profile, fetchTabData]);
+  }, [activeTab, activeSubTab, user, profile, loading, fetchTabData]);
 
   // 탭 변경 핸들러
   const handleTabChange = (tab) => {
@@ -181,7 +233,7 @@ const MyPage = () => {
             {/* 프로필 이미지 */}
             <div className="w-[70px] h-[70px] mr-[18px] rounded-full overflow-hidden bg-white flex-shrink-0">
               <Image
-                src={profile?.profile_image_url || '/img/default_profile.jpg'}
+                src={profile?.profile_image || '/img/default_profile.jpg'}
                 alt="프로필"
                 width={80}
                 height={80}

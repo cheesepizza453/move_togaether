@@ -17,34 +17,48 @@ export async function GET(request) {
     const authRequiredTypes = ['my', 'applied', 'favorites']
     let supabase, profile = null
 
-    if (authRequiredTypes.includes(type)) {
-      const authHeader = request.headers.get('authorization')
-      if (!authHeader) {
-        return NextResponse.json({ error: '인증 헤더가 필요합니다.' }, { status: 401 })
-      }
-
+    // 인증 헤더가 있는 경우 (로그인한 사용자)
+    const authHeader = request.headers.get('authorization')
+    if (authHeader) {
+      console.log('인증 헤더 확인:', '존재')
       const accessToken = authHeader.replace('Bearer ', '')
+      console.log('액세스 토큰:', accessToken ? '존재' : '없음')
       supabase = createServerSupabaseClient(accessToken)
 
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       if (authError || !user) {
-        return NextResponse.json({ error: '유효하지 않은 인증 정보입니다.' }, { status: 401 })
+        console.log('사용자 인증 실패:', authError)
+        // 인증이 필요한 타입인 경우에만 에러 반환
+        if (authRequiredTypes.includes(type)) {
+          return NextResponse.json({ error: '유효하지 않은 인증 정보입니다.' }, { status: 401 })
+        }
+        // all 타입인 경우 익명으로 처리
+        supabase = createServerSupabaseClient()
+      } else {
+        console.log('사용자 인증 성공:', user.id)
+        const { data: profileData, error: profileError } = await supabase
+          .from('user_profiles')
+          .select('id')
+          .eq('auth_user_id', user.id)
+          .eq('is_deleted', false)
+          .single()
+
+        if (profileError || !profileData) {
+          console.log('프로필 조회 실패:', profileError)
+          // 인증이 필요한 타입인 경우에만 에러 반환
+          if (authRequiredTypes.includes(type)) {
+            return NextResponse.json({ error: '사용자 프로필을 찾을 수 없습니다.' }, { status: 404 })
+          }
+          // all 타입인 경우 익명으로 처리
+          supabase = createServerSupabaseClient()
+        } else {
+          profile = profileData
+          console.log('프로필 조회 성공:', profile.id)
+        }
       }
-
-      const { data: profileData, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('id')
-        .eq('auth_user_id', user.id)
-        .eq('is_deleted', false)
-        .single()
-
-      if (profileError || !profileData) {
-        return NextResponse.json({ error: '사용자 프로필을 찾을 수 없습니다.' }, { status: 404 })
-      }
-
-      profile = profileData
     } else {
       // 익명 사용자용
+      console.log('인증 헤더 없음 - 익명 사용자로 처리')
       supabase = createServerSupabaseClient()
     }
 
@@ -69,7 +83,7 @@ export async function GET(request) {
 
     switch (type) {
       case 'all':
-        // 전체 게시물 (메인 페이지) - view 사용
+        // 전체 게시물 (메인 페이지) - 찜 상태 포함
         if (status === 'active') {
           query = supabase
             .from('active_posts_view')
@@ -209,6 +223,28 @@ export async function GET(request) {
 
     console.log(`${type} 타입 조회 결과:`, { data, count, error });
 
+    // 'all' 타입이고 로그인한 사용자인 경우 찜 상태 조회
+    let favoritePostIds = new Set();
+    if (type === 'all' && profile && data && data.length > 0) {
+      const postIds = data.map(post => post.id);
+      console.log('찜 상태 조회 - 사용자 프로필 ID:', profile.id);
+      console.log('찜 상태 조회 - 게시물 ID들:', postIds);
+
+      const { data: favoritesData, error: favoritesError } = await supabase
+        .from('favorites')
+        .select('post_id')
+        .eq('user_id', profile.id)
+        .eq('is_deleted', false)
+        .in('post_id', postIds);
+
+      console.log('찜 상태 조회 결과:', { favoritesData, favoritesError });
+
+      if (!favoritesError && favoritesData) {
+        favoritePostIds = new Set(favoritesData.map(fav => fav.post_id));
+        console.log('찜한 게시물 ID들:', Array.from(favoritePostIds));
+      }
+    }
+
     // 데이터 정리
     let posts = []
     if (type === 'applied') {
@@ -227,6 +263,14 @@ export async function GET(request) {
       })) || []
     } else {
       posts = data || []
+
+      // 'all' 타입인 경우 찜 상태 처리
+      if (type === 'all') {
+        posts = posts.map(post => ({
+          ...post,
+          is_favorite: favoritePostIds.has(post.id)
+        }))
+      }
 
       // 'my' 타입인 경우 각 게시물의 지원자 수 조회
       if (type === 'my' && posts.length > 0) {

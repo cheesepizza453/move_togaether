@@ -3,15 +3,41 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request, { params }) {
   try {
-    const supabase = createServerSupabaseClient();
-    const { id } = params;
+    const { id } = await params;
+
+    // 요청 헤더에서 Authorization 토큰 추출
+    const authHeader = request.headers.get('authorization');
+    const accessToken = authHeader?.replace('Bearer ', '');
+
+    if (!accessToken) {
+      return NextResponse.json(
+        { error: '인증이 필요합니다.' },
+        { status: 401 }
+      );
+    }
+
+    const supabase = createServerSupabaseClient(accessToken);
 
     // 인증 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json(
-        { error: '인증이 필요합니다.' },
+        { error: '유효하지 않은 인증 정보입니다.' },
         { status: 401 }
+      );
+    }
+
+    // 사용자 프로필 ID 조회
+    const { data: userProfile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('auth_user_id', user.id)
+      .single();
+
+    if (profileError || !userProfile) {
+      return NextResponse.json(
+        { error: '사용자 프로필을 찾을 수 없습니다.' },
+        { status: 404 }
       );
     }
 
@@ -29,7 +55,7 @@ export async function POST(request, { params }) {
       );
     }
 
-    if (post.user_id !== user.id) {
+    if (post.user_id !== userProfile.id) {
       return NextResponse.json(
         { error: '권한이 없습니다.' },
         { status: 403 }
@@ -49,7 +75,7 @@ export async function POST(request, { params }) {
       .from('posts')
       .update({
         status: 'completed',
-        completed_at: new Date().toISOString()
+        updated_at: new Date().toISOString()
       })
       .eq('id', id);
 

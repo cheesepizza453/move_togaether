@@ -82,6 +82,7 @@ export async function PUT(request) {
       display_name,
       phone,
       bio,
+      profile_image,
       instagram,
       naver_cafe,
       kakao_openchat
@@ -93,6 +94,7 @@ export async function PUT(request) {
         display_name,
         phone,
         bio,
+        profile_image,
         instagram,
         naver_cafe,
         kakao_openchat,
@@ -124,4 +126,3 @@ export async function PUT(request) {
     }, { status: 500 });
   }
 }
-

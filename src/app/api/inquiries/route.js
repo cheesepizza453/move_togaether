@@ -3,11 +3,20 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request) {
   try {
-    const supabase = createServerSupabaseClient();
+    // 요청 헤더에서 Authorization 토큰 추출
+    const authHeader = request.headers.get('authorization');
+    const accessToken = authHeader?.replace('Bearer ', '');
+
+    console.log('API 요청 토큰:', { authHeader, accessToken });
+
+    const supabase = createServerSupabaseClient(accessToken);
 
     // 인증 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser();
+    console.log('API 인증 확인:', { user: user?.id, authError });
+
     if (authError || !user) {
+      console.log('인증 실패:', authError);
       return NextResponse.json(
         { error: '인증이 필요합니다.' },
         { status: 401 }
@@ -112,7 +121,11 @@ export async function POST(request) {
 
 export async function GET(request) {
   try {
-    const supabase = createServerSupabaseClient();
+    // 요청 헤더에서 Authorization 토큰 추출
+    const authHeader = request.headers.get('authorization');
+    const accessToken = authHeader?.replace('Bearer ', '');
+
+    const supabase = createServerSupabaseClient(accessToken);
 
     // 인증 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser();

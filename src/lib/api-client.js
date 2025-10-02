@@ -61,7 +61,7 @@ const apiCall = async (endpoint, options = {}) => {
     endpoint.includes('/auth/') ||
     endpoint.includes('/applications') ||
     endpoint.includes('/favorites') ||
-    endpoint.includes('/posts/list') && (endpoint.includes('type=my') || endpoint.includes('type=applied') || endpoint.includes('type=favorites'))
+    endpoint.includes('/posts/list') // posts/list는 항상 인증 헤더 전달 (찜 상태 조회를 위해)
   );
 
   // 헤더 구성

@@ -13,18 +13,18 @@ import LocationSearchDialog from '../components/LocationSearchDialog';
 import { postsAPI, favoritesAPI, handleAPIError } from '@/lib/api-client';
 import { useAuth } from '@/hooks/useAuth';
 import { useDialogContext } from '@/components/DialogProvider';
+import { toast } from 'sonner';
 import IconLoading from "../../public/img/icon/IconLoading";
 
 export default function Home() {
   const { user } = useAuth();
-  const { showConfirm } = useDialogContext();
+  const { showConfirm, showError } = useDialogContext();
 
   const [sortOption, setSortOption] = useState('latest');
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [favoritePostIds, setFavoritePostIds] = useState(new Set());
-  const [favoritesLoading, setFavoritesLoading] = useState(false);
 
   // 위치 기반 정렬 관련 상태
   const [showLocationDialog, setShowLocationDialog] = useState(false);
@@ -81,33 +81,22 @@ export default function Home() {
   ]; */
   const mockPosts = [];
 
-  // 찜 목록 가져오기 (페이지 로드 시 한 번만 실행)
-  const fetchFavorites = useCallback(async () => {
-    try {
-      setFavoritesLoading(true);
-
-      const session = await supabase.auth.getSession();
-      if (!session.data.session) {
-        setFavoritePostIds(new Set()); // 로그인하지 않은 경우 빈 Set
-        return;
+  // 찜 상태 업데이트 (게시물 목록에서 가져온 찜 상태 사용)
+  const updateFavoriteStates = useCallback((postsData) => {
+    const favoriteSet = new Set();
+    postsData.forEach(post => {
+      if (post.is_favorite) {
+        favoriteSet.add(post.id);
       }
-
-      const { favoritePostIds } = await favoritesAPI.getList();
-      setFavoritePostIds(new Set(favoritePostIds));
-    } catch (error) {
-      console.error('찜 목록 조회 오류:', error);
-      const errorInfo = handleAPIError(error);
-      console.error('Error details:', errorInfo);
-      setFavoritePostIds(new Set()); // 에러 시 빈 Set
-    } finally {
-      setFavoritesLoading(false);
-    }
-  }, []); // 의존성 배열 비워서 한 번만 생성
+    });
+    setFavoritePostIds(favoriteSet);
+  }, []);
 
   // 강아지 크기 변환 함수
   const convertDogSize = (size) => {
     const sizeMap = {
       'small': '소형견',
+      'smallMedium': '중소형견',
       'medium': '중형견',
       'large': '대형견'
     };
@@ -170,6 +159,7 @@ export default function Home() {
         dogName: post.name || post.dog_name, // 강아지 이름
         dogSize: convertDogSize(post.size || post.dog_size), // 강아지 크기 변환
         dogBreed: post.breed || post.dog_breed, // 강아지 견종
+        is_favorite: post.is_favorite || false, // 찜 상태
         departureAddress: post.departure_address,
         arrivalAddress: post.arrival_address,
         deadline: formatDeadline(post.deadline),
@@ -202,12 +192,17 @@ export default function Home() {
 
       if (isLoadMore) {
         // 추가 로드인 경우 기존 데이터에 추가
-        setPosts(prevPosts => [...prevPosts, ...formattedPosts]);
+        const newPosts = [...posts, ...formattedPosts];
+        setPosts(newPosts);
         setPage(prevPage => prevPage + 1);
+        // 찜 상태 업데이트
+        updateFavoriteStates(newPosts);
       } else {
         // 새로 로드인 경우 기존 데이터 교체
         setPosts(formattedPosts);
         setPage(2); // 다음 페이지는 2부터 시작
+        // 찜 상태 업데이트
+        updateFavoriteStates(formattedPosts);
       }
 
     } catch (err) {
@@ -265,21 +260,76 @@ export default function Home() {
   // 초기 데이터 로드
   useEffect(() => {
     fetchPosts(sortOption);
-    fetchFavorites(); // 페이지 로드 시 한 번만 실행
   }, []); // 컴포넌트 마운트 시에만 실행
 
-  // 찜 상태 토글 핸들러 (로컬 상태만 업데이트)
-  const handleFavoriteToggle = useCallback((postId, isFavorited) => {
-    setFavoritePostIds(prev => {
-      const newSet = new Set(prev);
-      if (isFavorited) {
-        newSet.add(postId);
-      } else {
-        newSet.delete(postId);
+  // 찜 상태 토글 핸들러 (API 호출 + 로컬 상태 업데이트)
+  const handleFavoriteToggle = useCallback(async (postId, isFavorited) => {
+    try {
+      // 현재 상태 확인
+      const currentIsFavorite = favoritePostIds.has(postId);
+
+      // 상태가 이미 일치하는 경우 API 호출하지 않음
+      if (currentIsFavorite === isFavorited) {
+        console.log('찜 상태가 이미 일치합니다. API 호출을 건너뜁니다.');
+        return;
       }
-      return newSet;
-    });
-  }, []);
+
+      // API 호출
+      if (isFavorited) {
+        await favoritesAPI.add(postId);
+      } else {
+        await favoritesAPI.remove(postId);
+      }
+
+      // 로컬 상태 업데이트
+      setFavoritePostIds(prev => {
+        const newSet = new Set(prev);
+        if (isFavorited) {
+          newSet.add(postId);
+        } else {
+          newSet.delete(postId);
+        }
+        return newSet;
+      });
+      toast.success(isFavorited ? '즐겨찾기에 추가되었습니다.' : '즐겨찾기에서 제거되었습니다.');
+    } catch (error) {
+      console.error('찜 상태 변경 오류:', error);
+      const errorInfo = handleAPIError(error);
+      console.error('Error details:', errorInfo);
+
+      // 409 오류인 경우 로컬 상태만 업데이트
+      if (errorInfo.status === 409) {
+        console.log('이미 찜한 상태입니다. 로컬 상태를 업데이트합니다.');
+        setFavoritePostIds(prev => {
+          const newSet = new Set(prev);
+          if (isFavorited) {
+            newSet.add(postId);
+          } else {
+            newSet.delete(postId);
+          }
+          return newSet;
+        });
+        toast.success(isFavorited ? '즐겨찾기에 추가되었습니다.' : '즐겨찾기에서 제거되었습니다.');
+      } else if (errorInfo.status === 404) {
+        // 404 오류인 경우 (이미 제거된 찜) - 로컬 상태만 업데이트
+        console.log('이미 제거된 찜입니다. 로컬 상태를 업데이트합니다.');
+        setFavoritePostIds(prev => {
+          const newSet = new Set(prev);
+          if (isFavorited) {
+            newSet.add(postId);
+          } else {
+            newSet.delete(postId);
+          }
+          return newSet;
+        });
+        toast.success(isFavorited ? '즐겨찾기에 추가되었습니다.' : '즐겨찾기에서 제거되었습니다.');
+      } else if (errorInfo.type === 'auth') {
+        toast.error('로그인이 필요합니다.');
+      } else {
+        toast.error('찜 상태 변경에 실패했습니다.');
+      }
+    }
+  }, [showError, favoritePostIds]);
 
   // 위치 기반 정렬을 위한 함수
   const fetchPostsByDistance = async (latitude, longitude, pageNum = 1, isLoadMore = false) => {
@@ -343,18 +393,24 @@ export default function Home() {
         images: post.images || [],
         status: post.status,
         dday: post.deadline ? moment(post.deadline).diff(moment(), 'days') : 0,
-        distance: post.distance_km
+        distance: post.distance_km,
+        is_favorite: post.is_favorite || false // 찜 상태
       }));
 
       const hasMoreData = pagination?.hasMore ?? (formattedPosts.length === 10);
       setHasMore(hasMoreData);
 
       if (isLoadMore) {
-        setPosts(prevPosts => [...prevPosts, ...formattedPosts]);
+        const newPosts = [...posts, ...formattedPosts];
+        setPosts(newPosts);
         setPage(prevPage => prevPage + 1);
+        // 찜 상태 업데이트
+        updateFavoriteStates(newPosts);
       } else {
         setPosts(formattedPosts);
         setPage(2);
+        // 찜 상태 업데이트
+        updateFavoriteStates(formattedPosts);
       }
 
     } catch (err) {

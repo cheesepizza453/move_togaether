@@ -14,6 +14,7 @@ export function cn(...inputs) {
 export const convertDogSize = (size) => {
   const sizeMap = {
     'small': '소형견',
+    'smallMedium': '중소형견',
     'medium': '중형견',
     'large': '대형견'
   };
@@ -29,4 +30,3 @@ export const formatDeadline = (deadline) => {
   if (!deadline) return '';
   return moment(deadline).format('YY/MM/DD');
 };
-
