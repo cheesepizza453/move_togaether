@@ -15,6 +15,7 @@ module.exports = {
         'text-600':'#9A9A9A',
         'text-300':'#D5D5D5',
         'text-100':'#F5F5F5',
+        'text-050':'#FCFCFC',
         brand: {
           'bg':'#FBFBF7',
           'sub': '#FFF6D1',

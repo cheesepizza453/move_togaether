@@ -392,61 +392,70 @@ const EditProfilePage = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <div className="flex items-center px-4 py-3 bg-white border-b border-gray-200">
-        <button
-          onClick={() => router.back()}
-          className="text-gray-600 text-lg"
-        >
-          <span className="flex items-center">
-            <ChevronLeft size={20} className="text-gray-600" />
-            <span className="ml-1">내 정보 수정</span>
-          </span>
-        </button>
+      {/* 헤더 */}
+      <div className="bg-white w-full">
+        <div className="w-full flex items-center justify-between">
+          <div className="w-full flex items-center py-[28px] px-[30px]">
+            <button
+                onClick={() => router.back()}
+                className="mr-[12px]"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="9" height="16" viewBox="0 0 9 16" fill="none">
+                <path d="M8 15L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
+                      strokeLinecap="round"/>
+                <path d="M8 0.999999L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
+                      strokeLinecap="round"/>
+              </svg>
+            </button>
+            <div>
+              <h1 className="text-22-m text-black">내 정보 수정</h1>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Form */}
-      <div className="px-6 pt-8">
-        <ProfileEditForm
-          formData={formData}
-          setFormData={setFormData}
-          contactChannels={contactChannels}
-          setContactChannels={setContactChannels}
-          channelInputs={channelInputs}
-          setChannelInputs={setChannelInputs}
-          errors={errors}
-          setErrors={setErrors}
-          nicknameValidation={nicknameValidation}
-          nicknameChecking={nicknameChecking}
-          onNicknameChange={handleNicknameChange}
-          onNicknameBlur={handleNicknameBlur}
-          onChannelChange={handleChannelChange}
-          onChannelInputChange={handleChannelInputChange}
-          onProfileImageChange={handleProfileImageChange}
-        />
 
-        {/* 하단 버튼들 */}
-        <div className="bottom-0 left-0 right-0 bg-white p-4 mt-4">
-          <div className="text-right mb-8">
-            <button
+      {/* Form */}
+      <div className="px-[23px] pt-[10px]">
+        <ProfileEditForm
+            formData={formData}
+            setFormData={setFormData}
+            contactChannels={contactChannels}
+            setContactChannels={setContactChannels}
+            channelInputs={channelInputs}
+            setChannelInputs={setChannelInputs}
+            errors={errors}
+            setErrors={setErrors}
+            nicknameValidation={nicknameValidation}
+            nicknameChecking={nicknameChecking}
+            onNicknameChange={handleNicknameChange}
+            onNicknameBlur={handleNicknameBlur}
+            onChannelChange={handleChannelChange}
+            onChannelInputChange={handleChannelInputChange}
+            onProfileImageChange={handleProfileImageChange}
+        />
+        <div className={'flex justify-end'}>
+          <button
               onClick={() => setShowLogoutDialog(true)}
-              className="text-sm text-[#DBA913] underline font-bold"
-            >
-              로그아웃
-            </button>
-          </div>
-          <div className="flex space-x-3 mb-3">
+              className="px-[15px] py-[5px] text-right text-12-r text-brand-yellow-dark underline"
+          >
+            로그아웃
+          </button>
+        </div>
+        {/* 하단 버튼들 */}
+        <div className="sticky bottom-0 left-0 right-0 py-[20px] bg-white mt-[30px] border-t border-gray-100">
+          <div className="flex space-x-[7px]">
             <Button
-              onClick={handleSave}
-              disabled={!hasChanges || saving}
-              className="flex-1 bg-yellow-400 text-gray-800 hover:bg-yellow-500 disabled:bg-gray-300 disabled:text-gray-500"
+                onClick={handleSave}
+                disabled={!hasChanges || saving}
+                className="flex-1 h-[54px] bg-brand-main text-gray-800 rounded-[15px] disabled:bg-text-300 disabled:text-text-600"
             >
               {saving ? '수정 중...' : '수정하기'}
             </Button>
             <Button
-              onClick={handleCancel}
-              variant="outline"
-              className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50"
+                onClick={handleCancel}
+                variant="outline"
+                className="flex-1 h-[54px] border-gray-300 text-gray-700 bg-text-050"
             >
               취소
             </Button>
@@ -458,10 +467,10 @@ const EditProfilePage = () => {
       <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
         {/* 커스텀 오버레이 */}
         {showLogoutDialog && (
-          <div
-            className="fixed inset-0 z-[9998] bg-black/60"
-            onClick={() => setShowLogoutDialog(false)}
-          />
+            <div
+                className="fixed inset-0 z-[9998] bg-black/60"
+                onClick={() => setShowLogoutDialog(false)}
+            />
         )}
         <CustomAlertDialogContent className="z-[9999] bg-white">
           <AlertDialogHeader>
@@ -473,7 +482,7 @@ const EditProfilePage = () => {
           <AlertDialogFooter className="flex flex-row gap-3">
             <AlertDialogCancel className="mt-0 flex-1">취소</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => router.push('/logout')}
+                onClick={() => router.push('/logout')}
               className="flex-1"
             >
               로그아웃
