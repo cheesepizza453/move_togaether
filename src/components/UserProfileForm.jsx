@@ -67,6 +67,8 @@ const UserProfileForm = ({
     }
   };
 
+  console.log(errors);
+  console.log(nicknameValidation);
   return (
     <div className="space-y-4">
       {/* 프로필 사진 */}
@@ -124,7 +126,7 @@ const UserProfileForm = ({
           className={`w-full px-[15px] py-[18px] text-16-r rounded-[15px] border text-text-800 ${
             errors.nickname
               ? 'border-brand-point bg-brand-point-bg text-brand-point focus:border-brand-point focus:ring-brand-point'
-              : nicknameValidation?.isValid
+              : nicknameValidation?.available
                 ? 'border-[#2BA03E] bg-[#BFE1C5] text-[#2BA03E] focus:border-[#2BA03E] focus:ring-[#2BA03E]'
                 : 'border-text-600 bg-text-050 focus:bg-brand-sub focus:text-brand-yellow-dark focus:border-brand-main focus:ring-brand-main'
           } focus:outline-none focus:ring-1 transition-colors`}
@@ -134,7 +136,7 @@ const UserProfileForm = ({
           <span className={`text-9-r ${
             errors.nickname
               ? 'text-brand-point'
-              : nicknameValidation?.isValid
+              : nicknameValidation?.available
                 ? 'text-[#2BA03E]'
                 : 'text-brand-point'
           }`}>
