@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
-import SignupForm from '@/components/signup/SignupForm';
+import UserProfileForm from '@/components/UserProfileForm';
 
 
 const KakaoSignupPage = () => {
@@ -594,7 +594,8 @@ const KakaoSignupPage = () => {
       {/* 메인 컨텐츠 */}
       <div className="px-6 py-8">
         <form onSubmit={handleSubmit}>
-          <SignupForm
+          <UserProfileForm
+            mode="signup"
             formData={formData}
             setFormData={setFormData}
             contactChannels={contactChannels}
@@ -613,6 +614,10 @@ const KakaoSignupPage = () => {
             onChannelInputChange={handleChannelInputChange}
             showProfileImage={false}
             showIntroduction={true}
+            showPhone={true}
+            showSocialChannels={true}
+            showPassword={false}
+            showTerms={false}
           />
 
           {/* 회원가입 완료 버튼 */}
