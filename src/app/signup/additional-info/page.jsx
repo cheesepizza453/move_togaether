@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import SignupForm from '@/components/signup/SignupForm';
+import UserProfileForm from '@/components/UserProfileForm';
 
 // useSearchParams를 사용하는 컴포넌트를 별도로 분리
 const AdditionalInfoContent = () => {
@@ -261,7 +261,7 @@ const AdditionalInfoContent = () => {
 
         {/* 메인 컨텐츠 */}
         <div className="px-6 py-8">
-          <SignupForm
+          <UserProfileForm
               formData={formData}
               setFormData={setFormData}
               contactChannels={contactChannels}
@@ -271,15 +271,17 @@ const AdditionalInfoContent = () => {
               errors={errors}
               setErrors={setErrors}
               nicknameValidation={nicknameValidation}
-              setNicknameValidation={setNicknameValidation}
               nicknameChecking={nicknameChecking}
-              setNicknameChecking={setNicknameChecking}
               onNicknameChange={handleNicknameChange}
               onNicknameBlur={handleNicknameBlur}
               onChannelChange={handleChannelChange}
               onChannelInputChange={handleChannelInputChange}
+              onProfileImageChange={() => {}} // 회원가입에서는 프로필 이미지 변경 불가
+              mode="signup"
               showProfileImage={true}
               showIntroduction={true}
+              showPhone={true}
+              showSocialChannels={true}
           />
 
           {/* 회원가입 완료 버튼 */}

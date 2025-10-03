@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import ProfileEditForm from '@/components/ProfileEditForm';
+import UserProfileForm from '@/components/UserProfileForm';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -426,7 +426,7 @@ const EditProfilePage = () => {
 
       {/* Form */}
       <div className="px-[23px] pt-[10px]">
-        <ProfileEditForm
+        <UserProfileForm
             formData={formData}
             setFormData={setFormData}
             contactChannels={contactChannels}
@@ -442,6 +442,11 @@ const EditProfilePage = () => {
             onChannelChange={handleChannelChange}
             onChannelInputChange={handleChannelInputChange}
             onProfileImageChange={handleProfileImageChange}
+            mode="edit"
+            showProfileImage={true}
+            showIntroduction={true}
+            showPhone={true}
+            showSocialChannels={true}
         />
         <div className={'flex justify-end'}>
           <button

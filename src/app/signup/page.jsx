@@ -7,6 +7,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
+import UserProfileForm from '@/components/UserProfileForm';
 
 
 const SignupPage = () => {
