@@ -337,41 +337,85 @@ const VolunteerCreate = () => {
     }));
   };
 
-  const handlePhotoUpload = (event) => {
+  // 이미지 리사이징 함수
+  const resizeImage = (file, maxWidth = 1024) => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+
+      img.onload = () => {
+        // 원본 이미지 크기
+        const { width: originalWidth, height: originalHeight } = img;
+
+        // 리사이징이 필요한지 확인
+        if (originalWidth <= maxWidth) {
+          // 리사이징이 필요없으면 원본 파일을 그대로 사용
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target.result);
+          reader.readAsDataURL(file);
+          return;
+        }
+
+        // 새로운 크기 계산 (비율 유지)
+        const ratio = maxWidth / originalWidth;
+        const newHeight = Math.round(originalHeight * ratio);
+
+        // Canvas 크기 설정
+        canvas.width = maxWidth;
+        canvas.height = newHeight;
+
+        // 이미지 그리기 (고품질로)
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, maxWidth, newHeight);
+
+        // Canvas를 Blob으로 변환
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.readAsDataURL(blob);
+          } else {
+            reject(new Error('이미지 리사이징에 실패했습니다.'));
+          }
+        }, file.type, 0.9); // 품질 90%로 압축
+      };
+
+      img.onerror = () => reject(new Error('이미지 로드에 실패했습니다.'));
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  const handlePhotoUpload = async (event) => {
     const file = event.target.files[0];
     if (file) {
-      // 파일 크기 검증 (500KB 제한)
-      if (file.size > 500 * 1024) {
-        toast.error('파일 크기는 500KB 이하로 업로드해주세요.');
-        return;
-      }
-
       // 이미지 파일 검증
       if (!file.type.startsWith('image/')) {
         toast.error('이미지 파일만 업로드 가능합니다.');
         return;
       }
 
-      // FileReader로 이미지 미리보기 생성 (Promise 기반)
-      const reader = new FileReader();
+      try {
+        // 이미지 리사이징 (최대 너비 1024px)
+        const resizedImageDataUrl = await resizeImage(file, 1024);
 
-      reader.onload = (e) => {
-        try {
-          const base64String = e.target.result;
-          setPhotoPreview(base64String);
-          updateFormData('photo', base64String);
-        } catch (error) {
-          console.error('이미지 처리 오류:', error);
-          toast.error('이미지 처리 중 오류가 발생했습니다.');
+        // 리사이징된 이미지의 크기 확인 (대략적인 크기)
+        const base64Length = resizedImageDataUrl.length;
+        const estimatedSizeKB = Math.round((base64Length * 3) / 4 / 1024);
+
+        console.log(`이미지 리사이징 완료: 원본 ${Math.round(file.size / 1024)}KB → 리사이징 ${estimatedSizeKB}KB`);
+
+        setPhotoPreview(resizedImageDataUrl);
+        updateFormData('photo', resizedImageDataUrl);
+
+        if (estimatedSizeKB > 500) {
+          toast.warning(`이미지가 ${estimatedSizeKB}KB로 500KB를 초과합니다. 품질이 조정되었습니다.`);
         }
-      };
-
-      reader.onerror = (error) => {
-        console.error('파일 읽기 오류:', error);
-        toast.error('파일을 읽는 중 오류가 발생했습니다.');
-      };
-
-      reader.readAsDataURL(file);
+      } catch (error) {
+        console.error('이미지 처리 오류:', error);
+        toast.error('이미지 처리 중 오류가 발생했습니다.');
+      }
     }
   };
 

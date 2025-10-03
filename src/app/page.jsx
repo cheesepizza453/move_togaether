@@ -192,11 +192,13 @@ export default function Home() {
 
       if (isLoadMore) {
         // 추가 로드인 경우 기존 데이터에 추가
-        const newPosts = [...posts, ...formattedPosts];
-        setPosts(newPosts);
+        setPosts(prevPosts => {
+          const newPosts = [...prevPosts, ...formattedPosts];
+          // 찜 상태 업데이트
+          updateFavoriteStates(newPosts);
+          return newPosts;
+        });
         setPage(prevPage => prevPage + 1);
-        // 찜 상태 업데이트
-        updateFavoriteStates(newPosts);
       } else {
         // 새로 로드인 경우 기존 데이터 교체
         setPosts(formattedPosts);
@@ -208,6 +210,7 @@ export default function Home() {
     } catch (err) {
       console.error('게시물 조회 중 예외 발생:', err);
       const errorInfo = handleAPIError(err);
+
       setError(errorInfo.message);
 
       // 에러 발생 시 데이터 초기화 (새로 로드인 경우만)
@@ -216,9 +219,17 @@ export default function Home() {
       }
       setHasMore(false); // 에러 발생 시 더 이상 로드하지 않음
     } finally {
+      // 로딩 상태 해제 (마운트 상태 체크 제거)
+      console.log('fetchPosts finally 블록 실행:', {
+        isLoadMore,
+        pageNum
+      });
+
+      console.log('로딩 상태 해제 중...');
       setLoading(false);
       setIsLoadingMore(false);
       setIsFetching(false); // 중복 호출 방지 플래그 해제
+      console.log('로딩 상태 해제 완료');
     }
   };
 
@@ -400,11 +411,13 @@ export default function Home() {
       setHasMore(hasMoreData);
 
       if (isLoadMore) {
-        const newPosts = [...posts, ...formattedPosts];
-        setPosts(newPosts);
+        setPosts(prevPosts => {
+          const newPosts = [...prevPosts, ...formattedPosts];
+          // 찜 상태 업데이트
+          updateFavoriteStates(newPosts);
+          return newPosts;
+        });
         setPage(prevPage => prevPage + 1);
-        // 찜 상태 업데이트
-        updateFavoriteStates(newPosts);
       } else {
         setPosts(formattedPosts);
         setPage(2);
@@ -414,6 +427,7 @@ export default function Home() {
 
     } catch (err) {
       console.error('거리 기반 정렬 중 오류:', err);
+
       setError('거리 기반 정렬에 실패했습니다.');
       if (!isLoadMore) {
         setPosts([]);
