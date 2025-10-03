@@ -16,8 +16,10 @@ const ShelterMapPage = () => {
   const [error, setError] = useState(null);
   const [postsData, setPostsData] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
+  const [dataFetched, setDataFetched] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
   const [selectedMarker, setSelectedMarker] = useState(null); // 선택된 마커 상태
+  const [userLocation, setUserLocation] = useState(null); // 사용자 현재 위치
 
   // 강아지 크기 변환 함수
   const convertDogSize = (size) => {
@@ -34,7 +36,7 @@ const ShelterMapPage = () => {
   console.log('Profile:', profile);
 
   // 마커 이미지 설정 함수
-  const getMarkerImage = (deadline, isSelected = false) => {
+  const getMarkerImage = useCallback((deadline, isSelected = false) => {
     if (!deadline) {
       // deadline이 없으면 기본 마커 사용
       const size = isSelected ? 50 : 40;
@@ -66,7 +68,7 @@ const ShelterMapPage = () => {
     }
 
     return new window.kakao.maps.MarkerImage(imageSrc, imageSize, imageOption);
-  };
+  }, []);
 
   // 데이터 가져오기
   const fetchPostsData = async () => {
@@ -96,17 +98,263 @@ const ShelterMapPage = () => {
       if (result.success) {
         console.log('게시물 데이터 로드 완료:', result.data);
         setPostsData(result.data);
+        setDataFetched(true);
       } else {
         console.error('데이터 로드 실패:', result.error);
         setError(result.error);
+        setDataFetched(true);
       }
     } catch (error) {
       console.error('API 호출 오류:', error);
       setError(`데이터를 불러오는데 실패했습니다: ${error.message}`);
+      setDataFetched(true);
     } finally {
       setLoadingData(false);
     }
   };
+
+  // 사용자 현재 위치 가져오기
+  const getUserLocation = useCallback(() => {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        console.log('Geolocation이 지원되지 않습니다.');
+        resolve(null);
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const location = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          console.log('사용자 위치:', location);
+          setUserLocation(location);
+          resolve(location);
+        },
+        (error) => {
+          console.log('위치 정보를 가져올 수 없습니다:', error.message);
+          resolve(null);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000 // 5분
+        }
+      );
+    });
+  }, []);
+
+  // 마커만 업데이트하는 함수
+  const updateMarkers = useCallback(() => {
+    if (!clustererRef.current || !postsData || postsData.length === 0) {
+      console.log('마커 업데이트 불가: 클러스터러 또는 데이터 없음');
+      return;
+    }
+
+    console.log('마커 업데이트 시작, 데이터 개수:', postsData.length);
+
+    // 기존 마커들 정리
+    if (markersRef.current.length > 0) {
+      console.log('기존 마커들 정리');
+      markersRef.current.forEach(marker => {
+        marker.setMap(null);
+      });
+      markersRef.current = [];
+    }
+
+    // 클러스터러에서 모든 마커 제거
+    clustererRef.current.clear();
+
+    // 새 마커 생성
+    const markers = postsData.map(post => {
+      console.log('마커 생성 중:', post.title, '위치:', post.departure);
+
+      const markerImage = getMarkerImage(post.deadline, false);
+
+      const marker = new window.kakao.maps.Marker({
+        position: new window.kakao.maps.LatLng(post.departure.lat, post.departure.lng),
+        image: markerImage
+      });
+
+      // 마커 클릭 이벤트
+      window.kakao.maps.event.addListener(marker, 'click', () => {
+        if (selectedMarker) {
+          const originalImage = getMarkerImage(selectedMarker.post?.deadline, false);
+          selectedMarker.marker.setImage(originalImage);
+        }
+
+        setSelectedMarker({ marker, post });
+
+        const selectedImage = getMarkerImage(post.deadline, true);
+        marker.setImage(selectedImage);
+
+        setSelectedPost(post);
+
+        const existingInfoWindow = document.querySelector('.kakao-maps-info-window');
+        if (existingInfoWindow) {
+          existingInfoWindow.remove();
+        }
+      });
+
+      return marker;
+    });
+
+    // 마커들을 ref에 저장
+    markersRef.current = markers;
+
+    // 클러스터러에 마커들 추가
+    clustererRef.current.addMarkers(markers);
+    console.log('마커 업데이트 완료, 마커 개수:', markers.length);
+  }, [postsData, getMarkerImage, selectedMarker]);
+
+  // 사용자 위치를 직접 받아서 지도를 초기화하는 함수
+  const initializeMapWithUserLocation = useCallback((location) => {
+    console.log('initializeMapWithUserLocation 호출됨, 위치:', location);
+    console.log('mapRef.current:', !!mapRef.current);
+    console.log('window.kakao:', !!window.kakao);
+    console.log('window.kakao.maps:', !!window.kakao?.maps);
+    console.log('window.kakao.maps.LatLng:', !!window.kakao?.maps?.LatLng);
+
+    if (!mapRef.current) {
+      console.log('mapRef.current가 없음');
+      return;
+    }
+
+    if (!window.kakao) {
+      console.log('window.kakao가 없음');
+      return;
+    }
+
+    if (!window.kakao.maps) {
+      console.log('window.kakao.maps가 없음');
+      return;
+    }
+
+    if (!window.kakao.maps.LatLng) {
+      console.log('window.kakao.maps.LatLng가 없음');
+      return;
+    }
+
+    try {
+      console.log('지도 초기화 시작...');
+
+      // 지도 중심점 결정 (사용자 위치 또는 기본 서울)
+      console.log('userLocation:', location);
+      const centerLat = location ? location.lat : 37.5665;
+      const centerLng = location ? location.lng : 126.9780;
+      //const mapLevel = location ? 3 : 6; // 사용자 위치가 있으면 더 확대
+      const mapLevel = 6;
+
+      console.log('지도 중심점:', { lat: centerLat, lng: centerLng, level: mapLevel });
+
+      // 지도 생성
+      const map = new window.kakao.maps.Map(mapRef.current, {
+        center: new window.kakao.maps.LatLng(centerLat, centerLng),
+        level: mapLevel
+      });
+
+      console.log('지도 생성 완료:', map);
+      mapInstanceRef.current = map;
+
+      // 마커 클러스터러 생성
+      const clusterer = new window.kakao.maps.MarkerClusterer({
+        map: map, // 마커들을 클러스터로 관리하고 표시할 지도 객체
+        averageCenter: true, // 클러스터에 포함된 마커들의 평균 위치를 클러스터 마커 위치로 설정
+        minLevel: 1, // 클러스터 할 최소 지도 레벨 (1로 더 낮춤)
+        disableClickZoom: false, // 클러스터 마커 클릭 시 확대/축소 비활성화
+        gridSize: 60 // 클러스터링을 위한 격자 크기 (더 크게)
+      });
+
+      clustererRef.current = clusterer;
+
+      // 지도 초기화 완료 후 마커 업데이트
+      console.log('지도 초기화 완료, 마커 업데이트 시작');
+      updateMarkers();
+
+      setMapLoaded(true);
+    } catch (err) {
+      console.error('지도 초기화 오류:', err);
+      setError('지도를 초기화하는데 실패했습니다.');
+    }
+  }, [updateMarkers]);
+
+  const initializeMap = useCallback(() => {
+    console.log('initializeMap 호출됨');
+    console.log('mapRef.current:', !!mapRef.current);
+    console.log('window.kakao:', !!window.kakao);
+    console.log('window.kakao.maps:', !!window.kakao?.maps);
+    console.log('window.kakao.maps.LatLng:', !!window.kakao?.maps?.LatLng);
+    console.log('mapInstanceRef.current:', !!mapInstanceRef.current);
+
+    // 이미 지도가 초기화되어 있으면 마커만 업데이트
+    if (mapInstanceRef.current && clustererRef.current) {
+      console.log('지도가 이미 초기화됨, 마커만 업데이트');
+      updateMarkers();
+      return;
+    }
+
+    if (!mapRef.current) {
+      console.log('mapRef.current가 없음');
+      return;
+    }
+
+    if (!window.kakao) {
+      console.log('window.kakao가 없음');
+      return;
+    }
+
+    if (!window.kakao.maps) {
+      console.log('window.kakao.maps가 없음');
+      return;
+    }
+
+    if (!window.kakao.maps.LatLng) {
+      console.log('window.kakao.maps.LatLng가 없음');
+      return;
+    }
+
+    try {
+      console.log('지도 초기화 시작...');
+
+      // 지도 중심점 결정 (사용자 위치 또는 기본 서울)
+      console.log('userLocation:', userLocation);
+      const centerLat = userLocation ? userLocation.lat : 37.5665;
+      const centerLng = userLocation ? userLocation.lng : 126.9780;
+      const mapLevel = userLocation ? 3 : 6; // 사용자 위치가 있으면 더 확대
+
+      console.log('지도 중심점:', { lat: centerLat, lng: centerLng, level: mapLevel });
+
+      // 지도 생성
+      const map = new window.kakao.maps.Map(mapRef.current, {
+        center: new window.kakao.maps.LatLng(centerLat, centerLng),
+        level: mapLevel
+      });
+
+      console.log('지도 생성 완료:', map);
+      mapInstanceRef.current = map;
+
+      // 마커 클러스터러 생성
+      const clusterer = new window.kakao.maps.MarkerClusterer({
+        map: map, // 마커들을 클러스터로 관리하고 표시할 지도 객체
+        averageCenter: true, // 클러스터에 포함된 마커들의 평균 위치를 클러스터 마커 위치로 설정
+        minLevel: 1, // 클러스터 할 최소 지도 레벨 (1로 더 낮춤)
+        disableClickZoom: false, // 클러스터 마커 클릭 시 확대/축소 비활성화
+        gridSize: 60 // 클러스터링을 위한 격자 크기 (더 크게)
+      });
+
+      clustererRef.current = clusterer;
+
+      // 지도 초기화 완료 후 마커 업데이트
+      console.log('지도 초기화 완료, 마커 업데이트 시작');
+      updateMarkers();
+
+      setMapLoaded(true);
+    } catch (err) {
+      console.error('지도 초기화 오류:', err);
+      setError('지도를 초기화하는데 실패했습니다.');
+    }
+  }, [postsData, getMarkerImage, selectedMarker, updateMarkers, userLocation]);
 
   useEffect(() => {
     // 데이터 먼저 가져오기
@@ -147,14 +395,29 @@ const ShelterMapPage = () => {
   }, []);
 
 
-  // 데이터와 지도가 모두 준비되면 지도 초기화 (한 번만)
+  // 데이터와 지도가 모두 준비되면 지도 초기화
   useEffect(() => {
-    if (!loadingData && postsData.length > 0 && window.kakao && window.kakao.maps && window.kakao.maps.LatLng && !mapInstanceRef.current) {
-      console.log('데이터와 지도 API가 준비됨, 지도 초기화 시작');
-      console.log('postsData 개수:', postsData.length);
-      initializeMap();
-    }
-  }, [loadingData]); // postsData 의존성 제거
+    const initializeMapWithLocation = async () => {
+      if (dataFetched && !loadingData && window.kakao && window.kakao.maps && window.kakao.maps.LatLng && !mapInstanceRef.current) {
+        console.log('데이터와 지도 API가 준비됨, 지도 초기화 시작');
+        console.log('postsData 개수:', postsData.length);
+        console.log('dataFetched:', dataFetched);
+
+        // 사용자 위치 가져오기
+        let currentUserLocation = userLocation;
+        if (!currentUserLocation) {
+          console.log('사용자 위치 가져오기 시작');
+          currentUserLocation = await getUserLocation();
+          console.log('getUserLocation 결과:', currentUserLocation);
+        }
+
+        // 위치 정보를 직접 전달하여 지도 초기화
+        initializeMapWithUserLocation(currentUserLocation);
+      }
+    };
+
+    initializeMapWithLocation();
+  }, [dataFetched, loadingData, postsData, initializeMapWithUserLocation, updateMarkers, userLocation, getUserLocation]); // dataFetched 의존성 추가
 
   // 컴포넌트 언마운트 시 마커들 정리
   useEffect(() => {
@@ -207,149 +470,8 @@ const ShelterMapPage = () => {
     }
   };
 
-  const initializeMap = () => {
-    console.log('initializeMap 호출됨');
-    console.log('mapRef.current:', !!mapRef.current);
-    console.log('window.kakao:', !!window.kakao);
-    console.log('window.kakao.maps:', !!window.kakao?.maps);
-    console.log('window.kakao.maps.LatLng:', !!window.kakao?.maps?.LatLng);
-    // console.log('API 키:', process.env.NEXT_PUBLIC_KAKAO_MAPS_API_KEY);
 
-    if (!mapRef.current) {
-      console.log('mapRef.current가 없음');
-      return;
-    }
-
-    if (!window.kakao) {
-      console.log('window.kakao가 없음');
-      return;
-    }
-
-    if (!window.kakao.maps) {
-      console.log('window.kakao.maps가 없음');
-      return;
-    }
-
-    if (!window.kakao.maps.LatLng) {
-      console.log('window.kakao.maps.LatLng가 없음');
-      return;
-    }
-
-    try {
-      console.log('지도 초기화 시작...');
-
-      // 지도 생성
-      const map = new window.kakao.maps.Map(mapRef.current, {
-        center: new window.kakao.maps.LatLng(37.5665, 126.9780), // 서울 중심
-        level: 6 // 지도의 확대 레벨 (6으로 조정)
-      });
-
-      console.log('지도 생성 완료:', map);
-      mapInstanceRef.current = map;
-
-      // 마커 클러스터러 생성
-      const clusterer = new window.kakao.maps.MarkerClusterer({
-        map: map, // 마커들을 클러스터로 관리하고 표시할 지도 객체
-        averageCenter: true, // 클러스터에 포함된 마커들의 평균 위치를 클러스터 마커 위치로 설정
-        minLevel: 1, // 클러스터 할 최소 지도 레벨 (1로 더 낮춤)
-        disableClickZoom: false, // 클러스터 마커 클릭 시 확대/축소 비활성화
-        gridSize: 60 // 클러스터링을 위한 격자 크기 (더 크게)
-      });
-
-      clustererRef.current = clusterer;
-
-      // 실제 데이터가 있을 때만 마커 생성
-      if (postsData && postsData.length > 0) {
-        console.log('마커 생성 시작, 데이터 개수:', postsData.length);
-        console.log('첫 번째 데이터:', postsData[0]);
-
-        // 기존 마커들 정리
-        if (markersRef.current.length > 0) {
-          console.log('기존 마커들 정리');
-          markersRef.current.forEach(marker => {
-            marker.setMap(null);
-          });
-          markersRef.current = [];
-        }
-
-        // 마커 생성
-        const markers = postsData.map(post => {
-          console.log('마커 생성 중:', post.title, '위치:', post.departure);
-
-          // 마커 이미지 설정 (기본 크기)
-          const markerImage = getMarkerImage(post.deadline, false);
-
-          const marker = new window.kakao.maps.Marker({
-            position: new window.kakao.maps.LatLng(post.departure.lat, post.departure.lng),
-            image: markerImage // 커스텀 마커 이미지 적용
-          });
-
-          // 마커 클릭 이벤트
-          window.kakao.maps.event.addListener(marker, 'click', () => {
-            // 이전에 선택된 마커가 있다면 원래 크기로 복원
-            if (selectedMarker) {
-              const originalImage = getMarkerImage(selectedMarker.post?.deadline, false);
-              selectedMarker.marker.setImage(originalImage);
-            }
-
-            // 현재 마커를 선택된 마커로 설정
-            setSelectedMarker({ marker, post });
-
-            // 마커 크기를 10px 더 크게 변경
-            const selectedImage = getMarkerImage(post.deadline, true);
-            marker.setImage(selectedImage);
-
-            // 선택된 게시물 설정
-            setSelectedPost(post);
-
-            // 기존 인포윈도우 닫기
-            const existingInfoWindow = document.querySelector('.kakao-maps-info-window');
-            if (existingInfoWindow) {
-              existingInfoWindow.remove();
-            }
-          });
-
-          return marker;
-        });
-
-        // 마커들을 ref에 저장
-        markersRef.current = markers;
-
-        // 클러스터러에 마커들 추가
-        clusterer.addMarkers(markers);
-        console.log('마커 생성 완료, 마커 개수:', markers.length);
-
-        // 마커를 직접 지도에 추가 (클러스터러 문제 해결용)
-        markers.forEach(marker => {
-          marker.setMap(map);
-        });
-
-        // 마커가 제대로 추가되었는지 확인
-        setTimeout(() => {
-          console.log('클러스터러 마커 개수:', clusterer.getMarkers().length);
-          console.log('지도 레벨:', map.getLevel());
-        }, 1000);
-
-        // 지도 레벨을 조정하여 마커가 보이도록 함
-        map.setLevel(6);
-
-        // 마커가 안정적으로 표시되도록 추가 확인
-        setTimeout(() => {
-          console.log('마커 최종 확인 - 클러스터러:', clusterer.getMarkers().length);
-        }, 2000);
-      } else {
-        console.log('표시할 데이터가 없습니다.');
-        console.log('postsData:', postsData);
-      }
-
-      setMapLoaded(true);
-    } catch (err) {
-      console.error('지도 초기화 오류:', err);
-      setError('지도를 초기화하는데 실패했습니다.');
-    }
-  };
-
-  if (loading || loadingData) {
+  if (loading || loadingData || !dataFetched) {
     return (
         <>
           <div className="flex items-center justify-between h-[78px] px-[30px] bg-white">
