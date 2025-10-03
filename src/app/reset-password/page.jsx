@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 
-const ResetPasswordPage = () => {
+// useSearchParams를 사용하는 컴포넌트를 분리
+const ResetPasswordForm = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -223,6 +224,26 @@ const ResetPasswordPage = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+// 로딩 컴포넌트
+const ResetPasswordLoading = () => (
+  <div className="min-h-screen bg-white flex items-center justify-center">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-yellow-500 mx-auto mb-4"></div>
+      <h2 className="text-xl font-semibold text-gray-700 mb-2">페이지 로딩 중...</h2>
+      <p className="text-gray-500">잠시만 기다려주세요.</p>
+    </div>
+  </div>
+);
+
+// 메인 페이지 컴포넌트
+const ResetPasswordPage = () => {
+  return (
+    <Suspense fallback={<ResetPasswordLoading />}>
+      <ResetPasswordForm />
+    </Suspense>
   );
 };
 
