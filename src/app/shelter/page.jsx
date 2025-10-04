@@ -435,13 +435,22 @@ const ShelterMapPage = () => {
     };
   }, []);
 
-  const loadKakaoMapScript = () => {
+  const loadKakaoMapScript = (retryCount = 0) => {
     // 스크립트가 로드되어 있지 않다면 로드
     if (!document.querySelector('script[src*="dapi.kakao.com"]')) {
-      console.log('카카오맵 스크립트 로드 시작');
+      console.log(`카카오맵 스크립트 로드 시작 (재시도: ${retryCount})`);
+
+      // 기존 스크립트 제거 (재시도 시)
+      const existingScript = document.querySelector('script[src*="dapi.kakao.com"]');
+      if (existingScript) {
+        existingScript.remove();
+      }
+
       const script = document.createElement('script');
-      script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_MAPS_API_KEY}&libraries=clusterer&autoload=false`;
-      script.async = false; // 동기 로딩으로 변경
+      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_MAPS_API_KEY}&libraries=clusterer&autoload=false`;
+      script.async = false;
+      script.crossOrigin = 'anonymous'; // CORS 설정 추가
+
       script.onload = () => {
         console.log('카카오맵 스크립트 로드 완료');
         console.log('window.kakao after script load:', window.kakao);
@@ -459,13 +468,25 @@ const ShelterMapPage = () => {
           });
         } else {
           console.error('카카오맵 API가 로드되지 않음');
-          setError('카카오맵 API를 불러오는데 실패했습니다.');
+          if (retryCount < 3) {
+            console.log('재시도 중...');
+            setTimeout(() => loadKakaoMapScript(retryCount + 1), 2000);
+          } else {
+            setError('카카오맵 API를 불러오는데 실패했습니다.');
+          }
         }
       };
-      script.onerror = () => {
-        console.error('카카오맵 스크립트 로드 실패');
-        setError('카카오맵을 불러오는데 실패했습니다.');
+
+      script.onerror = (error) => {
+        console.error('카카오맵 스크립트 로드 실패:', error);
+        if (retryCount < 3) {
+          console.log('재시도 중...');
+          setTimeout(() => loadKakaoMapScript(retryCount + 1), 2000);
+        } else {
+          setError('카카오맵을 불러오는데 실패했습니다. 네트워크 연결을 확인해주세요.');
+        }
       };
+
       document.head.appendChild(script);
     }
   };
