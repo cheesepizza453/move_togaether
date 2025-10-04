@@ -449,7 +449,7 @@ const ShelterMapPage = () => {
       const script = document.createElement('script');
       script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_MAPS_API_KEY}&libraries=clusterer&autoload=false`;
       script.async = false;
-      script.crossOrigin = 'anonymous'; // CORS 설정 추가
+      // crossOrigin 속성 제거 - 카카오맵은 CORS 정책이 다름
 
       script.onload = () => {
         console.log('카카오맵 스크립트 로드 완료');
