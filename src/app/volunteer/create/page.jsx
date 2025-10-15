@@ -495,18 +495,20 @@ const VolunteerCreate = () => {
         console.log('사용자 ID 헤더 추가됨:', user.id);
       }
 
-      const fetchPromise = fetch('/api/posts/volunteer', {
+      // AbortController를 사용한 타임아웃 처리
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+      }, 30000); // 30초 타임아웃
+
+      const response = await fetch('/api/posts/volunteer', {
         method: 'POST',
         headers,
         body: JSON.stringify(formData),
+        signal: controller.signal
       });
 
-      const fetchTimeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('API 호출 타임아웃')), 30000)
-      );
-
-      console.log('Promise.race 시작...');
-      const response = await Promise.race([fetchPromise, fetchTimeoutPromise]);
+      clearTimeout(timeoutId);
       console.log('API 응답 받음, 상태:', response.status);
 
       // 응답이 ok가 아닌 경우 처리
@@ -538,7 +540,7 @@ const VolunteerCreate = () => {
     } catch (error) {
       console.error('등록 오류:', error);
 
-      if (error.message === 'API 호출 타임아웃') {
+      if (error.name === 'AbortError') {
         toast.error('서버 응답이 지연되고 있습니다. 잠시 후 다시 시도해주세요.');
       } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
         toast.error('네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.');
