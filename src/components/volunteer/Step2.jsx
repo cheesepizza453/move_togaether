@@ -35,6 +35,7 @@ const Step2 = ({
                     type="text"
                     value={formData.name}
                     onChange={(e) => onFormDataChange('name', e.target.value)}
+                    maxLength={20}
                     placeholder="임보견 이름을 입력해주세요"
                     className={`w-full ${inputStyle} ${
                         errors.name ? 'border-red-500' : 'border-gray-300'
@@ -45,7 +46,7 @@ const Step2 = ({
                     <p className="text-xs text-red-500 mt-1">{errors.name}</p>
                 )}
                 <p className="absolute top-[4px] right-[5px] text-text-800 text-12-l">
-                    {formData.title?.name || 0}/20
+                    {formData.name?.length ?? 0}/20
                 </p>
                 </div>
             </div>
