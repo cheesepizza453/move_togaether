@@ -172,15 +172,25 @@ export async function POST(request) {
         const base64Data = photo.split(',')[1];
         const buffer = Buffer.from(base64Data, 'base64');
 
+        console.log('이미지 데이터 정보:', {
+          base64Length: photo.length,
+          bufferSize: buffer.length,
+          bufferSizeKB: Math.round(buffer.length / 1024)
+        });
+
         // 파일명 생성 (타임스탬프 + 랜덤 문자열)
         const timestamp = Date.now();
         const randomString = Math.random().toString(36).substring(2, 15);
         const fileName = `posts/${timestamp}_${randomString}.jpg`;
 
+        console.log('업로드 파일명:', fileName);
+
         // Authorization 헤더가 있으면 일반 클라이언트 사용, 없으면 관리자 클라이언트 사용
         const storageSupabase = authHeader ? supabase : createAdminSupabaseClient();
+        console.log('Storage 클라이언트 타입:', authHeader ? '일반 클라이언트' : '관리자 클라이언트');
 
         // Supabase Storage에 업로드
+        console.log('Storage 업로드 시작...');
         const { error: uploadError } = await storageSupabase.storage
           .from('post-images')
           .upload(fileName, buffer, {
@@ -189,7 +199,11 @@ export async function POST(request) {
           });
 
         if (uploadError) {
-          console.error('사진 업로드 오류:', uploadError);
+          console.error('사진 업로드 오류 상세:', {
+            message: uploadError.message,
+            statusCode: uploadError.statusCode,
+            error: uploadError.error
+          });
           // 사진 업로드 실패 시에도 계속 진행 (사진 없이 등록)
           console.log('사진 업로드 실패했지만 계속 진행합니다.');
           images = null;
@@ -207,7 +221,11 @@ export async function POST(request) {
           });
         }
       } catch (error) {
-        console.error('사진 처리 오류:', error);
+        console.error('사진 처리 오류 상세:', {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        });
         // 사진 처리 오류 시에도 계속 진행 (사진 없이 등록)
         console.log('사진 처리 오류가 발생했지만 계속 진행합니다.');
         images = null;
@@ -249,15 +267,24 @@ export async function POST(request) {
       duration: dbEndTime - dbStartTime + 'ms',
       hasError: !!error,
       error: error?.message,
+      errorCode: error?.code,
+      errorDetails: error?.details,
       hasData: !!data,
       dataId: data?.id
     });
 
     if (error) {
-      console.error('데이터베이스 저장 오류:', error);
+      console.error('데이터베이스 저장 오류 상세:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        stack: error.stack
+      });
       return NextResponse.json({
         success: false,
-        error: '데이터 저장에 실패했습니다.'
+        error: '데이터 저장에 실패했습니다.',
+        details: error.message
       }, { status: 500 });
     }
 

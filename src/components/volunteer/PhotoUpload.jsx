@@ -14,15 +14,15 @@ const PhotoUpload = ({
   const handlePhotoUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
-      // 파일 크기 검증 (500KB 제한)
-      if (file.size > 500 * 1024) {
-        toast.error('파일 크기는 500KB 이하로 업로드해주세요.');
-        return;
-      }
-
       // 이미지 파일 검증
       if (!file.type.startsWith('image/')) {
         toast.error('이미지 파일만 업로드 가능합니다.');
+        return;
+      }
+
+      // 파일 크기 검증 (10MB 제한 - 리사이즈 후에는 훨씬 작아짐)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('파일 크기는 10MB 이하로 업로드해주세요.');
         return;
       }
 
