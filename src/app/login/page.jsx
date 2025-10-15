@@ -331,7 +331,7 @@ const LoginPage = () => {
           </div>
 
           {/* 텍스트 - 버튼 가운데에 위치 */}
-          <span className="block text-center font-[400] text-base">카카오톡 간편 가입</span>
+          <span className="block text-center font-[400] text-base">카카오톡 간편 로그인</span>
         </button>
       </div>
 
