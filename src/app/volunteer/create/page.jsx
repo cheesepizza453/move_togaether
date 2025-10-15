@@ -466,34 +466,39 @@ const VolunteerCreate = () => {
 
       console.log('=== 2단계: 사용자 인증 완료, 토큰 확인 시작 ===');
 
-      // 세션 토큰 가져오기 (간단한 방식)
+      // 세션 토큰 가져오기 (간소화된 방식)
       let accessToken = null;
-      try {
-        console.log('Supabase 세션 확인 중...');
-        const sessionStartTime = Date.now();
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        const sessionEndTime = Date.now();
 
-        console.log('세션 확인 완료:', {
-          duration: sessionEndTime - sessionStartTime + 'ms',
-          hasSession: !!session,
-          hasError: !!sessionError,
-          error: sessionError?.message
-        });
+      // 빠른 토큰 확인 (타임아웃 2초)
+      try {
+        console.log('토큰 확인 시작...');
+        const tokenStartTime = Date.now();
+
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('토큰 확인 타임아웃')), 2000)
+        );
+
+        const { data: { session }, error: sessionError } = await Promise.race([
+          sessionPromise,
+          timeoutPromise
+        ]);
+
+        const tokenEndTime = Date.now();
 
         if (sessionError) {
-          console.error('세션 확인 에러:', sessionError);
+          console.log('토큰 확인 에러 (무시하고 진행):', sessionError.message);
+        } else if (session?.access_token) {
+          accessToken = session.access_token;
+          console.log('토큰 확인 성공:', {
+            duration: tokenEndTime - tokenStartTime + 'ms',
+            tokenLength: accessToken.length
+          });
+        } else {
+          console.log('토큰 없음, 사용자 ID로 진행');
         }
-
-        accessToken = session?.access_token;
-        console.log('토큰 확인 결과:', {
-          hasToken: !!accessToken,
-          tokenLength: accessToken?.length || 0,
-          tokenPreview: accessToken ? accessToken.substring(0, 20) + '...' : 'null'
-        });
       } catch (error) {
-        console.error('세션 확인 실패:', error);
-        console.log('토큰 없이 진행합니다');
+        console.log('토큰 확인 실패 (무시하고 진행):', error.message);
       }
 
       console.log('=== 3단계: API 호출 준비 ===');
