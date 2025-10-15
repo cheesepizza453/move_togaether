@@ -361,16 +361,23 @@ export default function Home() {
         setPosts([]);
       }
 
-      // 인증 토큰 가져오기
-      const { data: { session } } = await supabase.auth.getSession();
-
-      const headers = {
+      // 인증 토큰 가져오기 (useAuth 훅 사용)
+      let headers = {
         'Content-Type': 'application/json',
       };
 
-      if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`;
-        headers['apikey'] = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      // user가 있으면 인증 헤더 추가
+      if (user) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.access_token) {
+            headers['Authorization'] = `Bearer ${session.access_token}`;
+            headers['apikey'] = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+          }
+        } catch (authError) {
+          console.warn('인증 토큰 가져오기 실패:', authError);
+          // 인증 실패해도 계속 진행 (익명 사용자로 처리)
+        }
       }
 
       const response = await fetch('/api/posts/sort-by-distance', {
@@ -385,10 +392,23 @@ export default function Home() {
       });
 
       if (!response.ok) {
-        throw new Error('거리 기반 정렬에 실패했습니다.');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || '거리 기반 정렬에 실패했습니다.');
       }
 
-      const { posts: distancePosts, pagination } = await response.json();
+      const responseData = await response.json();
+      const { posts: distancePosts, pagination } = responseData;
+
+      // posts가 배열이 아닌 경우 처리
+      if (!Array.isArray(distancePosts)) {
+        console.warn('API에서 받은 distancePosts가 배열이 아닙니다:', distancePosts);
+        if (isLoadMore) {
+          setHasMore(false);
+        } else {
+          setPosts([]);
+        }
+        return;
+      }
 
       // 데이터 포맷팅
       const formattedPosts = distancePosts.map(post => ({
@@ -428,7 +448,13 @@ export default function Home() {
     } catch (err) {
       console.error('거리 기반 정렬 중 오류:', err);
 
-      setError('거리 기반 정렬에 실패했습니다.');
+      // 더 구체적인 에러 메시지
+      let errorMessage = '거리 기반 정렬에 실패했습니다.';
+      if (err.message) {
+        errorMessage = err.message;
+      }
+
+      setError(errorMessage);
       if (!isLoadMore) {
         setPosts([]);
       }
@@ -479,12 +505,26 @@ export default function Home() {
   };
 
   const handleLocationConfirm = (locationData) => {
-    setCurrentLocation(locationData.address);
-    setShowLocationDialog(false); // 위치 다이얼로그 닫기
+    try {
+      setCurrentLocation(locationData.address);
+      setShowLocationDialog(false); // 위치 다이얼로그 닫기
 
-    // 좌표 정보를 직접 사용하여 거리 기반 정렬 시작
-    const { latitude, longitude } = locationData.coordinates;
-    fetchPostsByDistance(latitude, longitude, 1, false);
+      // 좌표 정보 검증
+      if (!locationData.coordinates ||
+          typeof locationData.coordinates.latitude !== 'number' ||
+          typeof locationData.coordinates.longitude !== 'number') {
+        console.error('유효하지 않은 좌표 정보:', locationData.coordinates);
+        setError('유효하지 않은 위치 정보입니다.');
+        return;
+      }
+
+      // 좌표 정보를 직접 사용하여 거리 기반 정렬 시작
+      const { latitude, longitude } = locationData.coordinates;
+      fetchPostsByDistance(latitude, longitude, 1, false);
+    } catch (error) {
+      console.error('위치 확인 처리 중 오류:', error);
+      setError('위치 정보 처리 중 오류가 발생했습니다.');
+    }
   };
 
 
