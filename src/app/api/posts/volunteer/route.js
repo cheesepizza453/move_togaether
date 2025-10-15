@@ -9,9 +9,15 @@ export async function POST(request) {
     console.log('요청 헤더:', Object.fromEntries(request.headers.entries()));
 
     // 요청 본문 파싱
-    console.log('요청 본문 파싱 시작...');
+    console.log('=== 1단계: 요청 본문 파싱 시작 ===');
+    const parseStartTime = Date.now();
     const requestBody = await request.json();
-    console.log('요청 본문 파싱 완료');
+    const parseEndTime = Date.now();
+    console.log('요청 본문 파싱 완료:', {
+      duration: parseEndTime - parseStartTime + 'ms',
+      hasPhoto: !!requestBody.photo,
+      photoLength: requestBody.photo?.length || 0
+    });
 
     const {
       title,
@@ -56,6 +62,7 @@ export async function POST(request) {
     }
 
     // 클라이언트에서 전달받은 인증 헤더 추출
+    console.log('=== 2단계: 인증 헤더 확인 시작 ===');
     const authHeader = request.headers.get('authorization');
     const apikeyHeader = request.headers.get('apikey');
     const userIdHeader = request.headers.get('x-user-id');
@@ -80,13 +87,29 @@ export async function POST(request) {
 
     if (authHeader) {
       // Authorization 헤더가 있으면 인증된 사용자로 처리
-      console.log('인증된 사용자로 처리');
+      console.log('=== 3단계: 인증된 사용자 처리 시작 ===');
       const accessToken = authHeader.replace('Bearer ', '');
+      console.log('토큰 추출 완료:', {
+        tokenLength: accessToken.length,
+        tokenPreview: accessToken.substring(0, 20) + '...'
+      });
+
+      const clientStartTime = Date.now();
       supabase = createServerSupabaseClient(accessToken);
+      const clientEndTime = Date.now();
+      console.log('Supabase 클라이언트 생성 완료:', clientEndTime - clientStartTime + 'ms');
 
       // JWT 토큰에서 사용자 정보 추출
+      console.log('사용자 정보 추출 시작...');
+      const userStartTime = Date.now();
       const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-      console.log('사용자 인증 결과:', { user: !!authUser, error: authError?.message });
+      const userEndTime = Date.now();
+      console.log('사용자 인증 완료:', {
+        duration: userEndTime - userStartTime + 'ms',
+        hasUser: !!authUser,
+        userId: authUser?.id,
+        error: authError?.message
+      });
 
       if (authError || !authUser) {
         console.log('인증 실패:', authError);
@@ -99,7 +122,8 @@ export async function POST(request) {
       user = authUser;
     } else if (userIdHeader) {
       // X-User-ID 헤더가 있으면 해당 사용자로 처리
-      console.log('X-User-ID 헤더로 사용자 처리:', userIdHeader);
+      console.log('=== 3단계: X-User-ID 헤더로 사용자 처리 ===');
+      console.log('사용자 ID:', userIdHeader);
       supabase = createServerSupabaseClient();
       user = { id: userIdHeader };
     } else {
@@ -112,14 +136,22 @@ export async function POST(request) {
     }
 
     // 사용자 프로필 ID 가져오기
-    console.log('사용자 프로필 조회 시작, user.id:', user.id);
+    console.log('=== 4단계: 사용자 프로필 조회 시작 ===');
+    console.log('사용자 ID:', user.id);
+    const profileStartTime = Date.now();
     const { data: userProfile, error: profileError } = await supabase
       .from('user_profiles')
       .select('id')
       .eq('auth_user_id', user.id)
       .single();
 
-    console.log('사용자 프로필 조회 결과:', { userProfile, error: profileError?.message });
+    const profileEndTime = Date.now();
+    console.log('사용자 프로필 조회 완료:', {
+      duration: profileEndTime - profileStartTime + 'ms',
+      hasProfile: !!userProfile,
+      profileId: userProfile?.id,
+      error: profileError?.message
+    });
 
     if (profileError || !userProfile) {
       console.log('사용자 프로필 없음:', profileError);
@@ -130,9 +162,12 @@ export async function POST(request) {
     }
 
     // 사진이 있는 경우 Supabase Storage에 업로드
+    console.log('=== 5단계: 사진 처리 시작 ===');
     let images = null;
     if (photo) {
       try {
+        console.log('사진 업로드 시작...');
+        const photoStartTime = Date.now();
         // Base64 데이터를 Blob으로 변환
         const base64Data = photo.split(',')[1];
         const buffer = Buffer.from(base64Data, 'base64');
@@ -165,7 +200,11 @@ export async function POST(request) {
             .getPublicUrl(fileName);
 
           images = [urlData.publicUrl];
-          console.log('사진 업로드 성공:', urlData.publicUrl);
+          const photoEndTime = Date.now();
+          console.log('사진 업로드 성공:', {
+            duration: photoEndTime - photoStartTime + 'ms',
+            url: urlData.publicUrl
+          });
         }
       } catch (error) {
         console.error('사진 처리 오류:', error);
@@ -173,9 +212,13 @@ export async function POST(request) {
         console.log('사진 처리 오류가 발생했지만 계속 진행합니다.');
         images = null;
       }
+    } else {
+      console.log('사진 없음, 사진 처리 건너뜀');
     }
 
     // 기존 posts 테이블에 저장
+    console.log('=== 6단계: 데이터베이스 저장 시작 ===');
+    const dbStartTime = Date.now();
     const { data, error } = await supabase
       .from('posts')
       .insert([
@@ -201,6 +244,15 @@ export async function POST(request) {
       .select()
       .single();
 
+    const dbEndTime = Date.now();
+    console.log('데이터베이스 저장 완료:', {
+      duration: dbEndTime - dbStartTime + 'ms',
+      hasError: !!error,
+      error: error?.message,
+      hasData: !!data,
+      dataId: data?.id
+    });
+
     if (error) {
       console.error('데이터베이스 저장 오류:', error);
       return NextResponse.json({
@@ -210,8 +262,8 @@ export async function POST(request) {
     }
 
     const endTime = Date.now();
-    console.log('=== 봉사자 등록 API 성공 ===');
-    console.log('처리 시간:', endTime - startTime, 'ms');
+    console.log('=== 7단계: 봉사자 등록 API 성공 ===');
+    console.log('총 처리 시간:', endTime - startTime, 'ms');
     console.log('등록된 데이터 ID:', data?.id);
 
     return NextResponse.json({
@@ -223,9 +275,12 @@ export async function POST(request) {
   } catch (error) {
     const endTime = Date.now();
     console.error('=== 봉사자 등록 API 오류 ===');
-    console.error('처리 시간:', endTime - startTime, 'ms');
-    console.error('오류 상세:', error);
-    console.error('오류 스택:', error.stack);
+    console.error('총 처리 시간:', endTime - startTime, 'ms');
+    console.error('오류 정보:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    });
 
     return NextResponse.json({
       success: false,

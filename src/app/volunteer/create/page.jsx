@@ -432,9 +432,11 @@ const VolunteerCreate = () => {
   };
 
   const handleSubmit = async () => {
-    console.log('=== 제출 시작 ===');
+    const startTime = Date.now();
+    console.log('=== 제출 시작 ===', new Date().toISOString());
     console.log('폼 데이터:', formData);
     console.log('현재 로딩 상태:', loading);
+    console.log('현재 사용자:', user);
 
     // 이미 로딩 중이면 중복 실행 방지
     if (loading) {
@@ -442,14 +444,17 @@ const VolunteerCreate = () => {
       return;
     }
 
+    console.log('로딩 상태 설정 중...');
     setLoading(true);
+    console.log('로딩 상태 설정 완료');
 
     try {
       // 세션 확인 (AuthContext의 user와 직접 세션 확인 조합)
-      console.log('세션 확인 중...');
+      console.log('=== 1단계: 세션 확인 시작 ===');
       console.log('AuthContext 사용자:', {
         hasUser: !!user,
-        userId: user?.id
+        userId: user?.id,
+        userEmail: user?.email
       });
 
       if (!user) {
@@ -459,25 +464,39 @@ const VolunteerCreate = () => {
         return;
       }
 
-      // AuthContext에서 사용자 정보를 확인했으므로 바로 API 호출 진행
-      console.log('사용자 인증 완료, API 호출 준비');
+      console.log('=== 2단계: 사용자 인증 완료, 토큰 확인 시작 ===');
 
       // 세션 토큰 가져오기 (간단한 방식)
       let accessToken = null;
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        console.log('Supabase 세션 확인 중...');
+        const sessionStartTime = Date.now();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        const sessionEndTime = Date.now();
+
+        console.log('세션 확인 완료:', {
+          duration: sessionEndTime - sessionStartTime + 'ms',
+          hasSession: !!session,
+          hasError: !!sessionError,
+          error: sessionError?.message
+        });
+
+        if (sessionError) {
+          console.error('세션 확인 에러:', sessionError);
+        }
+
         accessToken = session?.access_token;
-        console.log('세션 토큰 확인:', accessToken ? '존재' : '없음');
+        console.log('토큰 확인 결과:', {
+          hasToken: !!accessToken,
+          tokenLength: accessToken?.length || 0,
+          tokenPreview: accessToken ? accessToken.substring(0, 20) + '...' : 'null'
+        });
       } catch (error) {
-        console.log('세션 확인 실패, 토큰 없이 진행:', error.message);
+        console.error('세션 확인 실패:', error);
+        console.log('토큰 없이 진행합니다');
       }
 
-      // 서버로 데이터 전송 (타임아웃 추가)
-      console.log('API 호출 시작...');
-      console.log('전송할 데이터:', {
-        ...formData,
-        photo: formData.photo ? `[Base64 데이터 ${formData.photo.length}자]` : null
-      });
+      console.log('=== 3단계: API 호출 준비 ===');
 
       // 헤더 구성
       const headers = {
@@ -495,11 +514,26 @@ const VolunteerCreate = () => {
         console.log('사용자 ID 헤더 추가됨:', user.id);
       }
 
+      console.log('최종 헤더:', headers);
+
+      // 전송할 데이터 준비
+      const requestData = {
+        ...formData,
+        photo: formData.photo ? `[Base64 데이터 ${formData.photo.length}자]` : null
+      };
+      console.log('전송할 데이터 요약:', requestData);
+
+      console.log('=== 4단계: API 호출 시작 ===');
+
       // AbortController를 사용한 타임아웃 처리
       const controller = new AbortController();
       const timeoutId = setTimeout(() => {
+        console.log('타임아웃 발생! 요청 중단');
         controller.abort();
       }, 30000); // 30초 타임아웃
+
+      console.log('fetch 요청 시작...');
+      const fetchStartTime = Date.now();
 
       const response = await fetch('/api/posts/volunteer', {
         method: 'POST',
@@ -508,8 +542,17 @@ const VolunteerCreate = () => {
         signal: controller.signal
       });
 
+      const fetchEndTime = Date.now();
       clearTimeout(timeoutId);
-      console.log('API 응답 받음, 상태:', response.status);
+
+      console.log('=== 5단계: API 응답 받음 ===');
+      console.log('fetch 완료:', {
+        duration: fetchEndTime - fetchStartTime + 'ms',
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        headers: Object.fromEntries(response.headers.entries())
+      });
 
       // 응답이 ok가 아닌 경우 처리
       if (!response.ok) {
@@ -526,30 +569,54 @@ const VolunteerCreate = () => {
         return;
       }
 
+      console.log('=== 6단계: 응답 파싱 시작 ===');
+      const parseStartTime = Date.now();
       const result = await response.json();
-      console.log('API 응답 결과:', result);
+      const parseEndTime = Date.now();
 
+      console.log('응답 파싱 완료:', {
+        duration: parseEndTime - parseStartTime + 'ms',
+        result: result
+      });
+
+      console.log('=== 7단계: 결과 처리 ===');
       if (result.success) {
         console.log('등록 성공!');
         toast.success('이동 봉사 요청이 등록되었습니다!');
+        console.log('페이지 이동 시작...');
         router.push('/');
+        console.log('페이지 이동 완료');
       } else {
         console.log('등록 실패:', result.error);
         toast.error(result.error || '등록에 실패했습니다.');
       }
     } catch (error) {
-      console.error('등록 오류:', error);
+      const endTime = Date.now();
+      console.error('=== 등록 오류 발생 ===');
+      console.error('오류 정보:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        duration: endTime - startTime + 'ms'
+      });
 
       if (error.name === 'AbortError') {
+        console.log('타임아웃 에러 처리');
         toast.error('서버 응답이 지연되고 있습니다. 잠시 후 다시 시도해주세요.');
       } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        console.log('네트워크 에러 처리');
         toast.error('네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.');
       } else {
+        console.log('일반 에러 처리');
         toast.error(`등록 중 오류가 발생했습니다: ${error.message}`);
       }
     } finally {
-      console.log('제출 완료, 로딩 상태 해제');
+      const totalTime = Date.now() - startTime;
+      console.log('=== 제출 완료 ===');
+      console.log('총 소요 시간:', totalTime + 'ms');
+      console.log('로딩 상태 해제 중...');
       setLoading(false);
+      console.log('로딩 상태 해제 완료');
     }
   };
 
