@@ -72,8 +72,8 @@ const LoginDialog = ({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="flex flex-row gap-3">
-          <AlertDialogCancel className="mt-0 flex-1">취소</AlertDialogCancel>
-          <AlertDialogAction onClick={handleLogin} className="flex-1">
+          <AlertDialogCancel className="mt-0 flex-1 text-16-m">취소</AlertDialogCancel>
+          <AlertDialogAction onClick={handleLogin} className="flex-1 text-16-m">
             로그인하기
           </AlertDialogAction>
         </AlertDialogFooter>

@@ -296,7 +296,7 @@ const MyPage = () => {
       {/* 탭 콘텐츠 */}
       <div className="px-[23px] pb-6">
         {activeTab === '지원' && (
-          <div className="space-y-4">
+          <div className="space-y-[24px]">
             {dataLoading ? (
                 <div className={'w-full flex justify-center pt-[60px]'}>
                   <IconLoading/>

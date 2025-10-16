@@ -231,7 +231,7 @@ export default function FavoritesPage() {
         open={showLoginDialog}
         onOpenChange={setShowLoginDialog}
         title="로그인이 필요합니다"
-        description="즐겨찾기 기능을 사용하려면 로그인해주세요."
+        description="저장목록을 사용하려면 로그인해주세요."
         redirectPath="/favorites"
       />
     </div>
