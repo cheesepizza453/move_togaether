@@ -235,8 +235,8 @@ const MyPage = () => {
               <Image
                 src={profile?.profile_image || '/img/default_profile.jpg'}
                 alt="프로필"
-                width={80}
-                height={80}
+                width={70}
+                height={70}
                 className="w-full h-full object-cover"
               />
             </div>
@@ -268,7 +268,7 @@ const MyPage = () => {
       </div>
 
       {/* 탭 메뉴 */}
-      <div className="mt-[24px] mx-[23px] pb-[12px] border-b border-text-300">
+      <div className="mt-[24px] mb-[6px] mx-[23px] pb-[12px] border-b border-text-300">
         <div className="flex gap-x-[16px]">
           <button
             onClick={() => handleTabChange('지원')}
@@ -334,7 +334,6 @@ const MyPage = () => {
                       <MyPageCard
                           key={post.id}
                           post={post}
-                          activeSubTab={activeSubTab}
                           tab={'apply'}
                       />
                   );
@@ -346,7 +345,7 @@ const MyPage = () => {
         {activeTab === '작성' && (
             <div className="space-y-[24px]">
               {/* 하위 탭 메뉴 */}
-              <div className="flex space-x-[12px] py-2">
+              <div className="flex space-x-[12px] pb-[5px]">
                 <button
                     onClick={() => handleSubTabChange('진행중')}
                     className={`text-sm font-medium transition-colors outline-none focus:ring-0 ${
