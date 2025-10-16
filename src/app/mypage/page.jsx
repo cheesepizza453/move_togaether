@@ -331,42 +331,12 @@ const MyPage = () => {
                   const statusBadge = getStatusBadge(post.status, post.deadline);
 
                   return (
-                      <div key={app.application_id}
-                           className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                        <div className="flex items-center mb-3">
-                          <div className="w-12 h-12 bg-gray-100 rounded-lg mr-3 flex-shrink-0 overflow-hidden">
-                            {post.images && post.images.length > 0 ? (
-                                <img
-                                    src={post.images[0]}
-                                    alt={post.dog_name}
-                                    className="w-full h-full object-cover"
-                                />
-                            ) : (
-                                <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                                  이미지 없음
-                                </div>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-sm font-medium text-gray-800 mb-1 line-clamp-2">
-                              {post.title}
-                            </h3>
-                            <p className="text-xs text-gray-500 mb-2">{post.dog_name} / {convertDogSize(post.dog_size)}</p>
-                            <p className="text-xs text-gray-400">{formatDate(post.created_at)}</p>
-                          </div>
-                          <div className="ml-2">
-                        <span
-                            className={`inline-block text-xs px-2 py-1 rounded-full font-medium ${statusBadge.className}`}>
-                          {statusBadge.text}
-                        </span>
-                          </div>
-                        </div>
-                        <button
-                            onClick={() => router.push(`/posts/${app.post_id}`)}
-                            className="w-full bg-yellow-400 text-gray-800 py-2 px-4 rounded-xl text-sm font-medium hover:bg-yellow-500 transition-colors">
-                          {formatDate(app.application_date)} 지원
-                        </button>
-                      </div>
+                      <MyPageCard
+                          key={post.id}
+                          post={post}
+                          activeSubTab={activeSubTab}
+                          tab={'apply'}
+                      />
                   );
                 })
             )}
@@ -374,7 +344,7 @@ const MyPage = () => {
         )}
 
         {activeTab === '작성' && (
-            <div className="space-y-4">
+            <div className="space-y-[24px]">
               {/* 하위 탭 메뉴 */}
               <div className="flex space-x-[12px] py-2">
                 <button

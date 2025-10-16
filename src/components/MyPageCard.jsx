@@ -1,43 +1,28 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import moment from 'moment';
 
-const MyPageCard = ({
-  post,
-  activeSubTab,
-  onFavoriteToggle
-}) => {
+const MyPageCard = ({ post, activeSubTab, tab }) => {
   const router = useRouter();
-  // 유틸리티 함수들
+
   const convertDogSize = (size) => {
     const sizeMap = {
-      'small': '소형견',
-      'smallMedium': '중소형견',
-      'medium': '중형견',
-      'large': '대형견'
+      small: '소형견',
+      smallMedium: '중소형견',
+      medium: '중형견',
+      large: '대형견',
     };
     return sizeMap[size] || size;
   };
 
-  const formatDate = (date) => {
-    return moment(date).format('YY/MM/DD');
-  };
+  const formatDate = (date) => moment(date).format('YY/MM/DD');
 
   const getDday = (deadline) => {
     const today = moment();
     const deadlineDate = moment(deadline);
-    const diffDays = deadlineDate.diff(today, 'days');
-    return diffDays; // 숫자로 반환
-  };
-
-  const getDdayText = (deadline) => {
-    const diffDays = getDday(deadline);
-    if (diffDays < 0) return `D+${Math.abs(diffDays)}`;
-    if (diffDays === 0) return 'D-Day';
-    return `D-${diffDays}`;
+    return deadlineDate.diff(today, 'days');
   };
 
   // D-day 배지 색상 결정 (PostCard와 동일)
@@ -47,131 +32,128 @@ const MyPageCard = ({
     return 'bg-[#FFE889] text-brand-yellow-dark';
   };
 
-  const getStatusBadge = (status, deadline) => {
-    if (status !== 'active') {
-      return {
-        text: '입양 완료',
-        className: 'bg-green-100 text-green-600'
-      };
-    }
+/*  const getStatusBadge = (status, deadline) => {
+    if (status !== 'active')
+      return { text: '입양 완료', className: 'bg-green-100 text-green-600' };
 
     const dday = getDday(deadline);
-    const ddayText = getDdayText(deadline);
-
-    if (dday < 0) {
-      return {
-        text: '마감',
-        className: 'bg-red-100 text-red-600'
-      };
-    } else if (dday <= 3) {
-      return {
-        text: ddayText,
-        className: 'bg-red-100 text-red-600'
-      };
-    } else if (dday <= 7) {
-      return {
-        text: ddayText,
-        className: 'bg-orange-100 text-orange-600'
-      };
-    } else {
-      return {
-        text: ddayText,
-        className: 'bg-yellow-100 text-yellow-600'
-      };
-    }
-  };
+    if (dday < 0) return { text: '마감', className: 'bg-red-100 text-red-600' };
+    if (dday <= 3)
+      return { text: `D-${dday}`, className: 'bg-red-100 text-red-600' };
+    if (dday <= 7)
+      return { text: `D-${dday}`, className: 'bg-orange-100 text-orange-600' };
+    return { text: `D-${dday}`, className: 'bg-yellow-100 text-yellow-600' };
+  };*/
 
   const dday = getDday(post.deadline);
-  const statusBadge = getStatusBadge(post.status, post.deadline);
+  // const statusBadge = getStatusBadge(post.status, post.deadline);
 
   return (
-    <div
-      className="bg-white rounded-[15px] px-[18px] py-[16px] cursor-pointer relative shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]"
-    >
-      {/* 진행중 탭에서만 D-day를 사진 위쪽에 표시 */}
-      {activeSubTab === '진행중' && (
-      <div className="flex justify-end items-start">
-        {/* D-day 배지 - border 위에 겹쳐서 표시 */}
-        <div className="absolute -top-3 left-[-5px] z-10">
-          <span className={`flex items-center justify-center px-[13px] h-[24px] rounded-[7px] text-12-b font-bold ${getDdayColor(dday)}`}>
+
+      //
+      <div className={`${activeSubTab === '완료' ? 'bg-text-300' : 'bg-white shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]' } rounded-[15px] px-[22px] py-[18px] cursor-pointer relative`}>
+        {/* 진행중 탭에서만 D-day 표시 */}
+        {activeSubTab === '진행중' && (
+            <div className="absolute -top-3 left-[-5px] z-10">
+          <span
+              className={`flex items-center justify-center px-[13px] h-[24px] rounded-[7px] text-12-b font-bold ${getDdayColor(
+                  dday
+              )}`}
+          >
             D-{dday}
           </span>
-        </div>
-      </div>
-      )}
-      <div className="flex items-center mb-3">
-        <div className="w-12 h-12 bg-gray-100 rounded-lg mr-3 flex-shrink-0 overflow-hidden relative">
-
-          {post.images && post.images.length > 0 ? (
-            <img
-              src={post.images[0]}
-              alt={post.dog_name}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-              이미지 없음
             </div>
+        )}
+
+        {/* 카드 본문 */}
+        <div className="flex items-center">
+          <div className="w-[76px] h-[80px] bg-gray-100 rounded-[15px] mr-3 flex-shrink-0 overflow-hidden relative shadow-[0_0_7px_0px_rgba(0,0,0,0.25)]">
+            {post.images && post.images.length > 0 ? (
+                <img
+                    src={post.images[0]}
+                    alt={post.dog_name}
+                    className="w-full h-full object-cover"
+                />
+            ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                  이미지 없음
+                </div>
+            )}
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <h3 className="min-h-[40px] text-14-m text-black leading-[1.35] mb-[4px] line-clamp-2">
+              {post.title}
+            </h3>
+            <div className={'flex items-center justify-between'}>
+            <p className="text-12-r text-text-800">
+              {post.dog_name} / {convertDogSize(post.dog_size)}
+            </p>
+            <p className="text-9-r text-text-600">{formatDate(post.created_at)}</p>
+            </div>
+          </div>
+
+          {activeSubTab !== '진행중' && (
+              <div className="ml-2">
+
+              </div>
           )}
         </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-medium text-gray-800 mb-1 line-clamp-2">
-            {post.title}
-          </h3>
-          <p className="text-xs text-gray-500 mb-2">{post.dog_name} / {convertDogSize(post.dog_size)}</p>
-          <p className="text-xs text-gray-400">{formatDate(post.created_at)}</p>
-        </div>
-        {/* 진행중이 아닌 경우에만 오른쪽에 상태 배지 표시 */}
-        {activeSubTab !== '진행중' && (
-          <div className="ml-2">
-            <span className={`inline-block text-xs px-2 py-1 rounded-full font-medium ${statusBadge.className}`}>
-              {statusBadge.text}
-            </span>
-          </div>
+
+        {/* 하단 버튼/날짜 */}
+        {tab === 'apply' ? (
+            // 지원 탭
+            <div className="mt-[12px]">
+              <button
+                  onClick={() => router.push(`/posts/${post.id}`)}
+                  className="w-full bg-brand-main text-[#333] py-[8px] text-14-m rounded-[15px]"
+              >
+                {formatDate(post.application_date)} 지원
+              </button>
+            </div>
+        ) : (
+            // 작성 탭
+            <>
+              {activeSubTab === '진행중' && (
+                  <div className="mt-[12px]">
+                    <button
+                        onClick={() =>
+                            router.push(`/posts/${post.id}?tab=applicants`)
+                        }
+                        className="w-full bg-brand-main text-[#333] py-[8px] text-14-m rounded-[15px]"
+                    >
+                      지원자 <span className={'text-14-b'}>{post.applicant_count || 0}</span>
+                    </button>
+                  </div>
+              )}
+
+              {activeSubTab === '종료' && (
+                  <div className="mt-[12px]">
+                    <button
+                        // 작성 페이지로 이동 (재업로드)
+                        onClick={() => router.push('/volunteer/create')}
+                        className="w-full bg-brand-point text-white py-[8px] text-14-m rounded-[15px]"
+                    >
+                      재업로드
+                    </button>
+                  </div>
+              )}
+              {/*
+              {activeSubTab === '완료' && (
+                  <div className="mt-[12px]">
+                    <div className="flex space-x-2">
+                      <Link
+                          href={`/posts/${post.id}`}
+                          className="flex-1 bg-gray-100 text-gray-600 py-2 px-4 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors text-center"
+                      >
+                        상세보기
+                      </Link>
+                    </div>
+                  </div>
+              )}*/}
+            </>
         )}
       </div>
-
-      {/* 서브탭별 하단 버튼 */}
-      {activeSubTab === '진행중' && (
-        <div className="mt-3">
-          <button
-            onClick={() => {
-              // 지원자 정보 페이지로 이동 (applicants 탭으로)
-              router.push(`/posts/${post.id}?tab=applicants`);
-            }}
-            className="w-full bg-yellow-400 text-gray-800 py-2 px-4 rounded-xl text-sm font-medium hover:bg-yellow-500 transition-colors"
-          >
-            지원자 {post.applicant_count || 0}
-          </button>
-        </div>
-      )}
-      {activeSubTab === '종료' && (
-        <div className="mt-3">
-          <button
-            onClick={() => {
-              // 작성 페이지로 이동 (재업로드)
-              router.push('/volunteer/create');
-            }}
-            className="w-full bg-red-500 text-white py-2 px-4 rounded-xl text-sm font-medium hover:bg-red-600 transition-colors"
-          >
-            재업로드
-          </button>
-        </div>
-      )}
-      {activeSubTab === '완료' && (
-        // 완료된 게시물은 하단 버튼 없음
-        <div className="mt-3">
-          <div className="flex space-x-2">
-            <Link
-              href={`/posts/${post.id}`}
-              className="flex-1 bg-gray-100 text-gray-600 py-2 px-4 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors text-center"
-            >
-              상세보기
-            </Link>
-          </div>
-        </div>
-      )}
-    </div>
   );
 };
 
