@@ -143,7 +143,7 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, showTimeline = f
               <h3 className="ml-[5px] text-12-m text-gray-900 mb-[4px] line-clamp-2 leading-[1.35]">
                 {post.title}
               </h3>
-              <p className="text-10-r text-text-800">
+              <p className="ml-[5px] text-10-r text-text-800">
                 {post.dog_name} / {convertDogSize(post.dog_size)}
               </p>
             </div>

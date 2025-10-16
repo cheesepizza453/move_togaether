@@ -157,7 +157,7 @@ export default function AuthorDetailPage() {
                       onClick={() => window.open(author.instagram, '_blank')}
                       className="flex items-center justify-center px-[20px] py-[5px] rounded-[7px] bg-brand-bg border border-brand-yellow-dark text-12-m text-[#C3950B]"
                   >
-                    <span className={'ml-[-4px] mr-[3px] inline-block w-[17px h-[17px]'}><IconChannelInstagram/></span>
+                    <span className={'ml-[-4px] mr-[3px] inline-block w-[17px] h-[17px]'}><IconChannelInstagram/></span>
                     인스타그램
                   </button>
               )}
@@ -166,7 +166,7 @@ export default function AuthorDetailPage() {
                       onClick={() => window.open(author.naver_cafe, '_blank')}
                       className="flex items-center justify-center px-[20px] py-[5px] rounded-[7px] bg-brand-bg border border-brand-yellow-dark text-12-m text-[#C3950B]"
                   >
-                   <span className={'ml-[-4px] mr-[3px] inline-block w-[17px h-[17px]'}><IconChannelNaverCafe/></span>
+                   <span className={'ml-[-4px] mr-[3px] inline-block w-[17px] h-[17px]'}><IconChannelNaverCafe/></span>
                      네이버 카페
                   </button>
         )}
@@ -175,7 +175,7 @@ export default function AuthorDetailPage() {
                 onClick={() => window.open(author.kakao_openchat, '_blank')}
                 className="flex items-center justify-center px-[20px] py-[5px] rounded-[7px] bg-brand-bg border border-brand-yellow-dark text-12-m text-[#C3950B]"
             >
-              <span className={'ml-[-4px] mr-[3px] inline-block w-[17px h-[17px]'}><IconChannelKakaoTalk/></span>
+              <span className={'ml-[-4px] mr-[3px] inline-block w-[17px] h-[17px]'}><IconChannelKakaoTalk/></span>
               카카오톡 채널
             </button>
         )}
