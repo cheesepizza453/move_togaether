@@ -17,7 +17,7 @@ const MyPageCard = ({ post, activeSubTab, tab }) => {
     return sizeMap[size] || size;
   };
 
-  const formatDate = (date) => moment(date).format('YY/MM/DD');
+  const formatDate = (date) => moment(date).format('YY.MM.DD');
 
   const getDday = (deadline) => {
     const today = moment();
