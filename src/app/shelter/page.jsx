@@ -536,7 +536,7 @@ const ShelterMapPage = () => {
 
       {/* 상단 헤더 */}
       <div className="absolute top-0 left-0 right-0 z-10 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm">
-        <div className="flex items-center justify-between p-4">
+        <div className="flex items-center justify-between">
           <div className="flex items-center justify-between h-[78px] px-[30px] bg-white">
             <p className="text-22-m text-black">내 주변</p>
           </div>
