@@ -557,7 +557,7 @@ const ShelterMapPage = () => {
         {/* 선택된 게시물 카드 */}
         {selectedPost && (
             <a
-                className="absolute bottom-[20px] left-[25px] right-[25px] z-20"
+                className="absolute bottom-[90px] left-[25px] right-[25px] z-20"
                 href={`/posts/${selectedPost.id}`}
             >
               <div className="bg-white rounded-[30px] px-[25px] py-[20px] cursor-pointer relative shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]">
