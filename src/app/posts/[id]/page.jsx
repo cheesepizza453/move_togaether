@@ -567,9 +567,9 @@ export default function PostDetailPage() {
         {/* 작성자 정보 */}
         {!isOwner &&
             <div className={'relative w-full h-[92px] px-[25px] rounded-b-[15px] bg-white z-20 overflow-hidden'}>
-              <div className="pt-[10px] flex items-center justify-between">
+              <div className="w-full pt-[10px] flex items-center justify-between">
                 {/* 링크 추가 */}
-                <a className={'flex items-center gap-[9px]'} href={`/authors/${post.user_id}`}>
+                <a className={'w-full flex items-center gap-[9px]'} href={`/authors/${post.user_id}`}>
                   <div
                       className="relative w-[56px] h-[56px] rounded-full overflow-hidden flex items-center justify-center">
                     {/* 프로필 이미지 */}
