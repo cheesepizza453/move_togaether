@@ -91,15 +91,16 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, showTimeline = f
   if (showTimeline) {
     const getButtonInfo = (post) => {
       if (post.status !== 'active') {
+        // ToDo 버튼 구분 필요
         return {
           text: '모집 완료',
-          className: 'w-full bg-gray-400 text-white py-3 px-4 rounded-[20px] font-medium text-sm cursor-not-allowed',
+          className: 'w-full text-text-800 bg-text-300 py-[8px] rounded-[20px] text-14-m cursor-not-allowed',
           disabled: true
         };
       } else {
         return {
           text: '문의하기',
-          className: 'w-full bg-[#FFE066] text-gray-900 py-3 px-4 rounded-[20px] font-medium text-sm hover:bg-[#FFD700] transition-colors',
+          className: 'w-full bg-brand-main text-[#333] py-[8px] rounded-[20px] text-14-m',
           disabled: false
         };
       }
@@ -130,25 +131,25 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, showTimeline = f
         </div>
 
         {/* 카드 - 날짜 아래에 위치 */}
-        <div className="bg-white rounded-[30px] px-8 mt-4 py-6 shadow-sm border border-gray-100 flex-1">
+        <div className="bg-text-100 rounded-[30px] p-[26px] pb-[22px] mt-[16px] border border-gray-100 flex-1">
           <div className="flex items-start gap-4">
             <div className="flex-1 min-w-0">
               {/* D-day 표시 */}
               <div className="mb-2">
-                <div className={`inline-block px-3 py-1 rounded-full text-xs font-bold text-white ${getDdayColor(post.dday)}`}>
+                <div className={`inline-block px-[9px] py-[2px] rounded-[7px] text-14-b ${getDdayColor(post.dday)}`}>
                   {getDdayText(post.dday)}
                 </div>
               </div>
-              <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2">
+              <h3 className="ml-[5px] text-12-m text-gray-900 mb-[4px] line-clamp-2 leading-[1.35]">
                 {post.title}
               </h3>
-              <p className="text-xs text-gray-500 mb-3">
+              <p className="text-10-r text-text-800">
                 {post.dog_name} / {convertDogSize(post.dog_size)}
               </p>
             </div>
 
             <div className="flex-shrink-0">
-              <div className="w-20 h-20 rounded-[20px] overflow-hidden bg-gray-100">
+              <div className="ml-[5px] w-[70px] h-[70px] rounded-[20px] overflow-hidden bg-gray-100">
                 {post.images && post.images.length > 0 ? (
                   <img
                     src={post.images[0]}
@@ -164,7 +165,7 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, showTimeline = f
             </div>
           </div>
 
-          <div className="mt-4">
+          <div className="mt-[13px]">
             <button
               onClick={() => onPostClick(post.id)}
               className={buttonInfo.className}

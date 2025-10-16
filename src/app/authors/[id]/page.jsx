@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import moment from 'moment';
 import { Button } from '@/components/ui/button';
 import PostTimeline from '@/components/PostTimeline';
+import {IconChannelInstagram, IconChannelKakaoTalk, IconChannelNaverCafe} from "@/components/icon/IconChannel";
 
 export default function AuthorDetailPage() {
   const params = useParams();
@@ -64,6 +65,11 @@ export default function AuthorDetailPage() {
     router.push(`/posts/${postId}`);
   };
 
+  const channelButton = [
+    { label: '인스타그램', icon: <IconChannelInstagram />, href: '/' },
+    { label: '네이버 카페', icon: <IconChannelNaverCafe />, href: '/' },
+    { label: '카카오톡 채널', icon: <IconChannelKakaoTalk />, href: '/' },
+  ];
 
   if (loading) {
     return (
@@ -127,58 +133,58 @@ export default function AuthorDetailPage() {
         </div>
 
         {/* 작성자 정보 */}
-        <div className="flex items-center gap-[9px] px-[30px] mb-[40px]">
-          <div className="relative w-[56px] h-[56px] rounded-full overflow-hidden flex items-center justify-center">
+        <div className="flex items-center gap-[18px] px-[30px] mb-[40px]">
+          <div className="relative w-[70px] h-[70px] flex-shrink-0 rounded-full overflow-hidden flex items-center justify-center">
             <img src={'/img/default_profile.jpg'} alt={'프로필 이미지'} className={'absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover'}/>
           </div>
           <div>
-            <p className="text-18-b text-black mb-1">{author.display_name || '익명'}</p>
-            <p className="text-14-l text-black/70">{author.phone || '연락처 없음'}</p>
+            <p className="text-18-b text-black mb-1">{author?.display_name || '익명'}</p>
+            <p className="mb-[5px] text-14-l text-[#535353]">{author?.phone.replace(/(\d{3})(\d{3,4})(\d{4})/, "$1-$2-$3") || '연락처 없음'}</p>
+            {/* 소개글 */}
+            {author.bio && (
+            <p className="text-12-r text-text-800 leading-relaxed whitespace-normal">
+              {author.bio}
+            </p>
+            )}
           </div>
         </div>
 
-        {/* 소개글 */}
-        {author.bio && (
-          <div className="mb-4">
-            <p className="text-14-r text-black/80 leading-relaxed whitespace-pre-line">
-              {author.bio}
-            </p>
-          </div>
-        )}
-
         {/* 소셜 미디어 링크 */}
         {(author.instagram || author.naver_cafe || author.kakao_openchat) && (
-          <div className="flex gap-2 mb-[24px]">
-            {author.instagram && (
-              <button
-                onClick={() => window.open(author.instagram, '_blank')}
-                className="px-3 py-1 bg-white/80 text-black text-xs rounded-full border border-white/50 hover:bg-white transition-colors"
-              >
-                인스타그램
-              </button>
-            )}
-            {author.naver_cafe && (
-              <button
-                onClick={() => window.open(author.naver_cafe, '_blank')}
-                className="px-3 py-1 bg-white/80 text-black text-xs rounded-full border border-white/50 hover:bg-white transition-colors"
-              >
-                네이버 카페
-              </button>
-            )}
-            {author.kakao_openchat && (
-              <button
+            <div className="flex gap-x-[6px] px-[30px] mb-[23px]">
+              {author.instagram && (
+                  <button
+                      onClick={() => window.open(author.instagram, '_blank')}
+                      className="flex items-center justify-center px-[20px] py-[5px] rounded-[7px] bg-brand-bg border border-brand-yellow-dark text-12-m text-[#C3950B]"
+                  >
+                    <span className={'ml-[-4px] mr-[3px] inline-block w-[17px h-[17px]'}><IconChannelInstagram/></span>
+                    인스타그램
+                  </button>
+              )}
+              {author.naver_cafe && (
+                  <button
+                      onClick={() => window.open(author.naver_cafe, '_blank')}
+                      className="flex items-center justify-center px-[20px] py-[5px] rounded-[7px] bg-brand-bg border border-brand-yellow-dark text-12-m text-[#C3950B]"
+                  >
+                   <span className={'ml-[-4px] mr-[3px] inline-block w-[17px h-[17px]'}><IconChannelNaverCafe/></span>
+                     네이버 카페
+                  </button>
+        )}
+        {author.kakao_openchat && (
+            <button
                 onClick={() => window.open(author.kakao_openchat, '_blank')}
-                className="px-3 py-1 bg-white/80 text-black text-xs rounded-full border border-white/50 hover:bg-white transition-colors"
-              >
-                카카오톡 채널
-              </button>
-            )}
-          </div>
+                className="flex items-center justify-center px-[20px] py-[5px] rounded-[7px] bg-brand-bg border border-brand-yellow-dark text-12-m text-[#C3950B]"
+            >
+              <span className={'ml-[-4px] mr-[3px] inline-block w-[17px h-[17px]'}><IconChannelKakaoTalk/></span>
+              카카오톡 채널
+            </button>
+        )}
+            </div>
         )}
       </div>
 
       {/* 메인 콘텐츠 - 흰색 카드 */}
-      <main className="w-full bg-[#F9F9F5] rounded-t-[30px] px-[30px] pt-6 pb-6 min-h-[calc(100vh-120px)]">
+      <main className="w-full bg-white rounded-t-[30px] px-[30px] pt-6 pb-6 min-h-[calc(100vh-120px)]">
         {/* 섹션 제목 */}
         <h2 className="text-18-b text-black mb-4">
           도움을 기다리는 친구들 <span className="text-[#F36C5E]">{posts.length}</span>
