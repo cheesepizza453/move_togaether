@@ -7,8 +7,8 @@ import { DialogProvider } from '@/components/DialogProvider';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
-  title: 'Move Togaether - 유기견 이동봉사 매칭 플랫폼',
-  description: '입양 예정인 유기견들이 새로운 가족에게 안전하게 이동할 수 있도록 봉사자와 보호소/개인 구조자를 연결하는 매칭 플랫폼',
+  title: '무브투개더',
+  description: '유기견들이 새로운 가족에게 안전하게 이동할 수 있도록 봉사자와 보호소/개인 구조자를 연결하는 매칭 플랫폼입니다.',
   keywords: ['유기견', '이동봉사', '매칭', '보호소', '입양', '봉사자', 'Move Togaether'],
   authors: [{ name: 'Move Togaether Team' }],
   icons: {
