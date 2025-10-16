@@ -451,7 +451,7 @@ const EditProfilePage = () => {
         <div className={'flex justify-end'}>
           <button
               onClick={() => setShowLogoutDialog(true)}
-              className="px-[15px] py-[5px] text-right text-12-r text-brand-yellow-dark underline"
+              className="mt-[20px] px-[15px] py-[5px] text-right text-12-r text-brand-yellow-dark underline"
           >
             로그아웃
           </button>

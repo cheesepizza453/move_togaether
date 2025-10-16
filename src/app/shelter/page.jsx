@@ -268,6 +268,16 @@ const ShelterMapPage = () => {
 
       clustererRef.current = clusterer;
 
+      // 지도 클릭 시 카드 닫기 이벤트 추가
+      window.kakao.maps.event.addListener(map, 'click', () => {
+        if (selectedMarker) {
+          const originalImage = getMarkerImage(selectedMarker.post?.deadline, false);
+          selectedMarker.marker.setImage(originalImage);
+          setSelectedMarker(null);
+        }
+        setSelectedPost(null);
+      });
+
       // 지도 초기화 완료 후 마커 업데이트
       console.log('지도 초기화 완료, 마커 업데이트 시작');
       updateMarkers();
@@ -511,123 +521,111 @@ const ShelterMapPage = () => {
     return (
         <div className="flex items-center justify-center h-screen bg-gray-50">
           <div className="text-center max-w-md mx-auto p-6">
-            <div className="text-red-500 text-6xl mb-4">⚠️</div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">지도 로드 실패</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
-          >
-            다시 시도
-          </button>
+            <div className="text-brand-point text-6xl mb-4">⚠️</div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">지도 로드 실패</h2>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <button
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
+            >
+              다시 시도
+            </button>
+          </div>
         </div>
-      </div>
     );
   }
 
   return (
-    <div className="w-full relative">
-      {/* 지도 컨테이너 */}
+      <div className="w-full relative">
+        {/* 지도 컨테이너 */}
         <div
-          ref={mapRef}
-          className="w-full"
-          style={{ height: 'calc(100vh - 80px)' }} // BottomNavigation 높이만큼 더 많이 제외
+            ref={mapRef}
+            className="w-full"
+            style={{height: 'calc(100vh - 80px)'}} // BottomNavigation 높이만큼 더 많이 제외
         />
 
-      {/* 상단 헤더 */}
-      <div className="absolute top-0 left-0 right-0 z-10 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center justify-between h-[78px] px-[30px] bg-white">
-            <p className="text-22-m text-black">내 주변</p>
+        {/* 상단 헤더 */}
+        <div
+            className="absolute top-0 left-0 right-0 z-10 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between h-[78px] px-[30px] bg-white">
+              <p className="text-22-m text-black">내 주변</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* 선택된 게시물 카드 */}
-      {selectedPost && (
-          <div className="absolute bottom-[20px] left-[25px] right-[25px] z-20">
-            <div className="bg-white rounded-[30px] px-[25px] py-[20px] cursor-pointer relative shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]">
-            {/* 닫기 버튼 */}
-            <button
-              onClick={() => {
-                // 선택된 마커가 있다면 원래 크기로 복원
-                if (selectedMarker) {
-                  const originalImage = getMarkerImage(selectedMarker.post?.deadline, false);
-                  selectedMarker.marker.setImage(originalImage);
-                  setSelectedMarker(null);
-                }
-                setSelectedPost(null);
-              }}
-              className="absolute top-[10px] right-[15px] w-6 h-6 flex items-center justify-center text-gray-400"
+        {/* 선택된 게시물 카드 */}
+        {selectedPost && (
+            <a
+                className="absolute bottom-[20px] left-[25px] right-[25px] z-20"
+                href={`/posts/${selectedPost.id}`}
             >
-              ✕
-            </button>
-
-            {/* D-day 배지 */}
-            <div className="flex justify-end items-start">
-              <div className="absolute top-[8px] left-[16px] z-10">
-                {(() => {
-                  const today = moment();
-                  const deadlineDate = moment(selectedPost?.deadline);
-                  const diffDays = deadlineDate.diff(today, 'days');
-                  const getDdayColor = (dday) => {
-                    if (dday <= 7) return 'bg-brand-point text-white';
-                    if (dday <= 14) return 'bg-brand-main text-white';
-                    return 'bg-[#FFE889] text-brand-yellow-dark';
-                  };
-                  return (
-                    <span className={`flex items-center justify-center px-[9px] h-[22px] rounded-[7px] text-14-b font-bold ${getDdayColor(diffDays)}`}>
-                      D-{diffDays > 0 ? diffDays : '마감'}
-                    </span>
-                  );
-                })()}
-              </div>
-            </div>
-
-            <div className="flex space-x-[20px]">
-              {/* 왼쪽 이미지 영역 */}
-              <div className="flex-shrink-0 relative">
-                <figure className="relative w-[80px] h-[80px] overflow-hidden bg-gray-200 rounded-[15px] shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]">
-                  <img
-                    className="w-full h-full object-cover"
-                    src={selectedPost.images && selectedPost?.images.length > 0 ? selectedPost?.images[0] : "/img/dummy_thumbnail.jpg"}
-                    alt={selectedPost?.dog?.name || '강아지 사진'}
-                  />
-                </figure>
-              </div>
-
-              {/* 오른쪽 텍스트 영역 */}
-              <div className="min-w-0 h-[70px] mt-[10px] flex flex-col justify-between w-full">
-                {/* 제목 */}
-                <h3 className="text-list-1 mb-2 leading-tight line-clamp-2 text-14-m">
-                  {selectedPost?.title || '제목 없음'}
-                </h3>
-
-                {/* 강아지 정보와 날짜 */}
-                <div className="flex justify-between items-end text-text-800 mb-[6px]">
-                  <div className="text-name-breed text-12-r">
-                    {selectedPost?.dog?.name || '이름 없음'} / {convertDogSize(selectedPost?.dog?.size || 'medium')}
+              <div className="bg-white rounded-[30px] px-[25px] py-[20px] cursor-pointer relative shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]">
+                {/* D-day 배지 */}
+                <div className="flex justify-end items-start">
+                  <div className="absolute top-[8px] left-[16px] z-10">
+                    {(() => {
+                      const today = moment();
+                      const deadlineDate = moment(selectedPost?.deadline);
+                      const diffDays = deadlineDate.diff(today, 'days');
+                      const getDdayColor = (dday) => {
+                        if (dday <= 7) return 'bg-brand-point text-white';
+                        if (dday <= 14) return 'bg-brand-main text-white';
+                        return 'bg-[#FFE889] text-brand-yellow-dark';
+                      };
+                      return (
+                          <span className={`flex items-center justify-center px-[9px] h-[22px] rounded-[7px] text-14-b font-bold ${getDdayColor(diffDays)}`}>
+                          D-{diffDays > 0 ? diffDays : '마감'}
+                        </span>
+                      );
+                    })()}
                   </div>
-                  <div className="text-post-date text-text-600 text-9-r font-light">
-                    {selectedPost?.deadline || '날짜 없음'}
+                </div>
+
+                <div className="flex space-x-[20px]">
+                  {/* 왼쪽 이미지 영역 */}
+                  <div className="flex-shrink-0 relative">
+                    <figure className="relative w-[80px] h-[80px] overflow-hidden bg-gray-200 rounded-[15px] shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]">
+                      <img
+                          className="w-full h-full object-cover"
+                          src={selectedPost.images && selectedPost?.images.length > 0 ? selectedPost?.images[0] : "/img/dummy_thumbnail.jpg"}
+                          alt={selectedPost?.dog?.name || '강아지 사진'}
+                      />
+                    </figure>
+                  </div>
+
+                  {/* 오른쪽 텍스트 영역 */}
+                  <div className="min-w-0 h-[70px] mt-[10px] flex flex-col justify-between w-full">
+                    {/* 제목 */}
+                    <h3 className="text-list-1 mb-2 leading-tight line-clamp-2 text-14-m">
+                      {selectedPost?.title || '제목 없음'}
+                    </h3>
+
+                    {/* 강아지 정보와 날짜 */}
+                    <div className="flex justify-between items-end text-text-800 mb-[6px]">
+                      <div className="text-name-breed text-12-r">
+                        {selectedPost?.dog?.name || '이름 없음'} / {convertDogSize(selectedPost?.dog?.size || 'medium')}
+                      </div>
+                      <div className="text-post-date text-text-600 text-9-r font-light">
+                        {selectedPost?.deadline || '날짜 없음'}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
+            </a>
+        )}
 
-      {/* 로딩 오버레이 */}
-      {!mapLoaded && !error && (
-        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-20">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mx-auto mb-2"></div>
-            <p className="text-sm text-gray-600">지도를 초기화하는 중...</p>
-          </div>
-        </div>
-      )}
-    </div>
+        {/* 로딩 오버레이 */}
+        {!mapLoaded && !error && (
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-20">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mx-auto mb-2"></div>
+                <p className="text-sm text-gray-600">지도를 초기화하는 중...</p>
+              </div>
+            </div>
+        )}
+      </div>
   );
 };
 

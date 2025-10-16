@@ -214,7 +214,7 @@ const UserProfileForm = ({
                     {phoneVisibility === 'public' ? (
                       <IconRadioActive className="w-5 h-5" />
                     ) : (
-                      <div className="w-5 h-5 border-2 border-gray-300 rounded-full"></div>
+                      <div className="w-[24px] h-[24px] border-2 border-text-300 rounded-full"></div>
                     )}
                     <span className="text-14-r text-text-800">공개</span>
                   </div>
@@ -232,7 +232,7 @@ const UserProfileForm = ({
                     {phoneVisibility === 'private' ? (
                       <IconRadioActive className="w-5 h-5" />
                     ) : (
-                      <div className="w-5 h-5 border-2 border-gray-300 rounded-full"></div>
+                      <div className="w-[24px] h-[24px] border-2 border-text-300 rounded-full"></div>
                     )}
                     <span className="text-14-r text-text-800">비공개</span>
                   </div>
@@ -310,7 +310,7 @@ const UserProfileForm = ({
                     {contactChannels.instagram ? (
                       <IconCheckBoxActive className="w-5 h-5" />
                     ) : (
-                      <div className="w-5 h-5 border-2 border-gray-300 rounded"></div>
+                      <div className="w-[24px] h-[24px] border-2 border-text-300"></div>
                     )}
                     <span className="text-14-r text-text-800">인스타그램</span>
                   </div>
@@ -330,7 +330,7 @@ const UserProfileForm = ({
                     {contactChannels.naverCafe ? (
                       <IconCheckBoxActive className="w-5 h-5" />
                     ) : (
-                      <div className="w-5 h-5 border-2 border-gray-300 rounded"></div>
+                      <div className="w-[24px] h-[24px] border-2 border-text-300"></div>
                     )}
                     <span className="text-14-r text-text-800">네이버 카페</span>
                   </div>
@@ -350,7 +350,7 @@ const UserProfileForm = ({
                     {contactChannels.kakaoOpenChat ? (
                       <IconCheckBoxActive className="w-5 h-5" />
                     ) : (
-                      <div className="w-5 h-5 border-2 border-gray-300 rounded"></div>
+                      <div className="w-[24px] h-[24px] border-2 border-text-300"></div>
                     )}
                     <span className="text-14-r text-text-800">카카오톡 오픈채팅</span>
                   </div>
