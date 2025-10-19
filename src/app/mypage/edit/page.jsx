@@ -43,7 +43,9 @@ const EditProfilePage = () => {
     nickname: '',
     introduction: '',
     phone: '',
-    profileImage: ''
+    profileImage: '',
+    securityQuestion: '',
+    securityAnswer: ''
   });
   const [originalData, setOriginalData] = useState({});
   const [hasChanges, setHasChanges] = useState(false);
@@ -77,7 +79,9 @@ const EditProfilePage = () => {
         nickname: profile.display_name || '',
         introduction: profile.bio || '',
         phone: profile.phone || '',
-        profileImage: profile.profile_image || ''
+        profileImage: profile.profile_image || '',
+        securityQuestion: profile.security_question || '',
+        securityAnswer: profile.security_answer || ''
       };
 
       setFormData(initialData);
@@ -353,7 +357,9 @@ const EditProfilePage = () => {
           profile_image: profileImageUrl,
           instagram: contactChannels.instagram ? channelInputs.instagram : null,
           naver_cafe: contactChannels.naverCafe ? channelInputs.naverCafe : null,
-          kakao_openchat: contactChannels.kakaoOpenChat ? channelInputs.kakaoOpenChat : null
+          kakao_openchat: contactChannels.kakaoOpenChat ? channelInputs.kakaoOpenChat : null,
+          security_question: formData.securityQuestion,
+          security_answer: formData.securityAnswer
         })
       });
 
@@ -447,6 +453,7 @@ const EditProfilePage = () => {
             showIntroduction={true}
             showPhone={true}
             showSocialChannels={true}
+            showSecurityQuestion={true}
         />
         <div className={'flex justify-end'}>
           <button

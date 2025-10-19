@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { Plus } from 'lucide-react';
 import { IconRadioActive, IconCheckBoxActive} from "../../public/img/icon/IconCheck";
+import { SECURITY_QUESTIONS } from '@/constants/securityQuestions';
 
 const UserProfileForm = ({
   formData,
@@ -31,7 +32,9 @@ const UserProfileForm = ({
   // 회원가입 모드에서만 사용되는 props
   showPassword = false,
   showPasswordConfirm = false,
-  showTerms = false
+  showTerms = false,
+  // 보안 질문/답변 (회원가입 시에만 표시)
+  showSecurityQuestion = false
 }) => {
   const [phoneVisibility, setPhoneVisibility] = useState('public');
   const fileInputRef = useRef(null);
@@ -418,6 +421,58 @@ const UserProfileForm = ({
                 )}
               </div>
           )}
+        </div>
+      )}
+
+      {/* 보안 질문/답변 (회원가입 모드에서만) */}
+      {showSecurityQuestion && mode === 'signup' && (
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              보안 질문 <span className="text-brand-point">*</span>
+            </label>
+            <p className="text-xs text-gray-500 mb-3">
+              아이디 찾기 시 사용할 보안 질문을 선택해주세요.
+            </p>
+            <select
+              value={formData.securityQuestion || ''}
+              onChange={(e) => setFormData(prev => ({...prev, securityQuestion: e.target.value }))}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-main focus:border-transparent"
+            >
+              <option value="">보안 질문을 선택해주세요</option>
+              {SECURITY_QUESTIONS.map((question) => (
+                <option key={question.id} value={question.id}>
+                  {question.question}
+                </option>
+              ))}
+            </select>
+            {errors.securityQuestion && (
+              <p className="text-xs text-red-500 mt-1">{errors.securityQuestion}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              보안 질문 답변 <span className="text-brand-point">*</span>
+            </label>
+            <input
+              type="text"
+              value={formData.securityAnswer || ''}
+              onChange={(e) => setFormData(prev => ({...prev, securityAnswer: e.target.value }))}
+              placeholder="보안 질문에 대한 답변을 입력해주세요"
+              maxLength={50}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-main focus:border-transparent"
+            />
+            <div className="flex justify-between items-center mt-1">
+              <p className="text-xs text-gray-500">아이디 찾기 시 사용됩니다</p>
+              <p className="text-xs text-gray-400">
+                {(formData.securityAnswer || '').length}/50
+              </p>
+            </div>
+            {errors.securityAnswer && (
+              <p className="text-xs text-red-500 mt-1">{errors.securityAnswer}</p>
+            )}
+          </div>
         </div>
       )}
 

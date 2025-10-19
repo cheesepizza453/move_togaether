@@ -12,7 +12,9 @@ const AdditionalInfoContent = () => {
   const [formData, setFormData] = useState({
     nickname: '',
     introduction: '',
-    phone: ''
+    phone: '',
+    securityQuestion: '',
+    securityAnswer: ''
   });
 
   const [contactChannels, setContactChannels] = useState({
@@ -172,6 +174,16 @@ const AdditionalInfoContent = () => {
       newErrors.phone = '연락처를 입력해주세요.';
     }
 
+    // 보안 질문/답변 검증
+    if (!formData.securityQuestion) {
+      newErrors.securityQuestion = '보안 질문을 선택해주세요.';
+    }
+    if (!formData.securityAnswer.trim()) {
+      newErrors.securityAnswer = '보안 질문 답변을 입력해주세요.';
+    } else if (formData.securityAnswer.length < 2) {
+      newErrors.securityAnswer = '답변은 2자 이상 입력해주세요.';
+    }
+
     // 선택된 채널에 대한 입력값 검증
     if (contactChannels.instagram && !channelInputs.instagram.trim()) {
       newErrors.instagram = '인스타그램 ID를 입력해주세요.';
@@ -208,7 +220,9 @@ const AdditionalInfoContent = () => {
         introduction: formData.introduction,
         phone: formData.phone,
         contactChannels,
-        channelInputs
+        channelInputs,
+        securityQuestion: formData.securityQuestion,
+        securityAnswer: formData.securityAnswer
       });
 
       if (result.success) {
@@ -282,6 +296,7 @@ const AdditionalInfoContent = () => {
               showIntroduction={true}
               showPhone={true}
               showSocialChannels={true}
+              showSecurityQuestion={true}
           />
 
           {/* 회원가입 완료 버튼 */}
