@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase'
-import { getOptimizedPosts, withPerformanceMonitoring } from '@/lib/supabase-optimized'
+import { withPerformanceMonitoring } from '@/lib/supabase-optimized'
 import moment from 'moment'
 
 // 간단한 메모리 캐시 (프로덕션에서는 Redis 사용 권장)

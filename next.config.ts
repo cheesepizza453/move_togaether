@@ -10,10 +10,11 @@ const nextConfig: NextConfig = {
     removeConsole: process.env.NODE_ENV === 'production',
   },
 
+  // 서버 외부 패키지 설정 (Next.js 15에서 변경됨)
+  serverExternalPackages: ['@supabase/supabase-js'],
+
   // 실험적 기능 활성화
   experimental: {
-    // 서버 컴포넌트 최적화
-    serverComponentsExternalPackages: ['@supabase/supabase-js'],
     // 메모리 사용량 최적화
     memoryBasedWorkersCount: true,
     // 서버 액션 최적화
