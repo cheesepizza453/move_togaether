@@ -1,17 +1,52 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase'
+import { getOptimizedPosts, withPerformanceMonitoring } from '@/lib/supabase-optimized'
 import moment from 'moment'
 
-// GET: 게시물 목록 조회 (페이지네이션, 정렬, deadline 필터 적용)
-export async function GET(request) {
-  try {
-    // 익명 사용자용 Supabase 클라이언트 생성 (로그인 불필요)
-    const supabase = createServerSupabaseClient()
+// 간단한 메모리 캐시 (프로덕션에서는 Redis 사용 권장)
+const cache = new Map()
+const CACHE_TTL = 2 * 60 * 1000 // 2분
 
+const getCachedData = (key) => {
+  const cached = cache.get(key)
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.data
+  }
+  cache.delete(key)
+  return null
+}
+
+const setCachedData = (key, data) => {
+  cache.set(key, {
+    data,
+    timestamp: Date.now()
+  })
+}
+
+// GET: 게시물 목록 조회 (페이지네이션, 정렬, deadline 필터 적용)
+export const GET = withPerformanceMonitoring(async (request) => {
+  try {
     const { searchParams } = new URL(request.url)
     const sortBy = searchParams.get('sortBy') || 'latest'
     const page = parseInt(searchParams.get('page')) || 1
     const limit = parseInt(searchParams.get('limit')) || 10
+
+    // 캐시 키 생성
+    const cacheKey = `posts_${sortBy}_${page}_${limit}`
+
+    // 캐시에서 데이터 확인
+    const cachedData = getCachedData(cacheKey)
+    if (cachedData) {
+      return NextResponse.json(cachedData, {
+        headers: {
+          'Cache-Control': 'public, max-age=120, s-maxage=120',
+          'X-Cache': 'HIT'
+        }
+      })
+    }
+
+    // 익명 사용자용 Supabase 클라이언트 생성 (로그인 불필요)
+    const supabase = createServerSupabaseClient()
 
     // 정렬 옵션에 따른 order by 설정
     let orderConfig
@@ -46,7 +81,7 @@ export async function GET(request) {
       return NextResponse.json({ error: '게시물을 불러오는 중 오류가 발생했습니다.' }, { status: 400 })
     }
 
-    return NextResponse.json({
+    const responseData = {
       posts: data || [],
       pagination: {
         page,
@@ -55,12 +90,22 @@ export async function GET(request) {
         totalPages: Math.ceil((count || 0) / limit),
         hasMore: to < (count || 0) - 1
       }
+    }
+
+    // 캐시에 저장
+    setCachedData(cacheKey, responseData)
+
+    return NextResponse.json(responseData, {
+      headers: {
+        'Cache-Control': 'public, max-age=120, s-maxage=120',
+        'X-Cache': 'MISS'
+      }
     })
   } catch (error) {
     console.error('Posts GET error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}
+}, 'posts-get')
 
 // POST: 게시물 등록
 export async function POST(request) {

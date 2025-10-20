@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { supabase } from '@/lib/supabase';
 import moment from 'moment';
 import Header from '../components/common/Header';
@@ -9,12 +9,14 @@ import SortOptions from '../components/SortOptions';
 import PostCard from '../components/PostCard';
 import Footer from '../components/common/Footer';
 import BottomNavigation from '../components/common/BottomNavigation';
-import LocationSearchDialog from '../components/LocationSearchDialog';
 import { postsAPI, favoritesAPI, handleAPIError } from '@/lib/api-client';
 import { useAuth } from '@/hooks/useAuth';
 import { useDialogContext } from '@/components/DialogProvider';
 import { toast } from 'sonner';
 import IconLoading from "../../public/img/icon/IconLoading";
+
+// 동적 임포트로 무거운 컴포넌트 최적화
+const LocationSearchDialog = lazy(() => import('../components/LocationSearchDialog'));
 
 export default function Home() {
   const { user } = useAuth();
@@ -589,11 +591,17 @@ export default function Home() {
       </main>
 
       {/* 위치 검색 다이얼로그 */}
-      <LocationSearchDialog
-        isOpen={showLocationDialog}
-        onClose={() => setShowLocationDialog(false)}
-        onLocationConfirm={handleLocationConfirm}
-      />
+      <Suspense fallback={<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white p-4 rounded-lg">
+          <IconLoading className="w-8 h-8 animate-spin" />
+        </div>
+      </div>}>
+        <LocationSearchDialog
+          isOpen={showLocationDialog}
+          onClose={() => setShowLocationDialog(false)}
+          onLocationConfirm={handleLocationConfirm}
+        />
+      </Suspense>
     </div>
   );
 }

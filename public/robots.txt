@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://move-togaether.com/sitemap.xml
+
+# Disallow private pages
+Disallow: /mypage/
+Disallow: /api/
+Disallow: /_next/
+Disallow: /admin/
+
+# Crawl-delay for respectful crawling
+Crawl-delay: 1
