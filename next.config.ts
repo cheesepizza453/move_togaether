@@ -25,27 +25,27 @@ const nextConfig: NextConfig = {
     serverMinification: true,
   },
 
-  // 웹팩 설정
-  webpack: (config, { dev, isServer }) => {
-    // 카카오 SDK 외부화
-    config.externals = [...config.externals, 'kakao'];
+  // Turbopack 사용 시 웹팩 설정 비활성화 (충돌 방지)
+  // webpack: (config, { dev, isServer }) => {
+  //   // 카카오 SDK 외부화
+  //   config.externals = [...config.externals, 'kakao'];
 
-    // 프로덕션에서 번들 크기 최적화
-    if (!dev && !isServer) {
-      config.optimization.splitChunks = {
-        chunks: 'all',
-        cacheGroups: {
-          vendor: {
-            test: /[\\/]node_modules[\\/]/,
-            name: 'vendors',
-            chunks: 'all',
-          },
-        },
-      };
-    }
+  //   // 프로덕션에서 번들 크기 최적화
+  //   if (!dev && !isServer) {
+  //     config.optimization.splitChunks = {
+  //       chunks: 'all',
+  //       cacheGroups: {
+  //         vendor: {
+  //           test: /[\\/]node_modules[\\/]/,
+  //           name: 'vendors',
+  //           chunks: 'all',
+  //         },
+  //       },
+  //     };
+  //   }
 
-    return config;
-  },
+  //   return config;
+  // },
 
   // 이미지 최적화 설정 (Vercel 비용 절약을 위해 비활성화)
   images: {
