@@ -47,6 +47,7 @@ const EditProfilePage = () => {
     securityQuestion: '',
     securityAnswer: ''
   });
+  const [isEmailUser, setIsEmailUser] = useState(false);
   const [originalData, setOriginalData] = useState({});
   const [hasChanges, setHasChanges] = useState(false);
   const [contactChannels, setContactChannels] = useState({
@@ -75,6 +76,10 @@ const EditProfilePage = () => {
   // 프로필 데이터 로드
   useEffect(() => {
     if (profile) {
+      // 이메일 가입 사용자인지 확인 (provider가 'email'이거나 null인 경우)
+      const emailUser = !profile.provider || profile.provider === 'email';
+      setIsEmailUser(emailUser);
+
       const initialData = {
         nickname: profile.display_name || '',
         introduction: profile.bio || '',
@@ -121,33 +126,16 @@ const EditProfilePage = () => {
     setErrors(prev => ({ ...prev, profileImage: '' }));
   };
 
-  // 닉네임 변경 핸들러
+  // 닉네임 변경 핸들러 (수정 모드에서는 비활성화)
   const handleNicknameChange = (value) => {
-    setFormData(prev => ({ ...prev, nickname: value }));
-    setNicknameValidation(null);
-    setErrors(prev => ({ ...prev, nickname: '' }));
+    // 수정 모드에서는 닉네임 변경 불가
+    return;
   };
 
-  // 닉네임 블러 핸들러 (중복 체크)
+  // 닉네임 블러 핸들러 (수정 모드에서는 비활성화)
   const handleNicknameBlur = async (value) => {
-    if (!value.trim()) return;
-
-    // 현재 닉네임과 같으면 중복 체크하지 않음
-    if (value === profile?.display_name) {
-      setNicknameValidation({ isValid: true, message: '사용 가능한 닉네임입니다.' });
-      return;
-    }
-
-    setNicknameChecking(true);
-    try {
-      const result = await checkNicknameDuplicate(value);
-      setNicknameValidation(result);
-    } catch (error) {
-      console.error('닉네임 중복 체크 오류:', error);
-      setNicknameValidation({ isValid: false, message: '닉네임 확인 중 오류가 발생했습니다.' });
-    } finally {
-      setNicknameChecking(false);
-    }
+    // 수정 모드에서는 닉네임 중복 체크 불가
+    return;
   };
 
   // 연락채널 변경 핸들러
@@ -186,14 +174,22 @@ const EditProfilePage = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.nickname.trim()) {
-      newErrors.nickname = '닉네임을 입력해주세요.';
-    } else if (nicknameValidation && !nicknameValidation.isValid) {
-      newErrors.nickname = nicknameValidation.message;
-    }
+    // 닉네임은 수정 모드에서 검증하지 않음 (변경 불가)
 
     if (!formData.phone.trim()) {
       newErrors.phone = '연락처를 입력해주세요.';
+    }
+
+    // 이메일 가입 사용자만 보안 질문/답변 검증
+    if (isEmailUser) {
+      if (!formData.securityQuestion) {
+        newErrors.securityQuestion = '보안 질문을 선택해주세요.';
+      }
+      if (!formData.securityAnswer.trim()) {
+        newErrors.securityAnswer = '보안 질문 답변을 입력해주세요.';
+      } else if (formData.securityAnswer.length < 2) {
+        newErrors.securityAnswer = '답변은 2자 이상 입력해주세요.';
+      }
     }
 
     // 선택된 채널에 대한 입력값 검증
@@ -351,15 +347,18 @@ const EditProfilePage = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          display_name: formData.nickname,
+          display_name: formData.nickname, // 닉네임은 변경되지 않음 (읽기 전용)
           bio: formData.introduction,
           phone: formData.phone,
           profile_image: profileImageUrl,
           instagram: contactChannels.instagram ? channelInputs.instagram : null,
           naver_cafe: contactChannels.naverCafe ? channelInputs.naverCafe : null,
           kakao_openchat: contactChannels.kakaoOpenChat ? channelInputs.kakaoOpenChat : null,
-          security_question: formData.securityQuestion,
-          security_answer: formData.securityAnswer
+          // 이메일 가입 사용자만 보안 질문/답변 업데이트
+          ...(isEmailUser && {
+            security_question: formData.securityQuestion,
+            security_answer: formData.securityAnswer
+          })
         })
       });
 
@@ -453,7 +452,8 @@ const EditProfilePage = () => {
             showIntroduction={true}
             showPhone={true}
             showSocialChannels={true}
-            showSecurityQuestion={true}
+            showSecurityQuestion={isEmailUser} // 이메일 가입 사용자만 보안 질문 표시
+            isNicknameReadOnly={true} // 닉네임 읽기 전용
         />
         <div className={'flex justify-end'}>
           <button

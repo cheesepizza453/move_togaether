@@ -134,13 +134,38 @@ const FindIdPage = () => {
     }
   };
 
-  // 이메일 마스킹 처리
+  // 이메일 마스킹 처리 (@ 앞쪽 부분의 50~70% 보여주기)
   const maskEmail = (email) => {
     if (!email) return '';
     const [localPart, domain] = email.split('@');
+
+    // 이메일이 너무 짧으면 그대로 반환
     if (localPart.length <= 2) return email;
 
-    const maskedLocal = localPart.charAt(0) + '*'.repeat(localPart.length - 2) + localPart.charAt(localPart.length - 1);
+    // 3글자 이메일은 첫 글자와 마지막 글자만 보여주기
+    if (localPart.length === 3) {
+      return `${localPart.charAt(0)}*${localPart.charAt(2)}@${domain}`;
+    }
+
+    // 보여줄 글자 수 계산 (길이에 따라 50~70%)
+    let showRatio;
+    if (localPart.length <= 5) {
+      showRatio = 0.6; // 60%
+    } else if (localPart.length <= 10) {
+      showRatio = 0.65; // 65%
+    } else {
+      showRatio = 0.7; // 70% (긴 이메일일수록 더 많이 보여줌)
+    }
+
+    const showCount = Math.max(2, Math.floor(localPart.length * showRatio));
+    const hideCount = localPart.length - showCount;
+
+    // 앞부분과 뒷부분을 보여주고 가운데만 마스킹
+    const frontPart = localPart.substring(0, Math.floor(showCount / 2));
+    const backPart = localPart.substring(localPart.length - Math.ceil(showCount / 2));
+    const maskedPart = '*'.repeat(hideCount);
+
+    const maskedLocal = frontPart + maskedPart + backPart;
     return `${maskedLocal}@${domain}`;
   };
 
