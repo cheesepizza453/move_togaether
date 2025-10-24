@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense, lazy } from 'react';
+import { useState, useEffect, useCallback, Suspense, lazy, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import moment from 'moment';
 import Header from '../components/common/Header';
@@ -37,6 +37,7 @@ export default function Home() {
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isFetching, setIsFetching] = useState(false); // 중복 호출 방지용
+  const isFetchingRef = useRef(false); // 추가적인 중복 호출 방지
 
   // 목업 데이터 (실제로는 API에서 가져올 데이터)
   /* const mockPosts = [
@@ -113,13 +114,17 @@ export default function Home() {
 
   // Supabase에서 게시물 데이터 가져오기 (페이징 적용)
   const fetchPosts = async (sortBy = 'latest', pageNum = 1, isLoadMore = false) => {
-    // 중복 호출 방지
-    if (isFetching) {
+    console.log('fetchPosts 호출됨:', { sortBy, pageNum, isLoadMore, isFetching, isFetchingRef: isFetchingRef.current });
+
+    // 중복 호출 방지 (이중 체크)
+    if (isFetching || isFetchingRef.current) {
       console.log('이미 데이터를 가져오는 중입니다. 중복 호출 방지');
       return;
     }
 
     try {
+      console.log('fetchPosts 시작 - isFetching을 true로 설정');
+      isFetchingRef.current = true;
       setIsFetching(true);
 
       if (isLoadMore) {
@@ -133,6 +138,7 @@ export default function Home() {
       }
 
       // API 호출 (로그인 불필요)
+      console.log('API 호출 시작:', { type: 'all', sortBy, page: pageNum, limit: 10, status: 'active' });
       const { posts, pagination } = await postsAPI.getList({
         type: 'all',
         sortBy,
@@ -140,6 +146,7 @@ export default function Home() {
         limit: 10,
         status: 'active'
       });
+      console.log('API 호출 완료:', { posts, pagination });
 
       console.log(`페이지 ${pageNum} API에서 가져온 데이터:`, { posts, pagination });
 
@@ -211,7 +218,14 @@ export default function Home() {
 
     } catch (err) {
       console.error('게시물 조회 중 예외 발생:', err);
+      console.error('에러 상세 정보:', {
+        name: err.name,
+        message: err.message,
+        stack: err.stack
+      });
+
       const errorInfo = handleAPIError(err);
+      console.log('처리된 에러 정보:', errorInfo);
 
       setError(errorInfo.message);
 
@@ -228,10 +242,15 @@ export default function Home() {
       });
 
       console.log('로딩 상태 해제 중...');
-      setLoading(false);
-      setIsLoadingMore(false);
-      setIsFetching(false); // 중복 호출 방지 플래그 해제
-      console.log('로딩 상태 해제 완료');
+
+      // 안전한 로딩 상태 해제
+      setTimeout(() => {
+        setLoading(false);
+        setIsLoadingMore(false);
+        setIsFetching(false); // 중복 호출 방지 플래그 해제
+        isFetchingRef.current = false; // ref도 리셋
+        console.log('로딩 상태 해제 완료');
+      }, 100); // 약간의 지연을 두어 상태 업데이트 보장
     }
   };
 
@@ -272,6 +291,11 @@ export default function Home() {
 
   // 초기 데이터 로드
   useEffect(() => {
+    console.log('메인 페이지 초기 로드 시작');
+    // 컴포넌트 마운트 시 로딩 상태 초기화
+    setLoading(true);
+    setError(null);
+    setPosts([]);
     fetchPosts(sortOption);
   }, []); // 컴포넌트 마운트 시에만 실행
 
@@ -545,6 +569,10 @@ export default function Home() {
 
         {/* 게시물 목록 */}
         <section className="pb-6">
+          {(() => {
+            console.log('렌더링 상태 확인:', { loading, error, postsLength: posts.length, isFetching });
+            return null;
+          })()}
           {loading ? (
               <div className="flex justify-center items-center py-8">
                 <div className={'w-full flex justify-center pt-[60px]'}>

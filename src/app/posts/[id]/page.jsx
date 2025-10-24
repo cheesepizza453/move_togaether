@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -52,6 +52,7 @@ export default function PostDetailPage() {
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const isFetchingRef = useRef(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -80,6 +81,7 @@ export default function PostDetailPage() {
 
   useEffect(() => {
     if (postId) {
+      console.log('useEffect에서 fetchPost 호출, postId:', postId);
       fetchPost();
     }
   }, [postId]);
@@ -146,13 +148,22 @@ export default function PostDetailPage() {
   }, [isOwner, postId]);
 
   const fetchPost = async () => {
+    // 중복 호출 방지
+    if (isFetchingRef.current) {
+      console.log('fetchPost 이미 실행 중 - 중복 호출 방지');
+      return;
+    }
+
     try {
+      console.log('fetchPost 시작 - 로딩 상태를 true로 설정');
+      isFetchingRef.current = true;
       setLoading(true);
 
       // API를 통해 게시물 정보 가져오기
       const response = await fetch(`/api/posts/${postId}`);
 
       if (!response.ok) {
+        console.log('API 응답 오류:', response.status);
         if (response.status === 404) {
           setError('존재하지 않는 게시물입니다.');
         } else {
@@ -164,6 +175,7 @@ export default function PostDetailPage() {
       const { post: postData } = await response.json();
 
       if (!postData) {
+        console.log('postData가 없음');
         setError('존재하지 않는 게시물입니다.');
         return;
       }
@@ -178,6 +190,7 @@ export default function PostDetailPage() {
         isUrgent: moment(postData.deadline).diff(moment(), 'days') <= 1
       };
 
+      console.log('게시물 데이터 설정 완료:', formattedPost);
       setPost(formattedPost);
 
       console.log('포스트 데이터:', {
@@ -214,6 +227,8 @@ export default function PostDetailPage() {
       console.error('게시물 조회 중 오류:', err);
       setError('게시물을 불러오는 중 오류가 발생했습니다.');
     } finally {
+      console.log('fetchPost 완료 - 로딩 상태를 false로 설정');
+      isFetchingRef.current = false;
       setLoading(false);
     }
   };
@@ -415,7 +430,10 @@ export default function PostDetailPage() {
     }
   };
 
+  console.log('현재 로딩 상태:', loading);
+
   if (loading) {
+    console.log('로딩 중 - 로딩 화면 표시');
     return (
         <div className="min-h-screen bg-white">
           {/* 헤더 */}

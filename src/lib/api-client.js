@@ -91,6 +91,8 @@ const apiCall = async (endpoint, options = {}) => {
   // 재시도 로직
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
+      console.log(`API 호출 시도 ${attempt + 1}/${maxRetries + 1}:`, { url, config });
+
       // 타임아웃 설정 (10초)
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -99,6 +101,8 @@ const apiCall = async (endpoint, options = {}) => {
         ...config,
         signal: controller.signal
       });
+
+      console.log('API 응답 받음:', { status: response.status, ok: response.ok });
 
       clearTimeout(timeoutId);
 
@@ -147,6 +151,8 @@ const apiCall = async (endpoint, options = {}) => {
 
       return data;
     } catch (error) {
+      console.error(`API 호출 에러 (시도 ${attempt + 1}):`, error);
+
       // 마지막 시도이거나 재시도할 수 없는 오류인 경우
       if (attempt === maxRetries ||
           error instanceof APIError ||
@@ -417,7 +423,7 @@ export const checkAuthStatus = async () => {
 };
 
 // 기본 export
-export default {
+const apiClient = {
   posts: postsAPI,
   favorites: favoritesAPI,
   myPage: myPageAPI,
@@ -427,3 +433,5 @@ export default {
   handleError: handleAPIError,
   checkAuth: checkAuthStatus
 };
+
+export default apiClient;
