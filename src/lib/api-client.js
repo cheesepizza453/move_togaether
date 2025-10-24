@@ -46,7 +46,10 @@ const getAuthHeaders = async () => {
 
 // 기본 헤더 생성
 const getDefaultHeaders = () => ({
-  'Content-Type': 'application/json'
+  'Content-Type': 'application/json',
+  'Cache-Control': 'no-cache, no-store, must-revalidate',
+  'Pragma': 'no-cache',
+  'Expires': '0'
 });
 
 // API 호출 함수 (재시도 로직 포함)

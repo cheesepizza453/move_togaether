@@ -79,10 +79,65 @@ export default function PostDetailPage() {
     }
   }, [searchParams]);
 
+  // 브라우저 뒤로가기/앞으로가기 이벤트 감지
+  useEffect(() => {
+    const handlePopState = () => {
+      console.log('브라우저 뒤로가기/앞으로가기 감지 - 상태 초기화');
+      // 모든 상태 초기화
+      setPost(null);
+      setLoading(true);
+      setError(null);
+      setIsFavorite(false);
+      setFavoriteLoading(false);
+      setShowLoginDialog(false);
+      setShowApplyDialog(false);
+      setApplicants([]);
+      setApplicantsLoading(false);
+      isFetchingRef.current = false;
+
+      // API 재호출
+      setTimeout(() => {
+        if (postId) {
+          fetchPost();
+        }
+      }, 100);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [postId]);
+
   useEffect(() => {
     if (postId) {
       console.log('useEffect에서 fetchPost 호출, postId:', postId);
-      fetchPost();
+
+      // 브라우저 뒤로가기 대응: 모든 상태 초기화
+      setPost(null);
+      setLoading(true);
+      setError(null);
+      setIsFavorite(false);
+      setFavoriteLoading(false);
+      setShowLoginDialog(false);
+      setShowApplyDialog(false);
+      setApplicants([]);
+      setApplicantsLoading(false);
+      isFetchingRef.current = false;
+
+      // 약간의 지연을 두고 API 호출
+      const timer = setTimeout(() => {
+        console.log('상태 초기화 완료, fetchPost 호출');
+        fetchPost();
+      }, 50);
+
+      return () => {
+        clearTimeout(timer);
+        // 컴포넌트 언마운트 시 상태 정리
+        console.log('상세 페이지 언마운트 - 상태 정리');
+        isFetchingRef.current = false;
+      };
     }
   }, [postId]);
 
@@ -159,8 +214,14 @@ export default function PostDetailPage() {
       isFetchingRef.current = true;
       setLoading(true);
 
-      // API를 통해 게시물 정보 가져오기
-      const response = await fetch(`/api/posts/${postId}`);
+      // API를 통해 게시물 정보 가져오기 - 브라우저 뒤로가기 대응을 위한 캐시 방지
+      const response = await fetch(`/api/posts/${postId}?_t=${Date.now()}`, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
 
       if (!response.ok) {
         console.log('API 응답 오류:', response.status);

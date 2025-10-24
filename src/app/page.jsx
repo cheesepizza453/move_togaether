@@ -137,14 +137,15 @@ export default function Home() {
         setPosts([]); // 새로 로드할 때 기존 데이터 초기화
       }
 
-      // API 호출 (로그인 불필요)
+      // API 호출 (로그인 불필요) - 브라우저 뒤로가기 대응을 위한 캐시 방지
       console.log('API 호출 시작:', { type: 'all', sortBy, page: pageNum, limit: 10, status: 'active' });
       const { posts, pagination } = await postsAPI.getList({
         type: 'all',
         sortBy,
         page: pageNum,
         limit: 10,
-        status: 'active'
+        status: 'active',
+        _t: Date.now() // 캐시 방지를 위한 타임스탬프
       });
       console.log('API 호출 완료:', { posts, pagination });
 
@@ -287,11 +288,39 @@ export default function Home() {
     };
   }, [hasMore, isLoadingMore, loading, isFetching, sortOption, page]);
 
+  // 브라우저 뒤로가기/앞으로가기 이벤트 감지
+  useEffect(() => {
+    const handlePopState = () => {
+      console.log('브라우저 뒤로가기/앞으로가기 감지 - 상태 초기화');
+      // 모든 상태 초기화
+      setLoading(true);
+      setError(null);
+      setPosts([]);
+      setPage(1);
+      setHasMore(true);
+      setIsLoadingMore(false);
+      setIsFetching(false);
+      isFetchingRef.current = false;
+      setFavoritePostIds(new Set());
+
+      // API 재호출
+      setTimeout(() => {
+        fetchPosts(sortOption);
+      }, 100);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [sortOption]);
+
   // 초기 데이터 로드
   useEffect(() => {
     console.log('메인 페이지 초기 로드 시작');
 
-    // 모든 상태 초기화
+    // 모든 상태 완전 초기화 (브라우저 뒤로가기 대응)
     setLoading(true);
     setError(null);
     setPosts([]);
@@ -300,9 +329,20 @@ export default function Home() {
     setIsLoadingMore(false);
     setIsFetching(false);
     isFetchingRef.current = false;
+    setFavoritePostIds(new Set());
 
-    // API 호출
-    fetchPosts(sortOption);
+    // 약간의 지연을 두고 API 호출 (상태 초기화 완료 후)
+    const timer = setTimeout(() => {
+      console.log('상태 초기화 완료, API 호출 시작');
+      fetchPosts(sortOption);
+    }, 50);
+
+    return () => {
+      clearTimeout(timer);
+      // 컴포넌트 언마운트 시 상태 정리
+      console.log('메인 페이지 언마운트 - 상태 정리');
+      isFetchingRef.current = false;
+    };
   }, []); // 컴포넌트 마운트 시에만 실행
 
   // 찜 상태 토글 핸들러 (API 호출 + 로컬 상태 업데이트)
