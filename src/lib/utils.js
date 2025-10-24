@@ -30,3 +30,22 @@ export const formatDeadline = (deadline) => {
   if (!deadline) return '';
   return moment(deadline).format('YY/MM/DD');
 };
+
+/**
+ * 프로필 이미지 URL을 생성하는 함수
+ * @param {string} profileImage - 프로필 이미지 파일명 또는 URL
+ * @returns {string} 완전한 프로필 이미지 URL
+ */
+export const getProfileImageUrl = (profileImage) => {
+  if (!profileImage) {
+    return '/img/default_profile.jpg';
+  }
+
+  // 이미 완전한 URL인 경우 (http로 시작)
+  if (profileImage.startsWith('http')) {
+    return profileImage;
+  }
+
+  // Supabase Storage URL 생성
+  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/profiles/${profileImage}`;
+};

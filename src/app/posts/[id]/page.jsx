@@ -21,7 +21,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
-import { cn, convertDogSize, formatDeadline } from "@/lib/utils";
+import { cn, convertDogSize, formatDeadline, getProfileImageUrl } from "@/lib/utils";
 import IconRightArrow from "../../../../public/img/icon/IconRightArrow";
 import IconHeart from "../../../../public/img/icon/IconHeart";
 import IconLoading from "../../../../public/img/icon/IconLoading";
@@ -574,7 +574,7 @@ export default function PostDetailPage() {
                       className="relative w-[56px] h-[56px] rounded-full overflow-hidden flex items-center justify-center">
                     {/* 프로필 이미지 */}
                     <img
-                        src={post.user_profiles?.profile_image || '/img/default_profile.jpg'}
+                        src={getProfileImageUrl(post.user_profiles?.profile_image)}
                         alt={'프로필 이미지'}
                         className={'absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover'}
                         onError={(e) => {
@@ -729,7 +729,7 @@ export default function PostDetailPage() {
                                   <figure
                                       className={'relative w-[54px] h-[54px] rounded-full overflow-hidden shrink-0'}>
                                     <img
-                                        src={applicant.user_profiles?.profile_image || '/img/default_profile.jpg'}
+                                        src={getProfileImageUrl(applicant.user_profiles?.profile_image)}
                                         alt={'프로필 이미지'}
                                         className={'absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover'}
                                         onError={(e) => {
@@ -881,7 +881,7 @@ export default function PostDetailPage() {
                     <div
                         className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
                       <img
-                          src={selectedApplicant.user_profiles?.profile_image || '/img/default_profile.jpg'}
+                          src={getProfileImageUrl(selectedApplicant.user_profiles?.profile_image)}
                           alt={'프로필 이미지'}
                           className={'w-full h-full object-cover'}
                           onError={(e) => {

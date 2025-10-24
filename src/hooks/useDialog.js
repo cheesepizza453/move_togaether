@@ -89,6 +89,23 @@ const useDialog = () => {
     });
   }, [openDialog]);
 
+  const showLoginRequired = useCallback((message = '이 기능을 사용하려면 로그인이 필요합니다.', title = '로그인이 필요합니다', options = {}) => {
+    openDialog({
+      title,
+      message,
+      type: 'login',
+      confirmText: options.confirmText || '로그인하기',
+      cancelText: options.cancelText || '취소',
+      showCancel: true,
+      onConfirm: options.onConfirm || (() => {
+        // 기본 로그인 리다이렉트
+        window.location.href = '/login';
+      }),
+      onCancel: options.onCancel || null,
+      ...options
+    });
+  }, [openDialog]);
+
   return {
     dialog,
     openDialog,
@@ -97,7 +114,8 @@ const useDialog = () => {
     showConfirm,
     showWarning,
     showError,
-    showSuccess
+    showSuccess,
+    showLoginRequired
   };
 };
 

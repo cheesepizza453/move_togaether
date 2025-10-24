@@ -20,7 +20,7 @@ const LocationSearchDialog = lazy(() => import('../components/LocationSearchDial
 
 export default function Home() {
   const { user } = useAuth();
-  const { showConfirm, showError } = useDialogContext();
+  const { showLoginRequired, showError } = useDialogContext();
 
   const [sortOption, setSortOption] = useState('latest');
   const [posts, setPosts] = useState([]);
@@ -474,13 +474,10 @@ export default function Home() {
     // 가까운순 선택 시 로그인 체크
     if (sortId === 'distance') {
       if (!user) {
-        showConfirm({
-          title: '로그인 후 이용하실 수 있습니다.',
-          description: '가까운순 정렬을 사용하려면 로그인이 필요합니다.',
-          onConfirm: () => {
-            window.location.href = '/login';
-          }
-        });
+        showLoginRequired(
+          '가까운순 정렬을 사용하려면 로그인이 필요합니다.',
+          '로그인 후 이용하실 수 있습니다.'
+        );
         // 로그인 다이얼로그 표시 시 정렬 옵션을 이전 상태로 되돌림
         return;
       }

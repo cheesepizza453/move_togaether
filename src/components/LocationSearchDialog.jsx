@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { MapPin, Loader2 } from 'lucide-react';
+import { MapPin, Loader2, X } from 'lucide-react';
 
 const LocationSearchDialog = ({ isOpen, onClose, onLocationConfirm }) => {
   const [currentLocation, setCurrentLocation] = useState('');
@@ -76,10 +76,8 @@ const LocationSearchDialog = ({ isOpen, onClose, onLocationConfirm }) => {
     } catch (err) {
       console.error('위치 가져오기 오류:', err);
       setError('현재 위치를 가져올 수 없습니다. 위치 권한을 확인해주세요.');
-      // 위치 가져오기 실패 시 다이얼로그를 닫고 기존 정렬로 되돌림
-      setTimeout(() => {
-        onClose();
-      }, 2000); // 2초 후 자동으로 닫기
+      // 위치 가져오기 실패 시에도 다이얼로그를 자동으로 닫지 않음
+      // 사용자가 직접 닫거나 다시 시도할 수 있도록 함
     } finally {
       setIsLoading(false);
     }
@@ -140,8 +138,15 @@ const LocationSearchDialog = ({ isOpen, onClose, onLocationConfirm }) => {
         className="sm:max-w-md z-[9999] bg-white"
         showCloseButton={false}
       >
-        <DialogHeader>
+        <DialogHeader className="relative">
           <DialogTitle className="text-center">현재 위치 찾기</DialogTitle>
+          <button
+            onClick={onClose}
+            className="absolute right-0 top-0 p-1 hover:bg-gray-100 rounded-full transition-colors"
+            aria-label="닫기"
+          >
+            <X className="h-5 w-5 text-gray-500" />
+          </button>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -160,7 +165,24 @@ const LocationSearchDialog = ({ isOpen, onClose, onLocationConfirm }) => {
           </div>
 
           {error && (
-            <p className="text-sm text-red-600 text-center">{error}</p>
+            <div className="text-center space-y-2">
+              <p className="text-sm text-red-600">{error}</p>
+              <Button
+                onClick={getCurrentLocation}
+                disabled={isLoading}
+                variant="outline"
+                className="w-full text-sm"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    위치 찾는 중...
+                  </>
+                ) : (
+                  '다시 시도'
+                )}
+              </Button>
+            </div>
           )}
 
           <Button
