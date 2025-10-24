@@ -169,6 +169,7 @@ export default function PostDetailPage() {
         } else {
           setError('게시물을 불러올 수 없습니다.');
         }
+        setLoading(false);
         return;
       }
 
@@ -177,6 +178,7 @@ export default function PostDetailPage() {
       if (!postData) {
         console.log('postData가 없음');
         setError('존재하지 않는 게시물입니다.');
+        setLoading(false);
         return;
       }
 
@@ -192,6 +194,7 @@ export default function PostDetailPage() {
 
       console.log('게시물 데이터 설정 완료:', formattedPost);
       setPost(formattedPost);
+      setLoading(false); // 데이터 로드 성공 시 로딩 상태 해제
 
       console.log('포스트 데이터:', {
         postId: postData.id,

@@ -240,17 +240,15 @@ export default function Home() {
         isLoadMore,
         pageNum
       });
-
       console.log('로딩 상태 해제 중...');
 
-      // 안전한 로딩 상태 해제
-      setTimeout(() => {
-        setLoading(false);
-        setIsLoadingMore(false);
-        setIsFetching(false); // 중복 호출 방지 플래그 해제
-        isFetchingRef.current = false; // ref도 리셋
-        console.log('로딩 상태 해제 완료');
-      }, 100); // 약간의 지연을 두어 상태 업데이트 보장
+      // 즉시 로딩 상태 해제 (setTimeout 제거)
+      setLoading(false);
+      setIsLoadingMore(false);
+      setIsFetching(false); // 중복 호출 방지 플래그 해제
+      isFetchingRef.current = false; // ref도 리셋
+
+      console.log('로딩 상태 해제 완료');
     }
   };
 
@@ -292,10 +290,18 @@ export default function Home() {
   // 초기 데이터 로드
   useEffect(() => {
     console.log('메인 페이지 초기 로드 시작');
-    // 컴포넌트 마운트 시 로딩 상태 초기화
+
+    // 모든 상태 초기화
     setLoading(true);
     setError(null);
     setPosts([]);
+    setPage(1);
+    setHasMore(true);
+    setIsLoadingMore(false);
+    setIsFetching(false);
+    isFetchingRef.current = false;
+
+    // API 호출
     fetchPosts(sortOption);
   }, []); // 컴포넌트 마운트 시에만 실행
 
