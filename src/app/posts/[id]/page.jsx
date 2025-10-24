@@ -65,6 +65,7 @@ export default function PostDetailPage() {
     return tab === 'applicants' ? 'applicants' : 'post';
   });
   const [applicants, setApplicants] = useState([]);
+  const [applicantsLoading, setApplicantsLoading] = useState(false);
   const [selectedApplicant, setSelectedApplicant] = useState(null);
   const [showApplicantModal, setShowApplicantModal] = useState(false);
   const [isRecruitmentComplete, setIsRecruitmentComplete] = useState(false);
