@@ -104,7 +104,8 @@ const AdditionalInfoContent = () => {
     console.log('닉네임 blur 이벤트 발생:', value);
     console.log('현재 nicknameValidation:', nicknameValidation);
 
-    if (!value.trim() || nicknameValidation?.type !== 'success') {
+    // 빈 값이거나 유효성 검사에 통과하지 못한 경우 스킵
+    if (!value.trim() || !nicknameValidation || !nicknameValidation.isValid) {
       console.log('닉네임 중복 체크 건너뜀 - 조건 불만족');
       return;
     }
@@ -118,18 +119,23 @@ const AdditionalInfoContent = () => {
       if (result.isDuplicate) {
         setNicknameValidation({
           isValid: false,
-          message: result.message,
+          message: result.message || '이미 사용 중인 닉네임입니다',
           type: 'duplicate'
         });
       } else {
         setNicknameValidation({
           isValid: true,
-          message: result.message,
+          message: result.message || '사용 가능한 닉네임입니다',
           type: 'success'
         });
       }
     } catch (error) {
       console.error('닉네임 중복 체크 오류:', error);
+      setNicknameValidation({
+        isValid: false,
+        message: '중복 체크 중 오류가 발생했습니다',
+        type: 'error'
+      });
     } finally {
       setNicknameChecking(false);
     }

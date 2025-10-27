@@ -40,6 +40,9 @@ const UserProfileForm = ({
 }) => {
   const [phoneVisibility, setPhoneVisibility] = useState('public');
   const fileInputRef = useRef(null);
+  console.log(isNicknameReadOnly, 'isNicknameReadOnly', nicknameValidation, 'nicknameValidation');
+  console.log(errors, 'errors');
+  console.log(nicknameChecking);
 
   const handleProfileImageClick = () => {
     if (mode === 'signup') {
