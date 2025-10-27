@@ -53,7 +53,11 @@ export default function FavoritesPage() {
         showLoginDialog({
           title: '로그인이 필요합니다',
           message: '저장목록을 사용하려면 로그인해주세요.',
-          redirectPath: '/favorites'
+          redirectPath: '/favorites',
+          onCancel: () => {
+            console.log('취소 버튼 클릭 - 메인 페이지로 이동');
+            router.push('/');
+          }
         });
         return;
       }
@@ -145,7 +149,11 @@ export default function FavoritesPage() {
         showLoginDialog({
           title: '로그인이 필요합니다',
           message: '저장목록을 사용하려면 로그인해주세요.',
-          redirectPath: '/favorites'
+          redirectPath: '/favorites',
+          onCancel: () => {
+            console.log('취소 버튼 클릭 - 메인 페이지로 이동 (initializePage)');
+            router.push('/');
+          }
         });
       }
     };

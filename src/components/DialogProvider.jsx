@@ -65,7 +65,12 @@ export const DialogProvider = ({ children }) => {
             {dialogHook.dialog.showCancel && (
               <Button
                 variant="outline"
-                onClick={dialogHook.dialog.onCancel || dialogHook.closeDialog}
+                onClick={() => {
+                  if (dialogHook.dialog.onCancel) {
+                    dialogHook.dialog.onCancel();
+                  }
+                  dialogHook.closeDialog();
+                }}
                 className="flex-1 border-gray-300 text-gray-700 text-16-m"
               >
                 {dialogHook.dialog.cancelText}

@@ -96,7 +96,7 @@ const useDialog = () => {
       type: 'login',
       confirmText: options.confirmText || '로그인하기',
       cancelText: options.cancelText || '취소',
-      showCancel: true,
+      showCancel: options.showCancel !== undefined ? options.showCancel : (options.onCancel ? true : true),
       onConfirm: options.onConfirm || (() => {
         // 기본 로그인 리다이렉트
         window.location.href = '/login';
