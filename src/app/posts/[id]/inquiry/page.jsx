@@ -157,7 +157,7 @@ export default function InquiryPage() {
               문의자의 연락처가 임보자에게 공개됩니다. 남기신 문의는 삭제할 수 없으며 입양 완료 시 임보자는 지원자의 정보를 확인할 수 없습니다.
             </p>
             <div className="flex items-center gap-3">
-              <div className="bg-yellow-100 shadow-[0_0_9px_0_rgba(0,0,0,0.2)]">
+              <div className="bg-yellow-100 overflow-hidden rounded-full shadow-[0_0_9px_0_rgba(0,0,0,0.2)]">
                 <ProfileImage
                   profileImage={profile?.profile_image}
                   size={40}
@@ -175,7 +175,7 @@ export default function InquiryPage() {
         {/* 문의 폼 */}
         <Card>
           <CardHeader>
-            <CardTitle className="mb-[12px] text-16-b">전달할 메시지</CardTitle>
+            <CardTitle className="mb-[12px] text-16-b">전달할 메시지 <span className="text-red-500">*</span></CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
