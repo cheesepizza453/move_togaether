@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import { cn, convertDogSize, formatDeadline, getProfileImageUrl } from "@/lib/utils";
+import ProfileImage from '@/components/common/ProfileImage';
 import IconRightArrow from "../../../../public/img/icon/IconRightArrow";
 import IconHeart from "../../../../public/img/icon/IconHeart";
 import IconLoading from "../../../../public/img/icon/IconLoading";
@@ -653,18 +654,11 @@ export default function PostDetailPage() {
               <div className="w-full pt-[10px] flex items-center justify-between">
                 {/* 링크 추가 */}
                 <a className={'flex items-center gap-[9px]'} href={`/authors/${post.user_id}`}>
-                  <div
-                      className="relative w-[56px] h-[56px] rounded-full overflow-hidden flex items-center justify-center">
-                    {/* 프로필 이미지 */}
-                    <img
-                        src={getProfileImageUrl(post.user_profiles?.profile_image)}
-                        alt={'프로필 이미지'}
-                        className={'absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover'}
-                        onError={(e) => {
-                          e.target.src = '/img/default_profile.jpg';
-                        }}
-                    />
-                  </div>
+                  <ProfileImage
+                    profileImage={post.user_profiles?.profile_image}
+                    size={56}
+                    alt="프로필 이미지"
+                  />
                   <div>
                     <p className="pr-[30px] mb-[2px] text-18-b">{post.user_profiles?.display_name || '익명'}</p>
                     {/* 실제 전화번호 표시 */}
@@ -809,17 +803,11 @@ export default function PostDetailPage() {
                                   {applicant.message}
                                 </p>
                                 <div className="bg-gray-200 rounded-full flex items-center justify-center">
-                                  <figure
-                                      className={'relative w-[54px] h-[54px] rounded-full overflow-hidden shrink-0'}>
-                                    <img
-                                        src={getProfileImageUrl(applicant.user_profiles?.profile_image)}
-                                        alt={'프로필 이미지'}
-                                        className={'absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover'}
-                                        onError={(e) => {
-                                          e.target.src = '/img/default_profile.jpg';
-                                        }}
-                                    />
-                                  </figure>
+                                  <ProfileImage
+                                    profileImage={applicant.user_profiles?.profile_image}
+                                    size={54}
+                                    alt="프로필 이미지"
+                                  />
                                 </div>
                               </div>
                               <div className={'mt-[10px] pb-[16px] border-b border-[#d9d9d9]'}>
