@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { Plus } from 'lucide-react';
 import { IconRadioActive, IconCheckBoxActive} from "../../public/img/icon/IconCheck";
+import { SECURITY_QUESTIONS } from '@/constants/securityQuestions';
 
 const UserProfileForm = ({
   formData,
@@ -31,10 +32,17 @@ const UserProfileForm = ({
   // 회원가입 모드에서만 사용되는 props
   showPassword = false,
   showPasswordConfirm = false,
-  showTerms = false
+  showTerms = false,
+  // 보안 질문/답변 (회원가입 시에만 표시)
+  showSecurityQuestion = false,
+  // 닉네임 읽기 전용 (수정 모드에서)
+  isNicknameReadOnly = false
 }) => {
   const [phoneVisibility, setPhoneVisibility] = useState('public');
   const fileInputRef = useRef(null);
+  console.log(isNicknameReadOnly, 'isNicknameReadOnly', nicknameValidation, 'nicknameValidation');
+  console.log(errors, 'errors');
+  console.log(nicknameChecking);
 
   const handleProfileImageClick = () => {
     if (mode === 'signup') {
@@ -124,27 +132,34 @@ const UserProfileForm = ({
           onBlur={(e) => onNicknameBlur(e.target.value)}
           placeholder="닉네임 또는 보호소명을 입력해주세요."
           className={`w-full px-[15px] py-[18px] text-16-r rounded-[15px] border text-text-800 ${
-            errors.nickname
-              ? 'border-brand-point bg-brand-point-bg text-brand-point focus:border-brand-point focus:ring-brand-point'
-              : nicknameValidation?.available
-                ? 'border-[#2BA03E] bg-[#BFE1C5] text-[#2BA03E] focus:border-[#2BA03E] focus:ring-[#2BA03E]'
-                : 'border-text-600 bg-text-050 focus:bg-brand-sub focus:text-brand-yellow-dark focus:border-brand-main focus:ring-brand-main'
+            isNicknameReadOnly
+              ? 'border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed'
+              : errors.nickname
+                ? 'border-brand-point bg-brand-point-bg text-brand-point focus:border-brand-point focus:ring-brand-point'
+                : nicknameValidation?.available
+                  ? 'border-[#2BA03E] bg-[#BFE1C5] text-[#2BA03E] focus:border-[#2BA03E] focus:ring-[#2BA03E]'
+                  : 'border-text-600 bg-text-050 focus:bg-brand-sub focus:text-brand-yellow-dark focus:border-brand-main focus:ring-brand-main'
           } focus:outline-none focus:ring-1 transition-colors`}
           maxLength={20}
+          readOnly={isNicknameReadOnly}
         />
         <div className="flex justify-between items-center mt-[4px]">
           <span className={`text-9-r ${
-            errors.nickname
-              ? 'text-brand-point'
-              : nicknameValidation?.available
-                ? 'text-[#2BA03E]'
-                : 'text-brand-point'
+            isNicknameReadOnly
+              ? 'text-gray-500'
+              : errors.nickname
+                ? 'text-brand-point'
+                : nicknameValidation?.available
+                  ? 'text-[#2BA03E]'
+                  : 'text-brand-point'
           }`}>
-            {errors.nickname
-              ? errors.nickname
-              : nicknameChecking
-                ? '확인 중!'
-                : nicknameValidation?.message || ''
+            {isNicknameReadOnly
+              ? '닉네임은 수정할 수 없습니다.'
+              : errors.nickname
+                ? errors.nickname
+                : nicknameChecking
+                  ? '확인 중!'
+                  : nicknameValidation?.message || ''
             }
           </span>
           <span className="text-12-l text-text-800">
@@ -418,6 +433,61 @@ const UserProfileForm = ({
                 )}
               </div>
           )}
+        </div>
+      )}
+
+      {/* 보안 질문/답변 (회원가입 모드 또는 수정 모드에서 이메일 가입 사용자) */}
+      {showSecurityQuestion && (
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              보안 질문 <span className="text-brand-point">*</span>
+            </label>
+            <p className="text-xs text-gray-500 mb-3">
+              {mode === 'signup'
+                ? '아이디 찾기 시 사용할 보안 질문을 선택해주세요.'
+                : '아이디 찾기 시 사용할 보안 질문을 수정할 수 있습니다.'
+              }
+            </p>
+            <select
+              value={formData.securityQuestion || ''}
+              onChange={(e) => setFormData(prev => ({...prev, securityQuestion: e.target.value }))}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-main focus:border-transparent"
+            >
+              <option value="">보안 질문을 선택해주세요</option>
+              {SECURITY_QUESTIONS.map((question) => (
+                <option key={question.id} value={question.id}>
+                  {question.question}
+                </option>
+              ))}
+            </select>
+            {errors.securityQuestion && (
+              <p className="text-xs text-red-500 mt-1">{errors.securityQuestion}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              보안 질문 답변 <span className="text-brand-point">*</span>
+            </label>
+            <input
+              type="text"
+              value={formData.securityAnswer || ''}
+              onChange={(e) => setFormData(prev => ({...prev, securityAnswer: e.target.value }))}
+              placeholder="보안 질문에 대한 답변을 입력해주세요"
+              maxLength={50}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-main focus:border-transparent"
+            />
+            <div className="flex justify-between items-center mt-1">
+              <p className="text-xs text-gray-500">아이디 찾기 시 사용됩니다</p>
+              <p className="text-xs text-gray-400">
+                {(formData.securityAnswer || '').length}/50
+              </p>
+            </div>
+            {errors.securityAnswer && (
+              <p className="text-xs text-red-500 mt-1">{errors.securityAnswer}</p>
+            )}
+          </div>
         </div>
       )}
 

@@ -23,6 +23,7 @@ export async function GET(request, { params }) {
         instagram,
         naver_cafe,
         kakao_openchat,
+        profile_image,
         created_at,
         updated_at
       `)

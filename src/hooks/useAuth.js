@@ -204,6 +204,8 @@ export const AuthProvider = ({ children }) => {
             instagram: metadata.contactChannels?.instagram ? metadata.channelInputs?.instagram : null,
             naver_cafe: metadata.contactChannels?.naverCafe ? metadata.channelInputs?.naverCafe : null,
             kakao_openchat: metadata.contactChannels?.kakaoOpenChat ? metadata.channelInputs?.kakaoOpenChat : null,
+            security_question: metadata.securityQuestion || null,
+            security_answer: metadata.securityAnswer || null,
             provider: metadata.provider || 'email', // 가입 방식 저장
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()

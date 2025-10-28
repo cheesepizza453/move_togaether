@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -21,7 +21,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
-import { cn, convertDogSize, formatDeadline } from "@/lib/utils";
+import { cn, convertDogSize, formatDeadline, getProfileImageUrl } from "@/lib/utils";
 import IconRightArrow from "../../../../public/img/icon/IconRightArrow";
 import IconHeart from "../../../../public/img/icon/IconHeart";
 import IconLoading from "../../../../public/img/icon/IconLoading";
@@ -52,6 +52,7 @@ export default function PostDetailPage() {
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const isFetchingRef = useRef(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -64,6 +65,7 @@ export default function PostDetailPage() {
     return tab === 'applicants' ? 'applicants' : 'post';
   });
   const [applicants, setApplicants] = useState([]);
+  const [applicantsLoading, setApplicantsLoading] = useState(false);
   const [selectedApplicant, setSelectedApplicant] = useState(null);
   const [showApplicantModal, setShowApplicantModal] = useState(false);
   const [isRecruitmentComplete, setIsRecruitmentComplete] = useState(false);
@@ -78,9 +80,65 @@ export default function PostDetailPage() {
     }
   }, [searchParams]);
 
+  // 브라우저 뒤로가기/앞으로가기 이벤트 감지
+  useEffect(() => {
+    const handlePopState = () => {
+      console.log('브라우저 뒤로가기/앞으로가기 감지 - 상태 초기화');
+      // 모든 상태 초기화
+      setPost(null);
+      setLoading(true);
+      setError(null);
+      setIsFavorite(false);
+      setFavoriteLoading(false);
+      setShowLoginDialog(false);
+      setShowApplyDialog(false);
+      setApplicants([]);
+      setApplicantsLoading(false);
+      isFetchingRef.current = false;
+
+      // API 재호출
+      setTimeout(() => {
+        if (postId) {
+          fetchPost();
+        }
+      }, 100);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [postId]);
+
   useEffect(() => {
     if (postId) {
-      fetchPost();
+      console.log('useEffect에서 fetchPost 호출, postId:', postId);
+
+      // 브라우저 뒤로가기 대응: 모든 상태 초기화
+      setPost(null);
+      setLoading(true);
+      setError(null);
+      setIsFavorite(false);
+      setFavoriteLoading(false);
+      setShowLoginDialog(false);
+      setShowApplyDialog(false);
+      setApplicants([]);
+      setApplicantsLoading(false);
+      isFetchingRef.current = false;
+
+      // 약간의 지연을 두고 API 호출
+      const timer = setTimeout(() => {
+        console.log('상태 초기화 완료, fetchPost 호출');
+        fetchPost();
+      }, 50);
+
+      return () => {
+        clearTimeout(timer);
+        // 컴포넌트 언마운트 시 상태 정리
+        console.log('상세 페이지 언마운트 - 상태 정리');
+        isFetchingRef.current = false;
+      };
     }
   }, [postId]);
 
@@ -146,25 +204,43 @@ export default function PostDetailPage() {
   }, [isOwner, postId]);
 
   const fetchPost = async () => {
+    // 중복 호출 방지
+    if (isFetchingRef.current) {
+      console.log('fetchPost 이미 실행 중 - 중복 호출 방지');
+      return;
+    }
+
     try {
+      console.log('fetchPost 시작 - 로딩 상태를 true로 설정');
+      isFetchingRef.current = true;
       setLoading(true);
 
-      // API를 통해 게시물 정보 가져오기
-      const response = await fetch(`/api/posts/${postId}`);
+      // API를 통해 게시물 정보 가져오기 - 브라우저 뒤로가기 대응을 위한 캐시 방지
+      const response = await fetch(`/api/posts/${postId}?_t=${Date.now()}`, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
 
       if (!response.ok) {
+        console.log('API 응답 오류:', response.status);
         if (response.status === 404) {
           setError('존재하지 않는 게시물입니다.');
         } else {
           setError('게시물을 불러올 수 없습니다.');
         }
+        setLoading(false);
         return;
       }
 
       const { post: postData } = await response.json();
 
       if (!postData) {
+        console.log('postData가 없음');
         setError('존재하지 않는 게시물입니다.');
+        setLoading(false);
         return;
       }
 
@@ -178,7 +254,9 @@ export default function PostDetailPage() {
         isUrgent: moment(postData.deadline).diff(moment(), 'days') <= 1
       };
 
+      console.log('게시물 데이터 설정 완료:', formattedPost);
       setPost(formattedPost);
+      setLoading(false); // 데이터 로드 성공 시 로딩 상태 해제
 
       console.log('포스트 데이터:', {
         postId: postData.id,
@@ -214,6 +292,8 @@ export default function PostDetailPage() {
       console.error('게시물 조회 중 오류:', err);
       setError('게시물을 불러오는 중 오류가 발생했습니다.');
     } finally {
+      console.log('fetchPost 완료 - 로딩 상태를 false로 설정');
+      isFetchingRef.current = false;
       setLoading(false);
     }
   };
@@ -415,7 +495,10 @@ export default function PostDetailPage() {
     }
   };
 
+  console.log('현재 로딩 상태:', loading);
+
   if (loading) {
+    console.log('로딩 중 - 로딩 화면 표시');
     return (
         <div className="min-h-screen bg-white">
           {/* 헤더 */}
@@ -574,7 +657,7 @@ export default function PostDetailPage() {
                       className="relative w-[56px] h-[56px] rounded-full overflow-hidden flex items-center justify-center">
                     {/* 프로필 이미지 */}
                     <img
-                        src={post.user_profiles?.profile_image || '/img/default_profile.jpg'}
+                        src={getProfileImageUrl(post.user_profiles?.profile_image)}
                         alt={'프로필 이미지'}
                         className={'absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover'}
                         onError={(e) => {
@@ -729,7 +812,7 @@ export default function PostDetailPage() {
                                   <figure
                                       className={'relative w-[54px] h-[54px] rounded-full overflow-hidden shrink-0'}>
                                     <img
-                                        src={applicant.user_profiles?.profile_image || '/img/default_profile.jpg'}
+                                        src={getProfileImageUrl(applicant.user_profiles?.profile_image)}
                                         alt={'프로필 이미지'}
                                         className={'absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover'}
                                         onError={(e) => {
@@ -881,7 +964,7 @@ export default function PostDetailPage() {
                     <div
                         className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
                       <img
-                          src={selectedApplicant.user_profiles?.profile_image || '/img/default_profile.jpg'}
+                          src={getProfileImageUrl(selectedApplicant.user_profiles?.profile_image)}
                           alt={'프로필 이미지'}
                           className={'w-full h-full object-cover'}
                           onError={(e) => {

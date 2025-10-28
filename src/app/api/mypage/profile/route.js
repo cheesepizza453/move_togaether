@@ -85,7 +85,9 @@ export async function PUT(request) {
       profile_image,
       instagram,
       naver_cafe,
-      kakao_openchat
+      kakao_openchat,
+      security_question,
+      security_answer
     } = body;
 
     const { data: profile, error: profileError } = await supabase
@@ -98,6 +100,8 @@ export async function PUT(request) {
         instagram,
         naver_cafe,
         kakao_openchat,
+        security_question,
+        security_answer,
         updated_at: new Date().toISOString()
       })
       .eq('auth_user_id', user.id)

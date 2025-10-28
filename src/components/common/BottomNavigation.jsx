@@ -7,12 +7,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 // import { useSplash } from './SplashProvider';
 import {IconMenuBarHome, IconMenuBarMap, IconMenuBarHeart, IconMenuBarMy, IconMenuBarPlus} from "@/components/icon/IconMenuBar";
-import LoginDialog from '@/components/LoginDialog';
+import { useLoginDialog } from '@/components/LoginDialog';
 
 const BottomNavigation = () => {
   const [activeTab, setActiveTab] = useState('home');
-  const [showLoginDialog, setShowLoginDialog] = useState(false);
-  const [redirectPath, setRedirectPath] = useState('/login');
+  const { showLoginDialog } = useLoginDialog();
   // const { showSplash } = useSplash();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
@@ -72,8 +71,11 @@ const BottomNavigation = () => {
 
       if (!user) {
         // 로그인되지 않은 경우
-        setRedirectPath('/volunteer/create');
-        setShowLoginDialog(true);
+        showLoginDialog({
+          title: '로그인이 필요합니다',
+          message: '게시글을 작성하려면 로그인해주세요.',
+          redirectPath: '/volunteer/create'
+        });
         return;
       }
     }
@@ -127,14 +129,6 @@ const BottomNavigation = () => {
         })}
       </div>
 
-      {/* 로그인 다이얼로그 */}
-      <LoginDialog
-        open={showLoginDialog}
-        onOpenChange={setShowLoginDialog}
-        title="로그인이 필요합니다"
-        description="게시글을 작성하려면 로그인해주세요."
-        redirectPath={redirectPath}
-      />
     </>
   );
 };

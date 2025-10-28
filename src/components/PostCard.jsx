@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import IconHeart from "../../public/img/icon/IconHeart";
@@ -151,10 +152,15 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, showTimeline = f
             <div className="flex-shrink-0">
               <div className="ml-[5px] w-[70px] h-[70px] rounded-[20px] overflow-hidden bg-gray-100">
                 {post.images && post.images.length > 0 ? (
-                  <img
+                  <Image
                     src={post.images[0]}
-                    alt={post.dog_name}
+                    alt={post.dog_name || '강아지 사진'}
+                    width={70}
+                    height={70}
                     className="w-full h-full object-cover"
+                    priority={false}
+                    placeholder="blur"
+                    blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
@@ -199,10 +205,15 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, showTimeline = f
         <div className="flex-shrink-0 relative">
           {/* 강아지 이미지 */}
           <figure className="relative w-[80px] h-[80px] overflow-hidden bg-gray-200 rounded-[15px] shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]">
-              <img
+              <Image
                 className={'w-full h-full object-cover'}
                 src={images && images.length > 0 ? images[0] : "/img/dummy_thumbnail.jpg"}
                 alt={dogName || '강아지 사진'}
+                width={80}
+                height={80}
+                priority={false}
+                placeholder="blur"
+                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
               />
           </figure>
         </div>

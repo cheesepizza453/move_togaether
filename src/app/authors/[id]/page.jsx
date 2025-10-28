@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import moment from 'moment';
 import { Button } from '@/components/ui/button';
 import PostTimeline from '@/components/PostTimeline';
+import ProfileImage from '@/components/common/ProfileImage';
 import {IconChannelInstagram, IconChannelKakaoTalk, IconChannelNaverCafe} from "@/components/icon/IconChannel";
 
 export default function AuthorDetailPage() {
@@ -134,9 +135,11 @@ export default function AuthorDetailPage() {
 
         {/* 작성자 정보 */}
         <div className="flex items-center gap-[18px] px-[30px] mb-[40px]">
-          <div className="relative w-[70px] h-[70px] flex-shrink-0 rounded-full overflow-hidden flex items-center justify-center">
-            <img src={'/img/default_profile.jpg'} alt={'프로필 이미지'} className={'absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover'}/>
-          </div>
+          <ProfileImage
+            profileImage={author?.profile_image}
+            size={70}
+            alt="프로필 이미지"
+          />
           <div>
             <p className="text-18-b text-black mb-1">{author?.display_name || '익명'}</p>
             <p className="mb-[5px] text-14-l text-[#535353]">{author?.phone.replace(/(\d{3})(\d{3,4})(\d{4})/, "$1-$2-$3") || '연락처 없음'}</p>
@@ -166,8 +169,8 @@ export default function AuthorDetailPage() {
                       onClick={() => window.open(author.naver_cafe, '_blank')}
                       className="flex items-center justify-center px-[20px] py-[5px] rounded-[7px] bg-brand-bg border border-brand-yellow-dark text-12-m text-[#C3950B]"
                   >
-                   <span className={'ml-[-4px] mr-[3px] inline-block w-[17px] h-[17px]'}><IconChannelNaverCafe/></span>
-                     네이버 카페
+                    <span className={'ml-[-4px] mr-[3px] inline-block w-[17px] h-[17px]'}><IconChannelNaverCafe/></span>
+                    네이버 카페
                   </button>
         )}
         {author.kakao_openchat && (
