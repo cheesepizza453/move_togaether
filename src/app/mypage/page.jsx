@@ -3,11 +3,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import moment from 'moment';
 import { ChevronLeft, Edit } from 'lucide-react';
+import ProfileImage from '@/components/common/ProfileImage';
 import { myPageAPI, handleAPIError } from '@/lib/api-client';
 import MyPageCard from '@/components/MyPageCard';
 import { convertDogSize } from '@/lib/utils';
@@ -231,15 +231,12 @@ const MyPage = () => {
         <div className="">
           <div className="flex items-center">
             {/* 프로필 이미지 */}
-            <div className="w-[70px] h-[70px] mr-[18px] rounded-full overflow-hidden bg-white flex-shrink-0">
-              <Image
-                src={profile?.profile_image || '/img/default_profile.jpg'}
-                alt="프로필"
-                width={70}
-                height={70}
-                className="w-full h-full object-cover"
-              />
-            </div>
+            <ProfileImage
+              profileImage={profile?.profile_image}
+              size={70}
+              alt="프로필"
+              className="mr-[18px] bg-white flex-shrink-0"
+            />
 
             {/* 사용자 정보 */}
             <div className="flex-1 min-w-0">

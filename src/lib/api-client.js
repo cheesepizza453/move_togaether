@@ -309,11 +309,11 @@ export const authAPI = {
     });
   },
 
-  // 로그아웃
+  // 로그아웃 (로컬 처리만 필요하므로 API 호출 제거)
   logout: async () => {
-    return apiCall('/auth/logout', {
-      method: 'POST'
-    });
+    // 로그아웃은 클라이언트 사이드에서만 처리
+    // 서버 API 호출 불필요
+    return { success: true, message: '로그아웃이 완료되었습니다.' };
   },
 
   // 이메일 중복 체크

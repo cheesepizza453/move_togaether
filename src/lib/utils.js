@@ -34,11 +34,12 @@ export const formatDeadline = (deadline) => {
 /**
  * 프로필 이미지 URL을 생성하는 함수
  * @param {string} profileImage - 프로필 이미지 파일명 또는 URL
+ * @param {string} defaultImage - 기본 이미지 경로 (기본값: '/img/default_profile.jpg')
  * @returns {string} 완전한 프로필 이미지 URL
  */
-export const getProfileImageUrl = (profileImage) => {
+export const getProfileImageUrl = (profileImage, defaultImage = '/img/default_profile.jpg') => {
   if (!profileImage) {
-    return '/img/default_profile.jpg';
+    return defaultImage;
   }
 
   // 이미 완전한 URL인 경우 (http로 시작)

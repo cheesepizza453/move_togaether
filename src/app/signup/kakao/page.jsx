@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import UserProfileForm from '@/components/UserProfileForm';
+import ProfileImage from '@/components/common/ProfileImage';
 
 
 const KakaoSignupPage = () => {
@@ -579,10 +580,10 @@ const KakaoSignupPage = () => {
       {/* 카카오톡 사용자 정보 */}
       <div className="px-6 py-4 bg-yellow-50 border-b border-yellow-200">
         <div className="flex items-center space-x-3">
-          <img
-            src={userInfo.profile_image || '/img/default_profile.jpg'}
+          <ProfileImage
+            profileImage={userInfo.profile_image}
+            size={48}
             alt="프로필"
-            className="w-12 h-12 rounded-full"
           />
           <div>
             <p className="font-semibold text-gray-800">{userInfo.nickname || userInfo.name}</p>
