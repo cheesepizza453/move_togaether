@@ -132,7 +132,8 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, showTimeline = f
         </div>
 
         {/* 카드 - 날짜 아래에 위치 */}
-        <div className="bg-text-100 rounded-[30px] p-[26px] pb-[22px] mt-[16px] border border-gray-100 flex-1">
+        <div className="bg-text-100 rounded-[30px] p-[26px] pb-[22px] mt-[16px] border border-gray-100 flex-1"
+             onClick={handleCardClick}>
           <div className="flex items-start gap-4">
             <div className="flex-1 min-w-0">
               {/* D-day 표시 */}
