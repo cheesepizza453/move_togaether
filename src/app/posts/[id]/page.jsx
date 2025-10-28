@@ -660,7 +660,7 @@ export default function PostDetailPage() {
                                 className={'p-[7px] bg-[#fdbba2] text-white text-12-r rounded-[4px]'}>네이버 길찾기
                         </button>
                         <button onClick={handleKakaoMap}
-                                className={'p-[7px] bg-[#fdbba2] text-white text-12-r rounded-[4px]'}>카카오톡 길찾기
+                                className={'p-[7px] bg-[#fdbba2] text-white text-12-r rounded-[4px]'}>카카오맵 길찾기
                         </button>
                       </div>
                     </div>
