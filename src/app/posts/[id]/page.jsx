@@ -579,7 +579,7 @@ export default function PostDetailPage() {
   }
 
   return (
-      <div className="min-h-screen">
+      <div className={`min-h-screen ${isOwner && activeTab === 'applicants' && 'bg-brand-bg'}`}>
         {/* 헤더 */}
         <div className="bg-white">
           <div className={'flex flex-col items-center justify-between'}>
@@ -674,7 +674,7 @@ export default function PostDetailPage() {
               </div>
             </div>
         }
-        <div className={`${isOwner && 'mt-[-15px]'}`}>
+        <div className={`${isOwner && activeTab === 'post' && 'mt-[-15px]'} ${isOwner && activeTab === 'applicants' && 'bg-white pt-[30px] px-[22px] mb-[10px]'}`}>
           {/* 게시물 탭 */}
           {activeTab === 'post' && (
               <div>
@@ -775,7 +775,7 @@ export default function PostDetailPage() {
                         </div>
                       </div>
                     </div>
-                ) : applicants.length === 0 ? (
+                ) : applicants.length !== 0 ? (
                     <div className="pt-[200px] bg-white min-h-screen">
                       <Users className="h-12 w-12 text-gray-400 mx-auto mb-4"/>
                       <p className="text-text-800 text-16-m text-center">아직 지원자가 없습니다.</p>
@@ -799,7 +799,7 @@ export default function PostDetailPage() {
                             </div>
                             <div className="mb-4">
                               <div className={'flex items-center gap-x-[18px]'}>
-                                <p className="text-16-r text-brand-icon leading-[1.1] line-clamp-4">
+                                <p className="w-full text-16-r text-brand-icon leading-[1.1] line-clamp-4">
                                   {applicant.message}
                                 </p>
                                 <div className="bg-gray-200 rounded-full flex items-center justify-center">
