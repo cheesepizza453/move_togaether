@@ -11,7 +11,7 @@ import { convertDogSize } from '@/lib/utils';
 import moment from 'moment';
 import { toast } from 'sonner';
 
-const PostCard = ({ post, isFavorite = false, onFavoriteToggle, showTimeline = false }) => {
+const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, showTimeline = false }) => {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { showConfirm, showSuccess, showError } = useDialogContext();
@@ -173,7 +173,7 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, showTimeline = f
 
           <div className="mt-[13px]">
             <button
-              onClick={() => onPostClick(post.id)}
+              onClick={() => onPostClick?.(post.id)}
               className={buttonInfo.className}
               disabled={buttonInfo.disabled}
             >

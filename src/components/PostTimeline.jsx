@@ -14,7 +14,6 @@ const PostTimeline = ({ posts, onPostClick, emptyMessage }) => {
       </div>
     );
   }
-  console.log(posts);
 
   return (
     <div className="relative">
