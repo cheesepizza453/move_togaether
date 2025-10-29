@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }) => {
               return;
             }
           } catch (parseError) {
-            console.log('캐시된 데이터 파싱 오류, 서버에서 새로 가져옴');
+            console.log('캐시된 데이터 파싱 오류, 서버에서 새로 가져옴:', parseError.message);
           }
         }
 
@@ -253,7 +253,7 @@ export const AuthProvider = ({ children }) => {
           setProfile(profileData);
           return;
         } catch (parseError) {
-          console.log('캐시된 프로필 파싱 오류, 서버에서 새로 가져옴');
+          console.log('캐시된 프로필 파싱 오류, 서버에서 새로 가져옴:', parseError.message);
         }
       }
 
@@ -418,26 +418,14 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('supabase.auth.profileCacheTime');
       console.log('로컬 상태 및 캐시 초기화 완료');
 
-      // 2. 클라이언트 사이드에서 Supabase 세션 정리
-      console.log('클라이언트 사이드 로그아웃...');
-      const { error: clientError } = await supabase.auth.signOut();
-      if (clientError) {
-        console.error('클라이언트 로그아웃 오류:', clientError);
-      } else {
-        console.log('클라이언트 로그아웃 성공');
-      }
+      // 2. 클라이언트 사이드에서 Supabase 세션 정리 (백그라운드에서 실행)
+      console.log('클라이언트 사이드 로그아웃 (백그라운드)...');
+      // Promise를 기다리지 않고 백그라운드에서 실행
+      supabase.auth.signOut().catch(error => {
+        console.error('클라이언트 로그아웃 오류 (무시됨):', error);
+      });
 
-      // 3. 서버 사이드 로그아웃 (백업)
-      console.log('서버 로그아웃 요청...');
-      try {
-        await authAPI.logout();
-        console.log('서버 로그아웃 성공');
-      } catch (serverError) {
-        console.error('서버 로그아웃 오류:', serverError);
-        // 서버 오류는 무시하고 클라이언트 로그아웃만으로 처리
-      }
-
-      console.log('=== 로그아웃 완료 ===');
+      console.log('=== 로그아웃 완료 (로컬 정리 완료) ===');
       return { success: true };
     } catch (error) {
       console.error('=== 로그아웃 중 전체 오류 ===');

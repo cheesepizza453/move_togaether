@@ -117,7 +117,7 @@ const FormStep = ({
 
       {/* 하단 버튼 */}
       {showNextButton && (
-          <div className="bg-white p-4 mb-20">
+          <div className="bg-white p-4 pb-[80px]">
             <div className="max-w-md mx-auto">
               <button
                   onClick={onNext}

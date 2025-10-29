@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import { cn, convertDogSize, formatDeadline, getProfileImageUrl } from "@/lib/utils";
+import ProfileImage from '@/components/common/ProfileImage';
 import IconRightArrow from "../../../../public/img/icon/IconRightArrow";
 import IconHeart from "../../../../public/img/icon/IconHeart";
 import IconLoading from "../../../../public/img/icon/IconLoading";
@@ -578,7 +579,7 @@ export default function PostDetailPage() {
   }
 
   return (
-      <div className="min-h-screen">
+      <div className={`min-h-screen ${isOwner && activeTab === 'applicants' && 'bg-brand-bg'}`}>
         {/* 헤더 */}
         <div className="bg-white">
           <div className={'flex flex-col items-center justify-between'}>
@@ -653,18 +654,11 @@ export default function PostDetailPage() {
               <div className="w-full pt-[10px] flex items-center justify-between">
                 {/* 링크 추가 */}
                 <a className={'flex items-center gap-[9px]'} href={`/authors/${post.user_id}`}>
-                  <div
-                      className="relative w-[56px] h-[56px] rounded-full overflow-hidden flex items-center justify-center">
-                    {/* 프로필 이미지 */}
-                    <img
-                        src={getProfileImageUrl(post.user_profiles?.profile_image)}
-                        alt={'프로필 이미지'}
-                        className={'absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover'}
-                        onError={(e) => {
-                          e.target.src = '/img/default_profile.jpg';
-                        }}
-                    />
-                  </div>
+                  <ProfileImage
+                    profileImage={post.user_profiles?.profile_image}
+                    size={56}
+                    alt="프로필 이미지"
+                  />
                   <div>
                     <p className="pr-[30px] mb-[2px] text-18-b">{post.user_profiles?.display_name || '익명'}</p>
                     {/* 실제 전화번호 표시 */}
@@ -680,7 +674,7 @@ export default function PostDetailPage() {
               </div>
             </div>
         }
-        <div className={`${isOwner && 'mt-[-15px]'}`}>
+        <div className={`${isOwner && activeTab === 'post' && 'mt-[-15px]'} ${isOwner && activeTab === 'applicants' && 'bg-white pt-[30px] px-[22px] mb-[10px]'}`}>
           {/* 게시물 탭 */}
           {activeTab === 'post' && (
               <div>
@@ -743,7 +737,7 @@ export default function PostDetailPage() {
                                 className={'p-[7px] bg-[#fdbba2] text-white text-12-r rounded-[4px]'}>네이버 길찾기
                         </button>
                         <button onClick={handleKakaoMap}
-                                className={'p-[7px] bg-[#fdbba2] text-white text-12-r rounded-[4px]'}>카카오톡 길찾기
+                                className={'p-[7px] bg-[#fdbba2] text-white text-12-r rounded-[4px]'}>카카오맵 길찾기
                         </button>
                       </div>
                     </div>
@@ -781,7 +775,7 @@ export default function PostDetailPage() {
                         </div>
                       </div>
                     </div>
-                ) : applicants.length === 0 ? (
+                ) : applicants.length !== 0 ? (
                     <div className="pt-[200px] bg-white min-h-screen">
                       <Users className="h-12 w-12 text-gray-400 mx-auto mb-4"/>
                       <p className="text-text-800 text-16-m text-center">아직 지원자가 없습니다.</p>
@@ -805,21 +799,15 @@ export default function PostDetailPage() {
                             </div>
                             <div className="mb-4">
                               <div className={'flex items-center gap-x-[18px]'}>
-                                <p className="text-16-r text-brand-icon leading-[1.1] line-clamp-4">
+                                <p className="w-full text-16-r text-brand-icon leading-[1.1] line-clamp-4">
                                   {applicant.message}
                                 </p>
                                 <div className="bg-gray-200 rounded-full flex items-center justify-center">
-                                  <figure
-                                      className={'relative w-[54px] h-[54px] rounded-full overflow-hidden shrink-0'}>
-                                    <img
-                                        src={getProfileImageUrl(applicant.user_profiles?.profile_image)}
-                                        alt={'프로필 이미지'}
-                                        className={'absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover'}
-                                        onError={(e) => {
-                                          e.target.src = '/img/default_profile.jpg';
-                                        }}
-                                    />
-                                  </figure>
+                                  <ProfileImage
+                                    profileImage={applicant.user_profiles?.profile_image}
+                                    size={54}
+                                    alt="프로필 이미지"
+                                  />
                                 </div>
                               </div>
                               <div className={'mt-[10px] pb-[16px] border-b border-[#d9d9d9]'}>

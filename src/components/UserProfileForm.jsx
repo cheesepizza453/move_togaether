@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import Image from 'next/image';
+import ProfileImage from '@/components/common/ProfileImage';
 import { Plus } from 'lucide-react';
 import { IconRadioActive, IconCheckBoxActive} from "../../public/img/icon/IconCheck";
 import { SECURITY_QUESTIONS } from '@/constants/securityQuestions';
@@ -83,16 +83,12 @@ const UserProfileForm = ({
       {showProfileImage && (
         <div className="flex justify-center">
           <div className="relative">
-            <div className="w-20 h-20 bg-[#FFDD44] rounded-full overflow-hidden flex items-center justify-center">
-              <Image
-                src={formData.profileImage || "/img/default_profile.jpg"}
-                alt="프로필 이미지"
-                width={80}
-                height={80}
-                className="w-full h-full object-cover"
-                priority
-              />
-            </div>
+            <ProfileImage
+              profileImage={formData.profileImage}
+              size={80}
+              alt="프로필 이미지"
+              className="bg-[#FFDD44]"
+            />
             {mode === 'edit' ? (
               <button
                 onClick={handleProfileImageClick}
