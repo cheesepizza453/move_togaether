@@ -6,7 +6,7 @@ import { useDialogContext } from './DialogProvider';
 
 // 통합된 로그인 다이얼로그 훅
 export const useLoginDialog = () => {
-  const { showLoginRequired } = useDialogContext();
+  const { showLoginRequired, closeDialog } = useDialogContext();
   const router = useRouter();
 
   const showLoginDialog = (options = {}) => {
@@ -21,6 +21,8 @@ export const useLoginDialog = () => {
 
     showLoginRequired(message, title, {
       onConfirm: () => {
+        // 먼저 다이얼로그를 닫는다
+        try { closeDialog(); } catch (e) {}
         // 리다이렉트 경로가 있으면 저장
         if (redirectPath !== '/login') {
           sessionStorage.setItem('redirectAfterLogin', redirectPath);
@@ -33,7 +35,10 @@ export const useLoginDialog = () => {
           onLoginSuccess();
         }
       },
-      onCancel: onCancel,
+      onCancel: () => {
+        try { closeDialog(); } catch (e) {}
+        if (onCancel) onCancel();
+      },
       ...otherOptions
     });
   };
