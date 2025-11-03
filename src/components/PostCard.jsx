@@ -99,11 +99,19 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
           disabled: true
         };
       } else {
+        if (post.dday >= 0) {
         return {
-          text: '문의하기',
-          className: 'w-full bg-brand-main text-[#333] py-[8px] rounded-[20px] text-14-m',
-          disabled: false
-        };
+            text: '문의하기',
+            className: 'w-full bg-brand-main text-[#333] py-[8px] rounded-[20px] text-14-m',
+            disabled: false
+          };
+        } else {
+          return {
+            text: '아직 못 갔어요 🥺',
+            className: 'w-full bg-[#FFE066] text-gray-900 py-3 px-4 rounded-[20px] font-medium text-sm hover:bg-[#FFD700] transition-colors',
+            disabled: false
+          };
+        }
       }
     };
 
@@ -114,6 +122,7 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
       if (dday === 0) return 'D-Day';
       return `D-${dday}`;
     };
+    console.log(post);
 
     return (
       <div className="relative flex items-start gap-6 mb-6 pl-6">
@@ -137,16 +146,18 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
           <div className="flex items-start gap-4">
             <div className="flex-1 min-w-0">
               {/* D-day 표시 */}
-              <div className="mb-2">
-                <div className={`inline-block px-[9px] py-[2px] rounded-[7px] text-14-b ${getDdayColor(post.dday)}`}>
-                  {getDdayText(post.dday)}
+              {post.status === 'active' && post.dday > 0 && (
+                <div className="mb-2">
+                  <div className={`inline-block px-[9px] py-[2px] rounded-[7px] text-14-b ${getDdayColor(post.dday)}`}>
+                    {getDdayText(post.dday)}
+                  </div>
                 </div>
-              </div>
+              )}
               <h3 className="ml-[5px] text-12-m text-gray-900 mb-[4px] line-clamp-2 leading-[1.35]">
                 {post.title}
               </h3>
               <p className="ml-[5px] text-10-r text-text-800">
-                {post.dog_name} / {convertDogSize(post.dog_size)}
+                {post.dogName} / {convertDogSize(post.dogSize)}
               </p>
             </div>
 
@@ -174,7 +185,12 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
 
           <div className="mt-[13px]">
             <button
-              onClick={() => onPostClick?.(post.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!buttonInfo.disabled) {
+                  onPostClick?.(post.id);
+                }
+              }}
               className={buttonInfo.className}
               disabled={buttonInfo.disabled}
             >
