@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -70,6 +70,9 @@ export default function PostDetailPage() {
   const [selectedApplicant, setSelectedApplicant] = useState(null);
   const [showApplicantModal, setShowApplicantModal] = useState(false);
   const [isRecruitmentComplete, setIsRecruitmentComplete] = useState(false);
+  const [hasApplied, setHasApplied] = useState(false);
+  const [myApplication, setMyApplication] = useState(null);
+  const [showApplicationModal, setShowApplicationModal] = useState(false);
 
   // URL 쿼리 파라미터 변경 시 탭 업데이트
   useEffect(() => {
@@ -204,6 +207,52 @@ export default function PostDetailPage() {
     }
   }, [isOwner, postId]);
 
+  // 지원 여부 확인 함수 (자신이 작성하지 않은 게시물인 경우만)
+  const checkApplicationStatus = useCallback(async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        return;
+      }
+
+      // 내가 신청한 목록 조회 (post_id 없이 호출하면 내가 신청한 모든 목록)
+      const response = await fetch(`/api/inquiries`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        const applications = result.applications || [];
+        // 현재 게시물에 대한 지원 내역 찾기
+        const myApplicationData = applications.find(app => {
+          // post_id가 직접 있는 경우 또는 posts 객체 안에 있는 경우
+          const appPostId = app.post_id || app.posts?.id;
+          return appPostId === parseInt(postId);
+        });
+
+        if (myApplicationData) {
+          setHasApplied(true);
+          setMyApplication(myApplicationData);
+        } else {
+          setHasApplied(false);
+          setMyApplication(null);
+        }
+      }
+    } catch (err) {
+      console.error('지원 상태 확인 오류:', err);
+    }
+  }, [postId]);
+
+  // 지원 여부 확인 (자신이 작성하지 않은 게시물인 경우만)
+  useEffect(() => {
+    if (user && post && !isOwner && postId) {
+      checkApplicationStatus();
+    }
+  }, [user, post, isOwner, postId, checkApplicationStatus]);
+
   const fetchPost = async () => {
     // 중복 호출 방지
     if (isFetchingRef.current) {
@@ -289,6 +338,8 @@ export default function PostDetailPage() {
         console.error('즐겨찾기 상태 확인 오류:', error);
         // 오류가 발생해도 게시물은 계속 표시
       }
+
+      // 지원 여부 확인은 useEffect에서 처리 (isOwner 결정 후)
     } catch (err) {
       console.error('게시물 조회 중 오류:', err);
       setError('게시물을 불러오는 중 오류가 발생했습니다.');
@@ -368,6 +419,10 @@ export default function PostDetailPage() {
       return;
     }
     router.push(`/posts/${postId}/inquiry`);
+  };
+
+  const handleViewApplication = () => {
+    setShowApplicationModal(true);
   };
 
   const fetchApplicants = async () => {
@@ -848,10 +903,10 @@ export default function PostDetailPage() {
                   <div className="w-full max-w-[550px] mx-auto px-[23px]">
                     <div className="flex gap-3">
                       <Button
-                          onClick={handleInquiry}
+                          onClick={hasApplied ? handleViewApplication : handleInquiry}
                           className="rounded-[15px] text-16-m h-[54px] w-full flex-1 bg-brand-main"
                       >
-                        문의하기
+                        {hasApplied ? '지원 내용 확인' : '문의하기'}
                       </Button>
                     </div>
                   </div>
@@ -992,6 +1047,59 @@ export default function PostDetailPage() {
                     문자하기
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 지원내용 확인 모달 */}
+      {showApplicationModal && myApplication && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-[15px] max-w-md w-full max-h-[80vh] overflow-y-auto shadow-[0_0_12px_0px_rgba(0,0,0,0.1)]">
+            <div className="p-6 border-b flex items-center justify-between">
+              <h3 className="text-18-b">지원 내용 확인</h3>
+              <button
+                onClick={() => setShowApplicationModal(false)}
+                className="p-1 outline-none focus:outline-none"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <div className="mb-6">
+                <p className="text-14-m text-gray-600 mb-2">지원일시</p>
+                <p className="text-16-r text-gray-900">
+                  {moment(myApplication.created_at).format('YYYY년 MM월 DD일 HH:mm')}
+                </p>
+              </div>
+
+              <div className="mb-6">
+                <p className="text-14-m text-gray-600 mb-2">지원 상태</p>
+                <div className="inline-block px-[9px] py-[4px] rounded-[7px] text-14-b bg-brand-point text-white">
+                  {myApplication.status === 'pending' ? '대기중' :
+                   myApplication.status === 'accepted' ? '수락됨' :
+                   myApplication.status === 'rejected' ? '거절됨' : '확인중'}
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <p className="text-14-m text-gray-600 mb-2">지원 메시지</p>
+                <div className="p-4 bg-gray-50 rounded-[10px] min-h-[100px]">
+                  <p className="text-16-r text-gray-900 whitespace-pre-wrap leading-[1.5]">
+                    {myApplication.message || '메시지가 없습니다.'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => setShowApplicationModal(false)}
+                  className="flex-1 rounded-[15px] text-16-m h-[54px] bg-gray-200 text-gray-700 hover:bg-gray-300"
+                >
+                  닫기
+                </Button>
               </div>
             </div>
           </div>
