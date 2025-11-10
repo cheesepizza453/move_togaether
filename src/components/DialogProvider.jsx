@@ -47,30 +47,6 @@ export const DialogProvider = ({ children }) => {
     }
   }, [dialogHook.dialog.isOpen]);
 
-  // 다이얼로그와 오버레이를 강제로 제거하는 함수
-  const forceCloseDialog = () => {
-    // 상태 닫기
-    dialogHook.closeDialog();
-
-    // 즉시 DOM에서 오버레이 제거 (ID와 클래스 모두로 찾기)
-    const overlayById = document.getElementById('dialog-overlay');
-    const overlayByClass = document.querySelector('.dialog-overlay');
-    if (overlayById) {
-      overlayById.remove();
-    } else if (overlayByClass) {
-      overlayByClass.remove();
-    }
-
-    // body의 scroll lock 즉시 제거
-    document.body.classList.remove('radix-scroll-locked');
-    if (document.body.style.overflow) {
-      document.body.style.overflow = '';
-    }
-    if (document.body.style.paddingRight) {
-      document.body.style.paddingRight = '';
-    }
-  };
-
   return (
       <DialogContext.Provider value={dialogHook}>
         {children}
@@ -112,8 +88,8 @@ export const DialogProvider = ({ children }) => {
                   pendingCallbackRef.current = dialogHook.dialog.onConfirm;
                 }
 
-                // 다이얼로그 강제 닫기
-                forceCloseDialog();
+                // 다이얼로그 닫기
+                dialogHook.closeDialog();
               }}
               className={`flex-1 text-16-m ${getButtonStyles(dialogHook.dialog.type)}`}
             >
@@ -128,8 +104,8 @@ export const DialogProvider = ({ children }) => {
                     pendingCallbackRef.current = dialogHook.dialog.onCancel;
                   }
 
-                  // 다이얼로그 강제 닫기
-                  forceCloseDialog();
+                  // 다이얼로그 닫기
+                  dialogHook.closeDialog();
                 }}
                 className="flex-1 border-gray-300 text-gray-700 text-16-m"
               >
