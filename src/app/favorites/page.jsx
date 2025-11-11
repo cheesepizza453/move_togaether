@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { favoritesAPI, handleAPIError } from '@/lib/api-client';
 import { useAuth } from '@/hooks/useAuth';
 import { convertDogSize, formatDeadline } from '@/lib/utils';
-import LoginDialog from '@/components/LoginDialog';
+import { useLoginDialog } from '@/components/LoginDialog';
 import IconLoading from "../../../public/img/icon/IconLoading";
 
 export default function FavoritesPage() {
@@ -22,7 +22,7 @@ export default function FavoritesPage() {
   const [activeFavorites, setActiveFavorites] = useState([]);
   const [completedFavorites, setCompletedFavorites] = useState([]);
   const [error, setError] = useState(null);
-  const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const { showLoginDialog } = useLoginDialog();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeTab, setActiveTab] = useState('active');
 
@@ -50,7 +50,15 @@ export default function FavoritesPage() {
       setError(null);
 
       if (!user) {
-        setShowLoginDialog(true);
+        showLoginDialog({
+          title: '로그인이 필요합니다',
+          message: '저장목록을 사용하려면 로그인해주세요.',
+          redirectPath: '/favorites',
+          onCancel: () => {
+            console.log('취소 버튼 클릭 - 메인 페이지로 이동');
+            router.push('/');
+          }
+        });
         return;
       }
 
@@ -138,7 +146,15 @@ export default function FavoritesPage() {
         await fetchFavorites();
       } else {
         setLoading(false);
-        setShowLoginDialog(true);
+        showLoginDialog({
+          title: '로그인이 필요합니다',
+          message: '저장목록을 사용하려면 로그인해주세요.',
+          redirectPath: '/favorites',
+          onCancel: () => {
+            console.log('취소 버튼 클릭 - 메인 페이지로 이동 (initializePage)');
+            router.push('/');
+          }
+        });
       }
     };
 
@@ -226,14 +242,6 @@ export default function FavoritesPage() {
         )}
       </main>
 
-      {/* 로그인 다이얼로그 */}
-      <LoginDialog
-        open={showLoginDialog}
-        onOpenChange={setShowLoginDialog}
-        title="로그인이 필요합니다"
-        description="저장목록을 사용하려면 로그인해주세요."
-        redirectPath="/favorites"
-      />
     </div>
   );
 }

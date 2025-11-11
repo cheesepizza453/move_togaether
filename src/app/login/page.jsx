@@ -338,8 +338,12 @@ const LoginPage = () => {
       {/* 하단 링크 */}
       <div className="w-full max-w-sm mt-4">
         <div className="flex items-center justify-center space-x-4 text-xs">
+          <Link href="/find-id" className="text-gray-400 hover:text-gray-600">
+            아이디 찾기
+          </Link>
+          <div className="w-px h-4 bg-gray-300"></div>
           <Link href="/forgot-password" className="text-gray-400 hover:text-gray-600">
-            아이디/비밀번호 찾기
+            비밀번호 찾기
           </Link>
           <div className="w-px h-4 bg-gray-300"></div>
           <Link href="/signup" className="text-gray-400 hover:text-gray-600">

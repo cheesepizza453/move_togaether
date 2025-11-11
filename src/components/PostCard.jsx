@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import IconHeart from "../../public/img/icon/IconHeart";
@@ -10,7 +11,7 @@ import { convertDogSize } from '@/lib/utils';
 import moment from 'moment';
 import { toast } from 'sonner';
 
-const PostCard = ({ post, isFavorite = false, onFavoriteToggle, showTimeline = false }) => {
+const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, showTimeline = false }) => {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { showConfirm, showSuccess, showError } = useDialogContext();
@@ -98,11 +99,19 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, showTimeline = f
           disabled: true
         };
       } else {
+        if (post.dday >= 0) {
         return {
-          text: '문의하기',
-          className: 'w-full bg-brand-main text-[#333] py-[8px] rounded-[20px] text-14-m',
-          disabled: false
-        };
+            text: '문의하기',
+            className: 'w-full bg-brand-main text-[#333] py-[8px] rounded-[20px] text-14-m',
+            disabled: false
+          };
+        } else {
+          return {
+            text: '아직 못 갔어요 🥺',
+            className: 'w-full bg-[#FFE066] text-gray-900 py-3 px-4 rounded-[20px] font-medium text-sm hover:bg-[#FFD700] transition-colors',
+            disabled: false
+          };
+        }
       }
     };
 
@@ -113,6 +122,7 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, showTimeline = f
       if (dday === 0) return 'D-Day';
       return `D-${dday}`;
     };
+    console.log(post);
 
     return (
       <div className="relative flex items-start gap-6 mb-6 pl-6">
@@ -131,30 +141,38 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, showTimeline = f
         </div>
 
         {/* 카드 - 날짜 아래에 위치 */}
-        <div className="bg-text-100 rounded-[30px] p-[26px] pb-[22px] mt-[16px] border border-gray-100 flex-1">
+        <div className="bg-text-100 rounded-[30px] p-[26px] pb-[22px] mt-[16px] border border-gray-100 flex-1"
+             onClick={handleCardClick}>
           <div className="flex items-start gap-4">
             <div className="flex-1 min-w-0">
               {/* D-day 표시 */}
-              <div className="mb-2">
-                <div className={`inline-block px-[9px] py-[2px] rounded-[7px] text-14-b ${getDdayColor(post.dday)}`}>
-                  {getDdayText(post.dday)}
+              {post.status === 'active' && post.dday > 0 && (
+                <div className="mb-2">
+                  <div className={`inline-block px-[9px] py-[2px] rounded-[7px] text-14-b ${getDdayColor(post.dday)}`}>
+                    {getDdayText(post.dday)}
+                  </div>
                 </div>
-              </div>
+              )}
               <h3 className="ml-[5px] text-12-m text-gray-900 mb-[4px] line-clamp-2 leading-[1.35]">
                 {post.title}
               </h3>
               <p className="ml-[5px] text-10-r text-text-800">
-                {post.dog_name} / {convertDogSize(post.dog_size)}
+                {post.dogName} / {convertDogSize(post.dogSize)}
               </p>
             </div>
 
             <div className="flex-shrink-0">
               <div className="ml-[5px] w-[70px] h-[70px] rounded-[20px] overflow-hidden bg-gray-100">
                 {post.images && post.images.length > 0 ? (
-                  <img
+                  <Image
                     src={post.images[0]}
-                    alt={post.dog_name}
+                    alt={post.dog_name || '강아지 사진'}
+                    width={70}
+                    height={70}
                     className="w-full h-full object-cover"
+                    priority={false}
+                    placeholder="blur"
+                    blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
@@ -167,7 +185,12 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, showTimeline = f
 
           <div className="mt-[13px]">
             <button
-              onClick={() => onPostClick(post.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!buttonInfo.disabled) {
+                  onPostClick?.(post.id);
+                }
+              }}
               className={buttonInfo.className}
               disabled={buttonInfo.disabled}
             >
@@ -199,10 +222,15 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, showTimeline = f
         <div className="flex-shrink-0 relative">
           {/* 강아지 이미지 */}
           <figure className="relative w-[80px] h-[80px] overflow-hidden bg-gray-200 rounded-[15px] shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]">
-              <img
+              <Image
                 className={'w-full h-full object-cover'}
                 src={images && images.length > 0 ? images[0] : "/img/dummy_thumbnail.jpg"}
                 alt={dogName || '강아지 사진'}
+                width={80}
+                height={80}
+                priority={false}
+                placeholder="blur"
+                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
               />
           </figure>
         </div>

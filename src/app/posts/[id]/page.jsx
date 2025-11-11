@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -21,7 +21,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
-import { cn, convertDogSize, formatDeadline } from "@/lib/utils";
+import { cn, convertDogSize, formatDeadline, getProfileImageUrl } from "@/lib/utils";
+import ProfileImage from '@/components/common/ProfileImage';
 import IconRightArrow from "../../../../public/img/icon/IconRightArrow";
 import IconHeart from "../../../../public/img/icon/IconHeart";
 import IconLoading from "../../../../public/img/icon/IconLoading";
@@ -52,6 +53,7 @@ export default function PostDetailPage() {
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const isFetchingRef = useRef(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -64,9 +66,13 @@ export default function PostDetailPage() {
     return tab === 'applicants' ? 'applicants' : 'post';
   });
   const [applicants, setApplicants] = useState([]);
+  const [applicantsLoading, setApplicantsLoading] = useState(false);
   const [selectedApplicant, setSelectedApplicant] = useState(null);
   const [showApplicantModal, setShowApplicantModal] = useState(false);
   const [isRecruitmentComplete, setIsRecruitmentComplete] = useState(false);
+  const [hasApplied, setHasApplied] = useState(false);
+  const [myApplication, setMyApplication] = useState(null);
+  const [showApplicationModal, setShowApplicationModal] = useState(false);
 
   // URL 쿼리 파라미터 변경 시 탭 업데이트
   useEffect(() => {
@@ -78,9 +84,65 @@ export default function PostDetailPage() {
     }
   }, [searchParams]);
 
+  // 브라우저 뒤로가기/앞으로가기 이벤트 감지
+  useEffect(() => {
+    const handlePopState = () => {
+      console.log('브라우저 뒤로가기/앞으로가기 감지 - 상태 초기화');
+      // 모든 상태 초기화
+      setPost(null);
+      setLoading(true);
+      setError(null);
+      setIsFavorite(false);
+      setFavoriteLoading(false);
+      setShowLoginDialog(false);
+      setShowApplyDialog(false);
+      setApplicants([]);
+      setApplicantsLoading(false);
+      isFetchingRef.current = false;
+
+      // API 재호출
+      setTimeout(() => {
+        if (postId) {
+          fetchPost();
+        }
+      }, 100);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [postId]);
+
   useEffect(() => {
     if (postId) {
-      fetchPost();
+      console.log('useEffect에서 fetchPost 호출, postId:', postId);
+
+      // 브라우저 뒤로가기 대응: 모든 상태 초기화
+      setPost(null);
+      setLoading(true);
+      setError(null);
+      setIsFavorite(false);
+      setFavoriteLoading(false);
+      setShowLoginDialog(false);
+      setShowApplyDialog(false);
+      setApplicants([]);
+      setApplicantsLoading(false);
+      isFetchingRef.current = false;
+
+      // 약간의 지연을 두고 API 호출
+      const timer = setTimeout(() => {
+        console.log('상태 초기화 완료, fetchPost 호출');
+        fetchPost();
+      }, 50);
+
+      return () => {
+        clearTimeout(timer);
+        // 컴포넌트 언마운트 시 상태 정리
+        console.log('상세 페이지 언마운트 - 상태 정리');
+        isFetchingRef.current = false;
+      };
     }
   }, [postId]);
 
@@ -145,26 +207,90 @@ export default function PostDetailPage() {
     }
   }, [isOwner, postId]);
 
-  const fetchPost = async () => {
+  // 지원 여부 확인 함수 (자신이 작성하지 않은 게시물인 경우만)
+  const checkApplicationStatus = useCallback(async () => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        return;
+      }
+
+      // 내가 신청한 목록 조회 (post_id 없이 호출하면 내가 신청한 모든 목록)
+      const response = await fetch(`/api/inquiries`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        const applications = result.applications || [];
+        // 현재 게시물에 대한 지원 내역 찾기
+        const myApplicationData = applications.find(app => {
+          // post_id가 직접 있는 경우 또는 posts 객체 안에 있는 경우
+          const appPostId = app.post_id || app.posts?.id;
+          return appPostId === parseInt(postId);
+        });
+
+        if (myApplicationData) {
+          setHasApplied(true);
+          setMyApplication(myApplicationData);
+        } else {
+          setHasApplied(false);
+          setMyApplication(null);
+        }
+      }
+    } catch (err) {
+      console.error('지원 상태 확인 오류:', err);
+    }
+  }, [postId]);
+
+  // 지원 여부 확인 (자신이 작성하지 않은 게시물인 경우만)
+  useEffect(() => {
+    if (user && post && !isOwner && postId) {
+      checkApplicationStatus();
+    }
+  }, [user, post, isOwner, postId, checkApplicationStatus]);
+
+  const fetchPost = async () => {
+    // 중복 호출 방지
+    if (isFetchingRef.current) {
+      console.log('fetchPost 이미 실행 중 - 중복 호출 방지');
+      return;
+    }
+
+    try {
+      console.log('fetchPost 시작 - 로딩 상태를 true로 설정');
+      isFetchingRef.current = true;
       setLoading(true);
 
-      // API를 통해 게시물 정보 가져오기
-      const response = await fetch(`/api/posts/${postId}`);
+      // API를 통해 게시물 정보 가져오기 - 브라우저 뒤로가기 대응을 위한 캐시 방지
+      const response = await fetch(`/api/posts/${postId}?_t=${Date.now()}`, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
 
       if (!response.ok) {
+        console.log('API 응답 오류:', response.status);
         if (response.status === 404) {
           setError('존재하지 않는 게시물입니다.');
         } else {
           setError('게시물을 불러올 수 없습니다.');
         }
+        setLoading(false);
         return;
       }
 
       const { post: postData } = await response.json();
 
       if (!postData) {
+        console.log('postData가 없음');
         setError('존재하지 않는 게시물입니다.');
+        setLoading(false);
         return;
       }
 
@@ -178,7 +304,9 @@ export default function PostDetailPage() {
         isUrgent: moment(postData.deadline).diff(moment(), 'days') <= 1
       };
 
+      console.log('게시물 데이터 설정 완료:', formattedPost);
       setPost(formattedPost);
+      setLoading(false); // 데이터 로드 성공 시 로딩 상태 해제
 
       console.log('포스트 데이터:', {
         postId: postData.id,
@@ -210,10 +338,14 @@ export default function PostDetailPage() {
         console.error('즐겨찾기 상태 확인 오류:', error);
         // 오류가 발생해도 게시물은 계속 표시
       }
+
+      // 지원 여부 확인은 useEffect에서 처리 (isOwner 결정 후)
     } catch (err) {
       console.error('게시물 조회 중 오류:', err);
       setError('게시물을 불러오는 중 오류가 발생했습니다.');
     } finally {
+      console.log('fetchPost 완료 - 로딩 상태를 false로 설정');
+      isFetchingRef.current = false;
       setLoading(false);
     }
   };
@@ -287,6 +419,10 @@ export default function PostDetailPage() {
       return;
     }
     router.push(`/posts/${postId}/inquiry`);
+  };
+
+  const handleViewApplication = () => {
+    setShowApplicationModal(true);
   };
 
   const fetchApplicants = async () => {
@@ -415,7 +551,10 @@ export default function PostDetailPage() {
     }
   };
 
+  console.log('현재 로딩 상태:', loading);
+
   if (loading) {
+    console.log('로딩 중 - 로딩 화면 표시');
     return (
         <div className="min-h-screen bg-white">
           {/* 헤더 */}
@@ -495,7 +634,7 @@ export default function PostDetailPage() {
   }
 
   return (
-      <div className="min-h-screen">
+      <div className={`min-h-screen ${isOwner && activeTab === 'applicants' && 'bg-brand-bg'}`}>
         {/* 헤더 */}
         <div className="bg-white">
           <div className={'flex flex-col items-center justify-between'}>
@@ -570,18 +709,11 @@ export default function PostDetailPage() {
               <div className="w-full pt-[10px] flex items-center justify-between">
                 {/* 링크 추가 */}
                 <a className={'flex items-center gap-[9px]'} href={`/authors/${post.user_id}`}>
-                  <div
-                      className="relative w-[56px] h-[56px] rounded-full overflow-hidden flex items-center justify-center">
-                    {/* 프로필 이미지 */}
-                    <img
-                        src={post.user_profiles?.profile_image || '/img/default_profile.jpg'}
-                        alt={'프로필 이미지'}
-                        className={'absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover'}
-                        onError={(e) => {
-                          e.target.src = '/img/default_profile.jpg';
-                        }}
-                    />
-                  </div>
+                  <ProfileImage
+                    profileImage={post.user_profiles?.profile_image}
+                    size={56}
+                    alt="프로필 이미지"
+                  />
                   <div>
                     <p className="pr-[30px] mb-[2px] text-18-b">{post.user_profiles?.display_name || '익명'}</p>
                     {/* 실제 전화번호 표시 */}
@@ -597,7 +729,7 @@ export default function PostDetailPage() {
               </div>
             </div>
         }
-        <div className={`${isOwner && 'mt-[-15px]'}`}>
+        <div className={`${isOwner && activeTab === 'post' && 'mt-[-15px]'} ${isOwner && activeTab === 'applicants' && 'bg-white pt-[30px] px-[22px] mb-[10px]'}`}>
           {/* 게시물 탭 */}
           {activeTab === 'post' && (
               <div>
@@ -660,7 +792,7 @@ export default function PostDetailPage() {
                                 className={'p-[7px] bg-[#fdbba2] text-white text-12-r rounded-[4px]'}>네이버 길찾기
                         </button>
                         <button onClick={handleKakaoMap}
-                                className={'p-[7px] bg-[#fdbba2] text-white text-12-r rounded-[4px]'}>카카오톡 길찾기
+                                className={'p-[7px] bg-[#fdbba2] text-white text-12-r rounded-[4px]'}>카카오맵 길찾기
                         </button>
                       </div>
                     </div>
@@ -698,7 +830,7 @@ export default function PostDetailPage() {
                         </div>
                       </div>
                     </div>
-                ) : applicants.length === 0 ? (
+                ) : applicants.length !== 0 ? (
                     <div className="pt-[200px] bg-white min-h-screen">
                       <Users className="h-12 w-12 text-gray-400 mx-auto mb-4"/>
                       <p className="text-text-800 text-16-m text-center">아직 지원자가 없습니다.</p>
@@ -722,21 +854,15 @@ export default function PostDetailPage() {
                             </div>
                             <div className="mb-4">
                               <div className={'flex items-center gap-x-[18px]'}>
-                                <p className="text-16-r text-brand-icon leading-[1.1] line-clamp-4">
+                                <p className="w-full text-16-r text-brand-icon leading-[1.1] line-clamp-4">
                                   {applicant.message}
                                 </p>
                                 <div className="bg-gray-200 rounded-full flex items-center justify-center">
-                                  <figure
-                                      className={'relative w-[54px] h-[54px] rounded-full overflow-hidden shrink-0'}>
-                                    <img
-                                        src={applicant.user_profiles?.profile_image || '/img/default_profile.jpg'}
-                                        alt={'프로필 이미지'}
-                                        className={'absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover'}
-                                        onError={(e) => {
-                                          e.target.src = '/img/default_profile.jpg';
-                                        }}
-                                    />
-                                  </figure>
+                                  <ProfileImage
+                                    profileImage={applicant.user_profiles?.profile_image}
+                                    size={54}
+                                    alt="프로필 이미지"
+                                  />
                                 </div>
                               </div>
                               <div className={'mt-[10px] pb-[16px] border-b border-[#d9d9d9]'}>
@@ -777,10 +903,10 @@ export default function PostDetailPage() {
                   <div className="w-full max-w-[550px] mx-auto px-[23px]">
                     <div className="flex gap-3">
                       <Button
-                          onClick={handleInquiry}
+                          onClick={hasApplied ? handleViewApplication : handleInquiry}
                           className="rounded-[15px] text-16-m h-[54px] w-full flex-1 bg-brand-main"
                       >
-                        문의하기
+                        {hasApplied ? '지원 내용 확인' : '문의하기'}
                       </Button>
                     </div>
                   </div>
@@ -881,7 +1007,7 @@ export default function PostDetailPage() {
                     <div
                         className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
                       <img
-                          src={selectedApplicant.user_profiles?.profile_image || '/img/default_profile.jpg'}
+                          src={getProfileImageUrl(selectedApplicant.user_profiles?.profile_image)}
                           alt={'프로필 이미지'}
                           className={'w-full h-full object-cover'}
                           onError={(e) => {
@@ -921,6 +1047,59 @@ export default function PostDetailPage() {
                     문자하기
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 지원내용 확인 모달 */}
+      {showApplicationModal && myApplication && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-[15px] max-w-md w-full max-h-[80vh] overflow-y-auto shadow-[0_0_12px_0px_rgba(0,0,0,0.1)]">
+            <div className="p-6 border-b flex items-center justify-between">
+              <h3 className="text-18-b">지원 내용 확인</h3>
+              <button
+                onClick={() => setShowApplicationModal(false)}
+                className="p-1 outline-none focus:outline-none"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <div className="mb-6">
+                <p className="text-14-m text-gray-600 mb-2">지원일시</p>
+                <p className="text-16-r text-gray-900">
+                  {moment(myApplication.created_at).format('YYYY년 MM월 DD일 HH:mm')}
+                </p>
+              </div>
+
+              <div className="mb-6">
+                <p className="text-14-m text-gray-600 mb-2">지원 상태</p>
+                <div className="inline-block px-[9px] py-[4px] rounded-[7px] text-14-b bg-brand-point text-white">
+                  {myApplication.status === 'pending' ? '대기중' :
+                   myApplication.status === 'accepted' ? '수락됨' :
+                   myApplication.status === 'rejected' ? '거절됨' : '확인중'}
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <p className="text-14-m text-gray-600 mb-2">지원 메시지</p>
+                <div className="p-4 bg-gray-50 rounded-[10px] min-h-[100px]">
+                  <p className="text-16-r text-gray-900 whitespace-pre-wrap leading-[1.5]">
+                    {myApplication.message || '메시지가 없습니다.'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => setShowApplicationModal(false)}
+                  className="flex-1 rounded-[15px] text-16-m h-[54px] bg-gray-200 text-gray-700 hover:bg-gray-300"
+                >
+                  닫기
+                </Button>
               </div>
             </div>
           </div>

@@ -12,7 +12,9 @@ const AdditionalInfoContent = () => {
   const [formData, setFormData] = useState({
     nickname: '',
     introduction: '',
-    phone: ''
+    phone: '',
+    securityQuestion: '',
+    securityAnswer: ''
   });
 
   const [contactChannels, setContactChannels] = useState({
@@ -102,7 +104,8 @@ const AdditionalInfoContent = () => {
     console.log('닉네임 blur 이벤트 발생:', value);
     console.log('현재 nicknameValidation:', nicknameValidation);
 
-    if (!value.trim() || nicknameValidation?.type !== 'success') {
+    // 빈 값이거나 유효성 검사에 통과하지 못한 경우 스킵
+    if (!value.trim() || !nicknameValidation || !nicknameValidation.isValid) {
       console.log('닉네임 중복 체크 건너뜀 - 조건 불만족');
       return;
     }
@@ -116,18 +119,23 @@ const AdditionalInfoContent = () => {
       if (result.isDuplicate) {
         setNicknameValidation({
           isValid: false,
-          message: result.message,
+          message: result.message || '이미 사용 중인 닉네임입니다',
           type: 'duplicate'
         });
       } else {
         setNicknameValidation({
           isValid: true,
-          message: result.message,
+          message: result.message || '사용 가능한 닉네임입니다',
           type: 'success'
         });
       }
     } catch (error) {
       console.error('닉네임 중복 체크 오류:', error);
+      setNicknameValidation({
+        isValid: false,
+        message: '중복 체크 중 오류가 발생했습니다',
+        type: 'error'
+      });
     } finally {
       setNicknameChecking(false);
     }
@@ -172,6 +180,16 @@ const AdditionalInfoContent = () => {
       newErrors.phone = '연락처를 입력해주세요.';
     }
 
+    // 보안 질문/답변 검증
+    if (!formData.securityQuestion) {
+      newErrors.securityQuestion = '보안 질문을 선택해주세요.';
+    }
+    if (!formData.securityAnswer.trim()) {
+      newErrors.securityAnswer = '보안 질문 답변을 입력해주세요.';
+    } else if (formData.securityAnswer.length < 2) {
+      newErrors.securityAnswer = '답변은 2자 이상 입력해주세요.';
+    }
+
     // 선택된 채널에 대한 입력값 검증
     if (contactChannels.instagram && !channelInputs.instagram.trim()) {
       newErrors.instagram = '인스타그램 ID를 입력해주세요.';
@@ -208,7 +226,9 @@ const AdditionalInfoContent = () => {
         introduction: formData.introduction,
         phone: formData.phone,
         contactChannels,
-        channelInputs
+        channelInputs,
+        securityQuestion: formData.securityQuestion,
+        securityAnswer: formData.securityAnswer
       });
 
       if (result.success) {
@@ -282,6 +302,7 @@ const AdditionalInfoContent = () => {
               showIntroduction={true}
               showPhone={true}
               showSocialChannels={true}
+              showSecurityQuestion={true}
           />
 
           {/* 회원가입 완료 버튼 */}

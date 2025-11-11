@@ -164,7 +164,8 @@ const VolunteerCreate = () => {
     } else if (currentStep === 3) {
       // Step 3 유효성 검사 (URL 형식 검증)
       if (formData.relatedPostLink.trim()) {
-        const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+        // 더 포괄적인 URL 패턴으로 수정 (네이버 블로그, 유튜브 등 지원)
+        const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.\-?=&%#]*)*\/?$/;
         if (!urlPattern.test(formData.relatedPostLink)) {
           newErrors.relatedPostLink = '올바른 URL 형식이 아닙니다.';
         }

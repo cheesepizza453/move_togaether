@@ -143,7 +143,7 @@ const Preview = ({
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <h4 className="text-sm font-medium text-blue-900 mb-2">최종 확인</h4>
         <p className="text-sm text-blue-800">
-          위 정보가 모두 정확한지 확인해주세요. 제출 후에는 수정이 어려울 수 있습니다.
+          위 정보가 모두 정확한지 확인해주세요. 제출 후에는 수정이 어렵습니다.
         </p>
       </div>
 
