@@ -31,6 +31,10 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
     distance,
   } = post;
 
+  const createdAt = post.created_at ?? post.createdAt ?? null;
+  const formattedCreatedDateForTimeline = createdAt ? moment(createdAt).format('YYYY/MM/DD') : '';
+  const formattedCreatedDateForCard = createdAt ? moment(createdAt).format('YY/MM/DD') : '';
+
 
   const toggleFavorite = async (e) => {
     e.stopPropagation();
@@ -115,14 +119,12 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
       }
     };
 
-    const createdDate = moment(post.created_at).format('YYYY/MM/DD');
     const buttonInfo = getButtonInfo(post);
     const getDdayText = (dday) => {
       if (dday < 0) return `D+${Math.abs(dday)}`;
       if (dday === 0) return 'D-Day';
       return `D-${dday}`;
     };
-    console.log(post);
 
     return (
       <div className="relative flex items-start gap-6 mb-6 pl-6">
@@ -137,7 +139,7 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
 
         {/* 날짜 표시 - 노란원과 같은 높이 */}
         <div className="absolute top-0 left-6 text-sm font-medium" style={{ transform: 'translateY(-50%)' }}>
-          {createdDate}
+          {formattedCreatedDateForTimeline}
         </div>
 
         {/* 카드 - 날짜 아래에 위치 */}
@@ -267,7 +269,7 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
               {dogName} / {dogSize}
             </div>
             <div className="text-post-date text-text-600 text-9-r font-light">
-              {deadline}
+              {formattedCreatedDateForCard || deadline}
             </div>
           </div>
 

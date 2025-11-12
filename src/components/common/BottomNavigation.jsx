@@ -1,20 +1,52 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Home, Plus, Heart, User } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 // import { useSplash } from './SplashProvider';
 import {IconMenuBarHome, IconMenuBarMap, IconMenuBarHeart, IconMenuBarMy, IconMenuBarPlus} from "@/components/icon/IconMenuBar";
 import { useLoginDialog } from '@/components/LoginDialog';
 
+const getActiveTabFromPath = (pathname) => {
+  if (!pathname || pathname === '/') {
+    return 'home';
+  }
+
+  if (pathname.startsWith('/shelter')) {
+    return 'shelter';
+  }
+
+  if (pathname.startsWith('/volunteer/create')) {
+    return 'post';
+  }
+
+  if (pathname.startsWith('/favorites')) {
+    return 'favorites';
+  }
+
+  if (pathname.startsWith('/mypage')) {
+    return 'mypage';
+  }
+
+  return 'home';
+};
+
 const BottomNavigation = () => {
-  const [activeTab, setActiveTab] = useState('home');
+  const pathname = usePathname();
+  const [pendingTab, setPendingTab] = useState(null);
   const { showLoginDialog } = useLoginDialog();
   // const { showSplash } = useSplash();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    setPendingTab(null);
+  }, [pathname]);
+
+  const derivedActiveTab = getActiveTabFromPath(pathname);
+  const activeTab = pendingTab ?? derivedActiveTab;
 
   // Splash가 표시되는 동안 하단 네비게이션 숨김
   // if (showSplash) {
@@ -60,7 +92,6 @@ const BottomNavigation = () => {
   ];
 
   const handleTabClick = (tabId) => {
-    setActiveTab(tabId);
 
     // post 버튼 클릭 시 로그인 상태 확인
     if (tabId === 'post') {
@@ -79,6 +110,8 @@ const BottomNavigation = () => {
         return;
       }
     }
+
+    setPendingTab(tabId);
 
     // 해당 탭의 href로 이동
     const selectedTab = tabs.find(tab => tab.id === tabId);

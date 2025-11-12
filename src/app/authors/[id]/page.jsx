@@ -148,7 +148,8 @@ export default function AuthorDetailPage() {
         images: post.images || [],
         status: post.status,
         dday: post.dday || (post.deadline ? moment(post.deadline).diff(moment(), 'days') : 0),
-        is_favorite: post.is_favorite || false
+        is_favorite: post.is_favorite || false,
+        created_at: post.created_at
       }));
 
       // hasMore는 가져온 게시글 수가 limit보다 적으면 false
@@ -228,7 +229,8 @@ export default function AuthorDetailPage() {
         images: post.images || [],
         status: post.status,
         dday: post.dday || (post.deadline ? moment(post.deadline).diff(moment(), 'days') : 0),
-        is_favorite: post.is_favorite || false
+        is_favorite: post.is_favorite || false,
+        created_at: post.created_at
       }));
 
       // hasMore는 가져온 게시글 수가 limit보다 적으면 false

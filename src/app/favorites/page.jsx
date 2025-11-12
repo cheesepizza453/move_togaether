@@ -88,7 +88,8 @@ export default function FavoritesPage() {
           deadline: formatDeadline(post.deadline),
           images: post.images || [],
           status: post.status,
-          dday: post.deadline ? moment(post.deadline).diff(moment(), 'days') : 0
+          dday: post.deadline ? moment(post.deadline).diff(moment(), 'days') : 0,
+          created_at: post.created_at
         };
       });
 
