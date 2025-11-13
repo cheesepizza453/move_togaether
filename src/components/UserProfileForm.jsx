@@ -5,73 +5,126 @@ import ProfileImage from '@/components/common/ProfileImage';
 import { Plus } from 'lucide-react';
 import { IconRadioActive, IconCheckBoxActive} from "../../public/img/icon/IconCheck";
 import { SECURITY_QUESTIONS } from '@/constants/securityQuestions';
+import { toast } from 'sonner';
 
-const UserProfileForm = ({
-  formData,
-  setFormData,
-  contactChannels,
-  setContactChannels,
-  channelInputs,
-  setChannelInputs,
-  errors,
-  setErrors,
-  nicknameValidation,
-  nicknameChecking,
-  onNicknameChange,
-  onNicknameBlur,
-  onChannelChange,
-  onChannelInputChange,
-  onProfileImageChange,
-  // 모드 설정 (signup | edit)
-  mode = 'edit',
-  // 표시할 섹션들
-  showProfileImage = true,
-  showIntroduction = true,
-  showPhone = true,
-  showSocialChannels = true,
-  // 회원가입 모드에서만 사용되는 props
-  showPassword = false,
-  showPasswordConfirm = false,
-  showTerms = false,
-  // 보안 질문/답변 (회원가입 시에만 표시)
-  showSecurityQuestion = false,
-  // 닉네임 읽기 전용 (수정 모드에서)
-  isNicknameReadOnly = false
-}) => {
+const UserProfileForm = (props) => {
+  const {
+    formData,
+    setFormData,
+    contactChannels,
+    setContactChannels,
+    channelInputs,
+    setChannelInputs,
+    errors,
+    setErrors,
+    nicknameValidation,
+    nicknameChecking,
+    onNicknameChange,
+    onNicknameBlur,
+    onChannelChange,
+    onChannelInputChange,
+    onProfileImageChange,
+    mode = 'edit',
+    showProfileImage = true,
+    showIntroduction = true,
+    showPhone = true,
+    showSocialChannels = true,
+    showPassword = false,
+    showPasswordConfirm = false,
+    showTerms = false,
+    showSecurityQuestion = false,
+    isNicknameReadOnly = false,
+  } = props;
+
   const [phoneVisibility, setPhoneVisibility] = useState('public');
   const fileInputRef = useRef(null);
-  console.log(isNicknameReadOnly, 'isNicknameReadOnly', nicknameValidation, 'nicknameValidation');
-  console.log(errors, 'errors');
-  console.log(nicknameChecking);
+
+  // 공통으로 쓸 수 있는 압축 함수
+  const resizeImage = (file, maxWidth = 1024, quality = 0.85) => {
+    return new Promise((resolve, reject) => {
+      const img = new window.Image();
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      img.onload = () => {
+        const originalWidth = img.width;
+        const originalHeight = img.height;
+
+        // 이미 작으면 그대로 사용
+        if (originalWidth <= maxWidth) {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target.result);
+          reader.readAsDataURL(file);
+          return;
+        }
+
+        const ratio = maxWidth / originalWidth;
+        const newWidth = maxWidth;
+        const newHeight = Math.round(originalHeight * ratio);
+
+        canvas.width = newWidth;
+        canvas.height = newHeight;
+
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, newWidth, newHeight);
+
+        canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                reject(new Error('이미지 압축에 실패했습니다.'));
+                return;
+              }
+              const reader = new FileReader();
+              reader.onload = (e) => resolve(e.target.result);
+              reader.readAsDataURL(blob);
+            },
+            file.type || 'image/jpeg',
+            quality
+        );
+      };
+
+      img.onerror = () => reject(new Error('이미지를 불러올 수 없습니다.'));
+      img.src = URL.createObjectURL(file);
+    });
+  };
 
   const handleProfileImageClick = () => {
-    if (mode === 'signup') {
-      // 회원가입 모드에서는 비활성화
-      return;
-    }
+    if (mode === 'signup') return;
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (event) => {
+  const handleFileChange = async (event) => {
     const file = event.target.files[0];
-    if (file) {
-      // 파일 크기 체크 (5MB 제한)
-      if (file.size > 5 * 1024 * 1024) {
-        setErrors(prev => ({ ...prev, profileImage: '파일 크기는 5MB 이하여야 합니다.' }));
-        return;
-      }
+    if (!file) return;
 
-      // 이미지 파일 타입 체크
-      if (!file.type.startsWith('image/')) {
-        setErrors(prev => ({ ...prev, profileImage: '이미지 파일만 업로드 가능합니다.' }));
-        return;
-      }
+    // 5MB 제한
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors(prev => ({ ...prev, profileImage: '파일 크기는 5MB 이하여야 합니다.' }));
+      return;
+    }
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        onProfileImageChange(e.target.result);
-      };
-      reader.readAsDataURL(file);
+    if (!file.type.startsWith('image/')) {
+      setErrors(prev => ({ ...prev, profileImage: '이미지 파일만 업로드 가능합니다.' }));
+      return;
+    }
+
+    try {
+      const resizedDataUrl = await resizeImage(file, 512, 0.85); // 프로필은 512px 정도면 충분
+      // 대략적인 용량 계산
+      const base64 = resizedDataUrl.split(',')[1] || '';
+      const estimatedSizeKB = Math.round((base64.length * 3) / 4 / 1024);
+      console.log(`프로필 이미지 리사이즈: ${Math.round(file.size/1024)}KB → 약 ${estimatedSizeKB}KB`);
+
+      setErrors(prev => ({ ...prev, profileImage: undefined }));
+      onProfileImageChange(resizedDataUrl); // 부모로 전달
+
+      if (estimatedSizeKB > 500) {
+        toast?.warning?.(`이미지가 약 ${estimatedSizeKB}KB입니다. 500KB를 조금 넘을 수 있어요.`);
+      }
+    } catch (err) {
+      console.error(err);
+      setErrors(prev => ({ ...prev, profileImage: '이미지 처리 중 오류가 발생했습니다.' }));
     }
   };
 
