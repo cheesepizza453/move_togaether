@@ -76,7 +76,7 @@ export const DialogProvider = ({ children }) => {
             <DialogTitle className="mb-[15px] text-22-b text-center">
               {dialogHook.dialog.title}
             </DialogTitle>
-            <DialogDescription className="text-text-800 text-16-r leading-relaxed whitespace-pre-line text-center">
+            <DialogDescription className="text-text-800 text-16-r leading-[1.2] whitespace-pre-line text-center">
               {dialogHook.dialog.message}
             </DialogDescription>
           </DialogHeader>
