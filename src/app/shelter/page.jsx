@@ -471,7 +471,7 @@ const ShelterMapPage = () => {
                         };
                         return (
                             <span className={`flex items-center justify-center px-[9px] h-[22px] rounded-[7px] text-14-b font-bold ${getDdayColor(diffDays)}`}>
-                        D-{diffDays > 0 ? diffDays : '마감'}
+                        {diffDays > 0 ? 'D-'+diffDays : '오늘마감!'}
                       </span>
                         );
                       })()}
@@ -499,7 +499,7 @@ const ShelterMapPage = () => {
                           {selectedPost?.dog?.name || '이름 없음'} / {convertDogSize(selectedPost?.dog?.size || 'medium')}
                         </div>
                         <div className="text-post-date text-text-600 text-9-r font-light">
-                          {selectedPost?.deadline || '날짜 없음'}
+                          {selectedPost?.createdAt ? moment(selectedPost.createdAt).format("YY/MM/DD") : '날짜 없음'}
                         </div>
                       </div>
                     </div>
@@ -508,7 +508,6 @@ const ShelterMapPage = () => {
               </a>
             </div>
         )}
-
         {!mapLoaded && !error && (
             <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-20">
               <div className="text-center">

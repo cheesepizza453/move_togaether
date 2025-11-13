@@ -213,7 +213,7 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
         {/* D-day 배지 - border 위에 겹쳐서 표시 */}
         <div className="absolute -top-3 left-[-5px] z-10">
           <span className={`flex items-center justify-center px-[13px] h-[24px] rounded-[7px] text-12-b font-bold ${getDdayColor(dday)}`}>
-            D-{dday}
+            {dday=== 0 ? '오늘마감!' :`D-${dday}`}
           </span>
         </div>
       </div>
