@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 // 커스텀 AlertDialogContent (오버레이 없이)
 const CustomAlertDialogContent = React.forwardRef(({ className, ...props }, ref) => (
@@ -128,7 +129,9 @@ const FavoriteCard = ({ post, onFavoriteToggle, isCompleted = false }) => {
           <div className="relative flex-shrink-0">
             <div className="w-20 h-20 rounded-[20px] overflow-hidden bg-gray-100">
               {images && images.length > 0 ? (
-                <img
+                <Image
+                  width={76}
+                  height={80}
                   src={images[0]}
                   alt={dogName}
                   className="w-full h-full object-cover"

@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import moment from 'moment';
+import Image from "next/image";
 
 const MyPageCard = ({ post, activeSubTab, tab }) => {
   const router = useRouter();
@@ -68,7 +69,9 @@ const MyPageCard = ({ post, activeSubTab, tab }) => {
         <div className="flex items-center">
           <div className="w-[76px] h-[80px] bg-gray-100 rounded-[15px] mr-3 flex-shrink-0 overflow-hidden relative shadow-[0_0_7px_0px_rgba(0,0,0,0.25)]">
             {post.images && post.images.length > 0 ? (
-                <img
+                <Image
+                    width={200}
+                    height={200}
                     src={post.images[0]}
                     alt={post.dog_name}
                     className="w-full h-full object-cover"

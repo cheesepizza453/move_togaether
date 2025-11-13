@@ -24,6 +24,7 @@ import ProfileImage from '@/components/common/ProfileImage';
 import IconRightArrow from "../../../../public/img/icon/IconRightArrow";
 import IconHeart from "../../../../public/img/icon/IconHeart";
 import IconLoading from "../../../../public/img/icon/IconLoading";
+import Image from "next/image";
 
 // 커스텀 AlertDialogContent (오버레이 없이)
 const CustomAlertDialogContent = React.forwardRef(({ className, ...props }, ref) => (
@@ -733,7 +734,9 @@ export default function PostDetailPage() {
               <div>
                 {/* 강아지 이미지 */}
                 <div className="mt-[-15px] relative w-full aspect-[402/343]">
-                  <img
+                  <Image
+                      width={600}
+                      height={600}
                       src={post.images?.[0] || '/img/dummy_thumbnail.jpg'}
                       alt="강아지 이미지"
                       className={'absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover'}

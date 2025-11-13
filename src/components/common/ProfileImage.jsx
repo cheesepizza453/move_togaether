@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { getProfileImageUrl } from '@/lib/utils';
+import Image from 'next/image';
 
 /**
  * 프로필 이미지를 표시하는 재사용 가능한 컴포넌트
@@ -27,7 +28,9 @@ const ProfileImage = ({
       className={`relative flex-shrink-0 rounded-full overflow-hidden flex items-center justify-center ${className}`}
       style={{ width: `${size}px`, height: `${size}px` }}
     >
-      <img
+      <Image
+        width={100}
+        height={100}
         src={imageUrl}
         alt={alt}
         className="absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover"
