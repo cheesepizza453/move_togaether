@@ -92,20 +92,21 @@ const BottomNavigation = () => {
   ];
 
   const handleTabClick = (tabId) => {
+    const needsAuth = ['post', 'favorites', 'mypage'].includes(tabId);
+    const redirectMap = {
+      post: '/volunteer/create',
+      favorites: '/favorites',
+      mypage: '/mypage',
+    };
 
-    // post 버튼 클릭 시 로그인 상태 확인
-    if (tabId === 'post') {
-      if (authLoading) {
-        // 로딩 중일 때는 아무것도 하지 않음
-        return;
-      }
+    if (needsAuth) {
+      if (authLoading) return;
 
       if (!user) {
-        // 로그인되지 않은 경우
         showLoginDialog({
-          title: '로그인이 필요합니다',
-          message: '게시글을 작성하려면 로그인해주세요.',
-          redirectPath: '/volunteer/create'
+          title: '로그인하고 더 편하게 이용해보세요!',
+          message: '이 기능은 로그인 후 이용하실 수 있어요.',
+          redirectPath: redirectMap[tabId]
         });
         return;
       }
@@ -113,11 +114,8 @@ const BottomNavigation = () => {
 
     setPendingTab(tabId);
 
-    // 해당 탭의 href로 이동
     const selectedTab = tabs.find(tab => tab.id === tabId);
-    if (selectedTab && selectedTab.href) {
-      router.push(selectedTab.href);
-    }
+    if (selectedTab?.href) router.push(selectedTab.href);
   };
 
   return (
