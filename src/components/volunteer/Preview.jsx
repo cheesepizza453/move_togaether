@@ -1,6 +1,7 @@
 'use client';
 
 import { Edit3 } from 'lucide-react';
+import Image from "next/image";
 
 const Preview = ({
   formData,
@@ -76,7 +77,9 @@ const Preview = ({
           {photoPreview && (
             <div>
               <span className="text-sm font-medium text-gray-600">사진:</span>
-              <img
+              <Image
+                width={200}
+                height={200}
                 src={photoPreview}
                 alt="강아지 사진"
                 className="w-32 h-32 object-cover rounded-lg border border-gray-300 mt-2"
@@ -160,7 +163,7 @@ const Preview = ({
           className={`w-full py-4 px-6 rounded-lg font-medium transition-colors ${
             loading
               ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              : 'bg-green-500 text-white hover:bg-green-600 active:bg-green-700'
+              : 'bg-brand-main text-black'
           }`}
         >
           {loading ? (

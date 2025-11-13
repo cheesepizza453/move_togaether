@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import moment from 'moment';
 import IconLoading from "../../../public/img/icon/IconLoading";
+import Image from "next/image";
 
 
 const ShelterMapPage = () => {
@@ -481,7 +482,9 @@ const ShelterMapPage = () => {
                   <div className="flex space-x-[20px]">
                     <div className="flex-shrink-0 relative">
                       <figure className="relative w-[80px] h-[80px] overflow-hidden bg-gray-200 rounded-[15px] shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]">
-                        <img
+                        <Image
+                            width={74}
+                            height={74}
                             className="w-full h-full object-cover"
                             src={selectedPost.images && selectedPost?.images.length > 0 ? selectedPost?.images[0] : "/img/dummy_thumbnail.jpg"}
                             alt={selectedPost?.dog?.name || '강아지 사진'}

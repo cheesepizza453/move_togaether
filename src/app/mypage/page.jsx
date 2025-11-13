@@ -177,7 +177,7 @@ const MyPage = () => {
 
             {/* 사용자 정보 */}
             <div className="flex-1 min-w-0">
-              <h2 className="mb-[2px] text-18-b text-black">
+              <h2 className="mb-[4px] text-18-b text-black">
                 {profile?.display_name || '사용자'}
               </h2>
               <p className="mb-[5px] text-14-l text-[#535353]">
