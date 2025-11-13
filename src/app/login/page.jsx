@@ -122,9 +122,6 @@ const LoginPage = () => {
       console.log('로그인 결과:', result);
 
       if (result.success) {
-        console.log('로그인 성공');
-        toast.success('로그인되었습니다!');
-
         // 로그인 성공 후 리다이렉트 경로 확인
         const redirectPath = sessionStorage.getItem('redirectAfterLogin');
         if (redirectPath) {
@@ -237,21 +234,6 @@ const LoginPage = () => {
           />
         </div>
       </div>
-
-      {/* 성공 메시지 */}
-      {successMessage && (
-        <div className="w-full max-w-sm mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg">
-          {successMessage}
-        </div>
-      )}
-
-      {/* 에러 메시지 */}
-      {error && (
-        <div className="w-full max-w-sm mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
-          {error}
-        </div>
-      )}
-
       {/* 로그인 폼 */}
       <form onSubmit={handleLogin} className="w-full max-w-sm space-y-4">
         {/* 이메일 입력 */}
@@ -281,6 +263,20 @@ const LoginPage = () => {
             disabled={loading}
           />
         </div>
+
+        {/* 성공 메시지 */}
+        {successMessage && (
+            <div className="w-full text-12-r text-[#2BA03E] rounded-[15px]">
+              {successMessage}
+            </div>
+        )}
+
+        {/* 에러 메시지 */}
+        {error && (
+            <div className="w-full text-12-r text-brand-point-dark rounded-[15px]">
+              {error}
+            </div>
+        )}
 
         {/* 로그인 버튼 */}
         <button
