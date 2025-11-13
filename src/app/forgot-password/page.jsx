@@ -100,14 +100,14 @@ const ForgotPasswordPage = () => {
         {/* 메인 컨텐츠 */}
         <div className="px-6 py-8">
           <div className="text-center">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-20 h-20 bg-[#B7E6CA] rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-10 h-10 text-[#63B584]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
               </svg>
             </div>
 
             <h2 className="text-24-m text-black mb-4">이메일을 확인해주세요</h2>
-            <p className="text-16-r text-gray-600 mb-8">
+            <p className="text-16-r text-gray-600 mb-8 leading-[1.25]">
               <span className="font-semibold text-black">{email}</span>로<br/>
               비밀번호 재설정 요청을 처리했습니다.
             </p>
@@ -130,14 +130,14 @@ const ForgotPasswordPage = () => {
             <div className="space-y-3">
               <button
                 onClick={() => setEmailSent(false)}
-                className="w-full py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                className="w-full py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium"
               >
                 다른 이메일로 다시 시도
               </button>
 
               <Link
                 href="/login"
-                className="block w-full py-3 px-4 bg-brand-main text-white rounded-lg font-medium hover:bg-brand-yellow-dark transition-colors text-center"
+                className="block w-full py-3 px-4 bg-brand-main text-black rounded-lg font-medium text-center"
               >
                 로그인으로 돌아가기
               </Link>
@@ -169,14 +169,14 @@ const ForgotPasswordPage = () => {
       <div className="px-6 py-8">
         <div className="max-w-md mx-auto">
           <div className="text-center mb-8">
-            <h2 className="text-24-m text-black mb-4">비밀번호를 잊으셨나요?</h2>
-            <p className="text-16-r text-gray-600">
+            <h2 className="text-22-m text-black mb-[20px]">비밀번호를 잊으셨나요?</h2>
+            <p className="text-16-r text-gray-600 leading-[1.25]">
               가입하신 이메일 주소를 입력하시면<br/>
               비밀번호 재설정 링크를 보내드립니다.
             </p>
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-4">
-              <p className="text-14-r text-yellow-800">
-                <strong>참고:</strong> 카카오톡으로 가입한 계정은 이메일로 비밀번호를 찾을 수 없습니다.
+            <div className="bg-brand-bg rounded-lg p-3 mt-4">
+              <p className="text-12-r text-text-800">
+                카카오톡으로 가입한 계정은 이메일로 비밀번호를 찾을 수 없습니다.
               </p>
             </div>
           </div>
@@ -209,7 +209,7 @@ const ForgotPasswordPage = () => {
               className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors ${
                 loading
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-brand-main text-white hover:bg-brand-yellow-dark'
+                  : 'bg-brand-main text-black'
               }`}
             >
               {loading ? '이메일 발송 중...' : '비밀번호 재설정 링크 보내기'}
@@ -219,8 +219,8 @@ const ForgotPasswordPage = () => {
           <div className="mt-8 text-center">
             <p className="text-14-r text-gray-600">
               비밀번호가 기억나셨나요?{' '}
-              <Link href="/login" className="text-brand-main font-medium hover:underline">
-                로그인하기
+              <Link href="/login" className="text-brand-main font-medium underline">
+                  로그인하기
               </Link>
             </p>
           </div>

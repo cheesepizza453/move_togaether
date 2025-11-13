@@ -175,7 +175,8 @@ export default function Home() {
         deadline: formatDeadline(post.deadline),
         images: post.images || [],
         status: post.status,
-        dday: post.deadline ? moment(post.deadline).diff(moment(), 'days') : 0
+        dday: post.deadline ? moment(post.deadline).diff(moment(), 'days') : 0,
+        created_at: post.created_at
       }));
 
       console.log(`페이지 ${pageNum} 포맷팅된 데이터:`, formattedPosts);

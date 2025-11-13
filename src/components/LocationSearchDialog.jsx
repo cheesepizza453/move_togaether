@@ -135,14 +135,14 @@ const LocationSearchDialog = ({ isOpen, onClose, onLocationConfirm }) => {
         />
       )}
       <DialogContent
-        className="sm:max-w-md z-[9999] bg-white"
+        className="z-[9999] bg-white"
         showCloseButton={false}
       >
         <DialogHeader className="relative">
           <DialogTitle className="text-center">현재 위치 찾기</DialogTitle>
           <button
             onClick={onClose}
-            className="absolute right-0 top-0 p-1 hover:bg-gray-100 rounded-full transition-colors"
+            className="absolute right-0 top-0 p-1 rounded-full transition-colors"
             aria-label="닫기"
           >
             <X className="h-5 w-5 text-gray-500" />
@@ -155,7 +155,7 @@ const LocationSearchDialog = ({ isOpen, onClose, onLocationConfirm }) => {
               value={currentLocation}
               placeholder="현재 위치로 주소 찾기"
               readOnly
-              className="bg-yellow-50 border-yellow-200"
+              className="mt-[20px] bg-brand-bg placeholder-black text-16-r"
             />
             {isLoading && (
               <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -166,12 +166,12 @@ const LocationSearchDialog = ({ isOpen, onClose, onLocationConfirm }) => {
 
           {error && (
             <div className="text-center space-y-2">
-              <p className="text-sm text-red-600">{error}</p>
+              <p className="text-12-r text-brand-point">{error}</p>
               <Button
                 onClick={getCurrentLocation}
                 disabled={isLoading}
                 variant="outline"
-                className="w-full text-sm"
+                className="w-full text-16-m h-[42px]"
               >
                 {isLoading ? (
                   <>
@@ -188,9 +188,8 @@ const LocationSearchDialog = ({ isOpen, onClose, onLocationConfirm }) => {
           <Button
             onClick={handleSearch}
             disabled={!currentLocation || isLoading}
-            className="w-full bg-brand-main text-black font-medium"
+            className="w-full h-[42px] bg-brand-main text-black font-16-m"
           >
-            <MapPin className="h-4 w-4 mr-2" />
             현재 위치 검색
           </Button>
         </div>

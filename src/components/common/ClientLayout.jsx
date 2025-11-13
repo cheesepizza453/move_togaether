@@ -19,11 +19,24 @@ const ClientLayout = memo(({ children }) => {
       {!isLoginPage && <BottomNavigation />}
       {!isLoginPage && <Footer />}
       <Toaster
-        position="top-right"
+        position="top-center"
         expand={true}
-        richColors={true}
+        richColors={false}
         closeButton={true}
-        duration={5000}
+        duration={3000}
+        toastOptions={{
+            classNames: {
+                toast: "!rounded-[15px] !text-14-m !shadow-[0_0_10px_0px_rgba(0,0,0,0.1)]",
+                success:
+                    "!bg-[#BFE1C5] !text-[#2BA03E]",
+                error:
+                    "!bg-brand-point-bg !text-brand-point",
+                warning:
+                    "bg-[#FFF6D1] text-[#DBBC13]",
+                info:
+                    "bg-white text-black",
+            },
+        }}
       />
     </>
   );

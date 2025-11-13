@@ -32,14 +32,12 @@ const ShelterMapPage = () => {
     };
     return sizeMap[size] || '중형견'; // 기본값으로 '중형견' 반환
   };
-  console.log('User:', user);
-  console.log('Profile:', profile);
 
   // 마커 이미지 설정 함수
   const getMarkerImage = useCallback((deadline, isSelected = false) => {
     if (!deadline) {
       // deadline이 없으면 기본 마커 사용
-      const size = isSelected ? 50 : 40;
+      const size = isSelected ? 60 : 50;
       return new window.kakao.maps.MarkerImage('/img/marker1.png', new window.kakao.maps.Size(size, size), { offset: new window.kakao.maps.Point(size/2, size) });
     }
 
@@ -48,20 +46,17 @@ const ShelterMapPage = () => {
     const diffDays = deadlineDate.diff(today, 'days');
 
     let imageSrc, imageSize, imageOption;
-    const size = isSelected ? 50 : 40; // 선택된 마커는 10px 더 크게
+    const size = isSelected ? 60 : 50;
 
     if (diffDays <= 7) {
-      // 7일 이내 - marker3 (빨간색)
       imageSrc = '/img/marker3.png';
       imageSize = new window.kakao.maps.Size(size, size);
       imageOption = { offset: new window.kakao.maps.Point(size/2, size) };
     } else if (diffDays <= 14) {
-      // 14일 이내 - marker2 (주황색)
       imageSrc = '/img/marker2.png';
       imageSize = new window.kakao.maps.Size(size, size);
       imageOption = { offset: new window.kakao.maps.Point(size/2, size) };
     } else {
-      // 14일 초과 - marker1 (노란색)
       imageSrc = '/img/marker1.png';
       imageSize = new window.kakao.maps.Size(size, size);
       imageOption = { offset: new window.kakao.maps.Point(size/2, size) };
@@ -74,17 +69,12 @@ const ShelterMapPage = () => {
   const fetchPostsData = async () => {
     try {
       setLoadingData(true);
-      console.log('API 호출 시작: /api/shelters/active');
-
       const response = await fetch('/api/shelters/active');
-      console.log('API 응답 상태:', response.status);
 
-      // 응답 상태 확인
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      // Content-Type 확인
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         const text = await response.text();
@@ -93,14 +83,11 @@ const ShelterMapPage = () => {
       }
 
       const result = await response.json();
-      console.log('API 응답 데이터:', result);
 
       if (result.success) {
-        console.log('게시물 데이터 로드 완료:', result.data);
         setPostsData(result.data);
         setDataFetched(true);
       } else {
-        console.error('데이터 로드 실패:', result.error);
         setError(result.error);
         setDataFetched(true);
       }
@@ -117,7 +104,6 @@ const ShelterMapPage = () => {
   const getUserLocation = useCallback(() => {
     return new Promise((resolve) => {
       if (!navigator.geolocation) {
-        console.log('Geolocation이 지원되지 않습니다.');
         resolve(null);
         return;
       }
@@ -128,12 +114,10 @@ const ShelterMapPage = () => {
             lat: position.coords.latitude,
             lng: position.coords.longitude
           };
-          console.log('사용자 위치:', location);
           setUserLocation(location);
           resolve(location);
         },
         (error) => {
-          console.log('위치 정보를 가져올 수 없습니다:', error.message);
           resolve(null);
         },
         {
@@ -148,28 +132,21 @@ const ShelterMapPage = () => {
   // 마커만 업데이트하는 함수
   const updateMarkers = useCallback(() => {
     if (!clustererRef.current || !postsData || postsData.length === 0) {
-      console.log('마커 업데이트 불가: 클러스터러 또는 데이터 없음');
       return;
     }
 
-    console.log('마커 업데이트 시작, 데이터 개수:', postsData.length);
-
     // 기존 마커들 정리
     if (markersRef.current.length > 0) {
-      console.log('기존 마커들 정리');
       markersRef.current.forEach(marker => {
         marker.setMap(null);
       });
       markersRef.current = [];
     }
 
-    // 클러스터러에서 모든 마커 제거
     clustererRef.current.clear();
 
     // 새 마커 생성
     const markers = postsData.map(post => {
-      console.log('마커 생성 중:', post.title, '위치:', post.departure);
-
       const markerImage = getMarkerImage(post.deadline, false);
 
       const marker = new window.kakao.maps.Marker({
@@ -179,15 +156,20 @@ const ShelterMapPage = () => {
 
       // 마커 클릭 이벤트
       window.kakao.maps.event.addListener(marker, 'click', () => {
-        if (selectedMarker) {
-          const originalImage = getMarkerImage(selectedMarker.post?.deadline, false);
-          selectedMarker.marker.setImage(originalImage);
-        }
+        // 이전에 선택된 마커가 있으면 원래 크기로 복원
+        setSelectedMarker(prevSelected => {
+          if (prevSelected && prevSelected.marker) {
+            const originalImage = getMarkerImage(prevSelected.post?.deadline, false);
+            prevSelected.marker.setImage(originalImage);
+          }
 
-        setSelectedMarker({ marker, post });
+          // 새로운 마커를 크게 만들기
+          const selectedImage = getMarkerImage(post.deadline, true);
+          marker.setImage(selectedImage);
 
-        const selectedImage = getMarkerImage(post.deadline, true);
-        marker.setImage(selectedImage);
+          // 새로운 선택 상태 반환
+          return { marker, post };
+        });
 
         setSelectedPost(post);
 
@@ -205,198 +187,142 @@ const ShelterMapPage = () => {
 
     // 클러스터러에 마커들 추가
     clustererRef.current.addMarkers(markers);
-    console.log('마커 업데이트 완료, 마커 개수:', markers.length);
-  }, [postsData, getMarkerImage, selectedMarker]);
+  }, [postsData, getMarkerImage]); // selectedMarker 제거!
 
-  // 사용자 위치를 직접 받아서 지도를 초기화하는 함수
+  // 지도 초기화 함수
   const initializeMapWithUserLocation = useCallback((location) => {
-    console.log('initializeMapWithUserLocation 호출됨, 위치:', location);
-    console.log('mapRef.current:', !!mapRef.current);
-    console.log('window.kakao:', !!window.kakao);
-    console.log('window.kakao.maps:', !!window.kakao?.maps);
-    console.log('window.kakao.maps.LatLng:', !!window.kakao?.maps?.LatLng);
-
-    if (!mapRef.current) {
-      console.log('mapRef.current가 없음');
-      return;
-    }
-
-    if (!window.kakao) {
-      console.log('window.kakao가 없음');
-      return;
-    }
-
-    if (!window.kakao.maps) {
-      console.log('window.kakao.maps가 없음');
-      return;
-    }
-
-    if (!window.kakao.maps.LatLng) {
-      console.log('window.kakao.maps.LatLng가 없음');
+    if (!mapRef.current || !window.kakao?.maps?.LatLng) {
       return;
     }
 
     try {
-      console.log('지도 초기화 시작...');
-
-      // 지도 중심점 결정 (사용자 위치 또는 기본 서울)
-      console.log('userLocation:', location);
       const centerLat = location ? location.lat : 37.5665;
       const centerLng = location ? location.lng : 126.9780;
-      //const mapLevel = location ? 3 : 6; // 사용자 위치가 있으면 더 확대
       const mapLevel = 6;
 
-      console.log('지도 중심점:', { lat: centerLat, lng: centerLng, level: mapLevel });
-
-      // 지도 생성
       const map = new window.kakao.maps.Map(mapRef.current, {
         center: new window.kakao.maps.LatLng(centerLat, centerLng),
         level: mapLevel
       });
 
-      console.log('지도 생성 완료:', map);
       mapInstanceRef.current = map;
 
-      // 마커 클러스터러 생성
       const clusterer = new window.kakao.maps.MarkerClusterer({
         map: map, // 마커들을 클러스터로 관리하고 표시할 지도 객체
         averageCenter: true, // 클러스터에 포함된 마커들의 평균 위치를 클러스터 마커 위치로 설정
         minLevel: 1, // 클러스터 할 최소 지도 레벨 (1로 더 낮춤)
         disableClickZoom: false, // 클러스터 마커 클릭 시 확대/축소 비활성화
-        gridSize: 60 // 클러스터링을 위한 격자 크기 (더 크게)
+        gridSize: 60,
+        styles: [{
+          width: '60px',
+          height: '60px',
+          background: 'rgba(255,208,68,0.7)',
+          borderRadius: '999px',
+          color: '#000',
+          fontSize: '16px',
+          fontWeight: '700',
+          textAlign: 'center',
+          lineHeight: '60px',
+          border:'1px solid rgba(255,208,68,1)'
+        }]
       });
 
       clustererRef.current = clusterer;
 
-      // 지도 클릭 시 카드 닫기 이벤트 추가
+      // 지도 클릭 시 선택 해제 - 함수형 업데이트 사용!
       window.kakao.maps.event.addListener(map, 'click', () => {
-        if (selectedMarker) {
-          const originalImage = getMarkerImage(selectedMarker.post?.deadline, false);
-          selectedMarker.marker.setImage(originalImage);
-          setSelectedMarker(null);
-        }
+        setSelectedMarker(prevSelected => {
+          if (prevSelected && prevSelected.marker) {
+            const originalImage = getMarkerImage(prevSelected.post?.deadline, false);
+            prevSelected.marker.setImage(originalImage);
+          }
+          return null;
+        });
         setSelectedPost(null);
       });
 
-      // 지도 초기화 완료 후 마커 업데이트
-      console.log('지도 초기화 완료, 마커 업데이트 시작');
       updateMarkers();
-
       setMapLoaded(true);
     } catch (err) {
       console.error('지도 초기화 오류:', err);
       setError('지도를 초기화하는데 실패했습니다.');
     }
-  }, [updateMarkers]);
+  }, [updateMarkers, getMarkerImage]);
 
   const initializeMap = useCallback(() => {
-    console.log('initializeMap 호출됨');
-    console.log('mapRef.current:', !!mapRef.current);
-    console.log('window.kakao:', !!window.kakao);
-    console.log('window.kakao.maps:', !!window.kakao?.maps);
-    console.log('window.kakao.maps.LatLng:', !!window.kakao?.maps?.LatLng);
-    console.log('mapInstanceRef.current:', !!mapInstanceRef.current);
-
-    // 이미 지도가 초기화되어 있으면 마커만 업데이트
     if (mapInstanceRef.current && clustererRef.current) {
-      console.log('지도가 이미 초기화됨, 마커만 업데이트');
       updateMarkers();
       return;
     }
 
-    if (!mapRef.current) {
-      console.log('mapRef.current가 없음');
-      return;
-    }
-
-    if (!window.kakao) {
-      console.log('window.kakao가 없음');
-      return;
-    }
-
-    if (!window.kakao.maps) {
-      console.log('window.kakao.maps가 없음');
-      return;
-    }
-
-    if (!window.kakao.maps.LatLng) {
-      console.log('window.kakao.maps.LatLng가 없음');
+    if (!mapRef.current || !window.kakao?.maps?.LatLng) {
       return;
     }
 
     try {
-      console.log('지도 초기화 시작...');
-
-      // 지도 중심점 결정 (사용자 위치 또는 기본 서울)
-      console.log('userLocation:', userLocation);
       const centerLat = userLocation ? userLocation.lat : 37.5665;
       const centerLng = userLocation ? userLocation.lng : 126.9780;
-      const mapLevel = userLocation ? 3 : 6; // 사용자 위치가 있으면 더 확대
+      const mapLevel = userLocation ? 3 : 6;
 
-      console.log('지도 중심점:', { lat: centerLat, lng: centerLng, level: mapLevel });
-
-      // 지도 생성
       const map = new window.kakao.maps.Map(mapRef.current, {
         center: new window.kakao.maps.LatLng(centerLat, centerLng),
         level: mapLevel
       });
 
-      console.log('지도 생성 완료:', map);
       mapInstanceRef.current = map;
 
-      // 마커 클러스터러 생성
       const clusterer = new window.kakao.maps.MarkerClusterer({
         map: map, // 마커들을 클러스터로 관리하고 표시할 지도 객체
         averageCenter: true, // 클러스터에 포함된 마커들의 평균 위치를 클러스터 마커 위치로 설정
         minLevel: 1, // 클러스터 할 최소 지도 레벨 (1로 더 낮춤)
         disableClickZoom: false, // 클러스터 마커 클릭 시 확대/축소 비활성화
-        gridSize: 60 // 클러스터링을 위한 격자 크기 (더 크게)
+        gridSize: 60,
+        styles: [{
+          width: '60px',
+          height: '60px',
+          background: 'rgba(255,208,68,0.7)',
+          borderRadius: '999px',
+          color: '#000',
+          fontSize: '16px',
+          fontWeight: '700',
+          textAlign: 'center',
+          lineHeight: '60px',
+          border:'1px solid rgba(255,208,68,1)'
+        }]
       });
 
       clustererRef.current = clusterer;
 
-      // 지도 초기화 완료 후 마커 업데이트
-      console.log('지도 초기화 완료, 마커 업데이트 시작');
       updateMarkers();
-
       setMapLoaded(true);
     } catch (err) {
       console.error('지도 초기화 오류:', err);
       setError('지도를 초기화하는데 실패했습니다.');
     }
-  }, [postsData, getMarkerImage, selectedMarker, updateMarkers, userLocation]);
+  }, [postsData, getMarkerImage, updateMarkers, userLocation]);
 
   useEffect(() => {
-    // 데이터 먼저 가져오기
     fetchPostsData();
 
-    // 카카오맵 스크립트가 이미 로드되어 있는지 확인
     if (window.kakao && window.kakao.maps && window.kakao.maps.LatLng) {
-      console.log('카카오맵 API가 이미 로드됨');
       return;
     }
 
-    // jQuery가 로드되어 있는지 확인
     if (!window.jQuery) {
-      console.log('jQuery 로드 시작');
       const jqueryScript = document.createElement('script');
       jqueryScript.src = 'https://code.jquery.com/jquery-3.6.0.min.js';
       jqueryScript.async = true;
       jqueryScript.onload = () => {
-        console.log('jQuery 로드 완료');
         loadKakaoMapScript();
       };
       jqueryScript.onerror = () => {
-        console.error('jQuery 로드 실패');
         setError('jQuery를 불러오는데 실패했습니다.');
       };
       document.head.appendChild(jqueryScript);
     } else {
-      console.log('jQuery가 이미 로드됨');
       loadKakaoMapScript();
     }
 
-    // 컴포넌트 언마운트 시 정리
     return () => {
       if (clustererRef.current) {
         clustererRef.current.clear();
@@ -404,36 +330,23 @@ const ShelterMapPage = () => {
     };
   }, []);
 
-
-  // 데이터와 지도가 모두 준비되면 지도 초기화
   useEffect(() => {
     const initializeMapWithLocation = async () => {
       if (dataFetched && !loadingData && window.kakao && window.kakao.maps && window.kakao.maps.LatLng && !mapInstanceRef.current) {
-        console.log('데이터와 지도 API가 준비됨, 지도 초기화 시작');
-        console.log('postsData 개수:', postsData.length);
-        console.log('dataFetched:', dataFetched);
-
-        // 사용자 위치 가져오기
         let currentUserLocation = userLocation;
         if (!currentUserLocation) {
-          console.log('사용자 위치 가져오기 시작');
           currentUserLocation = await getUserLocation();
-          console.log('getUserLocation 결과:', currentUserLocation);
         }
-
-        // 위치 정보를 직접 전달하여 지도 초기화
         initializeMapWithUserLocation(currentUserLocation);
       }
     };
 
     initializeMapWithLocation();
-  }, [dataFetched, loadingData, postsData, initializeMapWithUserLocation, updateMarkers, userLocation, getUserLocation]); // dataFetched 의존성 추가
+  }, [dataFetched, loadingData, postsData, initializeMapWithUserLocation, updateMarkers, userLocation, getUserLocation]);
 
-  // 컴포넌트 언마운트 시 마커들 정리
   useEffect(() => {
     return () => {
       if (markersRef.current.length > 0) {
-        console.log('컴포넌트 언마운트 - 마커들 정리');
         markersRef.current.forEach(marker => {
           marker.setMap(null);
         });
@@ -446,11 +359,7 @@ const ShelterMapPage = () => {
   }, []);
 
   const loadKakaoMapScript = (retryCount = 0) => {
-    // 스크립트가 로드되어 있지 않다면 로드
     if (!document.querySelector('script[src*="dapi.kakao.com"]')) {
-      console.log(`카카오맵 스크립트 로드 시작 (재시도: ${retryCount})`);
-
-      // 기존 스크립트 제거 (재시도 시)
       const existingScript = document.querySelector('script[src*="dapi.kakao.com"]');
       if (existingScript) {
         existingScript.remove();
@@ -459,27 +368,16 @@ const ShelterMapPage = () => {
       const script = document.createElement('script');
       script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_MAPS_API_KEY}&libraries=clusterer&autoload=false`;
       script.async = false;
-      // crossOrigin 속성 제거 - 카카오맵은 CORS 정책이 다름
 
       script.onload = () => {
-        console.log('카카오맵 스크립트 로드 완료');
-        console.log('window.kakao after script load:', window.kakao);
-
-        // 카카오맵 API의 onload 콜백 사용
         if (window.kakao && window.kakao.maps) {
           window.kakao.maps.load(() => {
-            console.log('카카오맵 API onload 콜백 실행');
-            console.log('kakao.maps.LatLng after onload:', window.kakao.maps.LatLng);
-
-            // DOM이 완전히 렌더링된 후 지도 초기화
             setTimeout(() => {
               initializeMap();
             }, 500);
           });
         } else {
-          console.error('카카오맵 API가 로드되지 않음');
           if (retryCount < 3) {
-            console.log('재시도 중...');
             setTimeout(() => loadKakaoMapScript(retryCount + 1), 2000);
           } else {
             setError('카카오맵 API를 불러오는데 실패했습니다.');
@@ -488,9 +386,7 @@ const ShelterMapPage = () => {
       };
 
       script.onerror = (error) => {
-        console.error('카카오맵 스크립트 로드 실패:', error);
         if (retryCount < 3) {
-          console.log('재시도 중...');
           setTimeout(() => loadKakaoMapScript(retryCount + 1), 2000);
         } else {
           setError('카카오맵을 불러오는데 실패했습니다. 네트워크 연결을 확인해주세요.');
@@ -500,7 +396,6 @@ const ShelterMapPage = () => {
       document.head.appendChild(script);
     }
   };
-
 
   if (loading || loadingData || !dataFetched) {
     return (
@@ -541,7 +436,7 @@ const ShelterMapPage = () => {
         <div
             ref={mapRef}
             className="w-full"
-            style={{height: 'calc(100vh - 80px)'}} // BottomNavigation 높이만큼 더 많이 제외
+            style={{height: 'calc(100vh - 80px)'}}
         />
 
         {/* 상단 헤더 */}
@@ -556,67 +451,63 @@ const ShelterMapPage = () => {
 
         {/* 선택된 게시물 카드 */}
         {selectedPost && (
-            <a
-                className="fixed bottom-[100px] w-full max-w-[500px] left-1/2 -translate-x-1/2 z-20"
-                href={`/posts/${selectedPost.id}`}
-            >
-              <div className="bg-white rounded-[30px] px-[25px] py-[20px] cursor-pointer relative shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]">
-                {/* D-day 배지 */}
-                <div className="flex justify-end items-start">
-                  <div className="absolute top-[8px] left-[16px] z-10">
-                    {(() => {
-                      const today = moment();
-                      const deadlineDate = moment(selectedPost?.deadline);
-                      const diffDays = deadlineDate.diff(today, 'days');
-                      const getDdayColor = (dday) => {
-                        if (dday <= 7) return 'bg-brand-point text-white';
-                        if (dday <= 14) return 'bg-brand-main text-white';
-                        return 'bg-[#FFE889] text-brand-yellow-dark';
-                      };
-                      return (
-                          <span className={`flex items-center justify-center px-[9px] h-[22px] rounded-[7px] text-14-b font-bold ${getDdayColor(diffDays)}`}>
-                          D-{diffDays > 0 ? diffDays : '마감'}
-                        </span>
-                      );
-                    })()}
-                  </div>
-                </div>
-
-                <div className="flex space-x-[20px]">
-                  {/* 왼쪽 이미지 영역 */}
-                  <div className="flex-shrink-0 relative">
-                    <figure className="relative w-[80px] h-[80px] overflow-hidden bg-gray-200 rounded-[15px] shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]">
-                      <img
-                          className="w-full h-full object-cover"
-                          src={selectedPost.images && selectedPost?.images.length > 0 ? selectedPost?.images[0] : "/img/dummy_thumbnail.jpg"}
-                          alt={selectedPost?.dog?.name || '강아지 사진'}
-                      />
-                    </figure>
+            <div className="fixed bottom-[100px] w-full max-w-[500px] left-1/2 -translate-x-1/2 z-20">
+              <a
+                  className="block w-full h-full"
+                  href={`/posts/${selectedPost.id}`}
+              >
+                <div className="bg-white rounded-[30px] px-[25px] py-[20px] cursor-pointer relative shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]">
+                  {/* D-day 배지 */}
+                  <div className="flex justify-end items-start">
+                    <div className="absolute top-[8px] left-[16px] z-10">
+                      {(() => {
+                        const today = moment();
+                        const deadlineDate = moment(selectedPost?.deadline);
+                        const diffDays = deadlineDate.diff(today, 'days');
+                        const getDdayColor = (dday) => {
+                          if (dday <= 7) return 'bg-brand-point text-white';
+                          if (dday <= 14) return 'bg-brand-main text-white';
+                          return 'bg-[#FFE889] text-brand-yellow-dark';
+                        };
+                        return (
+                            <span className={`flex items-center justify-center px-[9px] h-[22px] rounded-[7px] text-14-b font-bold ${getDdayColor(diffDays)}`}>
+                        {diffDays > 0 ? 'D-'+diffDays : '오늘마감!'}
+                      </span>
+                        );
+                      })()}
+                    </div>
                   </div>
 
-                  {/* 오른쪽 텍스트 영역 */}
-                  <div className="min-w-0 h-[70px] mt-[10px] flex flex-col justify-between w-full">
-                    {/* 제목 */}
-                    <h3 className="text-list-1 mb-2 leading-tight line-clamp-2 text-14-m">
-                      {selectedPost?.title || '제목 없음'}
-                    </h3>
+                  <div className="flex space-x-[20px]">
+                    <div className="flex-shrink-0 relative">
+                      <figure className="relative w-[80px] h-[80px] overflow-hidden bg-gray-200 rounded-[15px] shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]">
+                        <img
+                            className="w-full h-full object-cover"
+                            src={selectedPost.images && selectedPost?.images.length > 0 ? selectedPost?.images[0] : "/img/dummy_thumbnail.jpg"}
+                            alt={selectedPost?.dog?.name || '강아지 사진'}
+                        />
+                      </figure>
+                    </div>
 
-                    {/* 강아지 정보와 날짜 */}
-                    <div className="flex justify-between items-end text-text-800 mb-[6px]">
-                      <div className="text-name-breed text-12-r">
-                        {selectedPost?.dog?.name || '이름 없음'} / {convertDogSize(selectedPost?.dog?.size || 'medium')}
-                      </div>
-                      <div className="text-post-date text-text-600 text-9-r font-light">
-                        {selectedPost?.deadline || '날짜 없음'}
+                    <div className="min-w-0 h-[70px] mt-[10px] flex flex-col justify-between w-full">
+                      <h3 className="text-list-1 mb-2 leading-tight line-clamp-2 text-14-m">
+                        {selectedPost?.title || '제목 없음'}
+                      </h3>
+
+                      <div className="flex justify-between items-end text-text-800 mb-[6px]">
+                        <div className="text-name-breed text-12-r">
+                          {selectedPost?.dog?.name || '이름 없음'} / {convertDogSize(selectedPost?.dog?.size || 'medium')}
+                        </div>
+                        <div className="text-post-date text-text-600 text-9-r font-light">
+                          {selectedPost?.createdAt ? moment(selectedPost.createdAt).format("YY/MM/DD") : '날짜 없음'}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </a>
+              </a>
+            </div>
         )}
-
-        {/* 로딩 오버레이 */}
         {!mapLoaded && !error && (
             <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-20">
               <div className="text-center">

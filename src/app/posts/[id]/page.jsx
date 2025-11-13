@@ -7,9 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDialogContext } from '@/components/DialogProvider';
 import moment from 'moment';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { MapPin, Calendar, Clock, User, Phone, Heart, MessageCircle, Users, X, Loader2 } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -814,25 +812,20 @@ export default function PostDetailPage() {
 
           {/* 지원자 탭 */}
           {activeTab === 'applicants' && (
-              <div className="">
+              <div className="bg-brand-bg">
                 {isRecruitmentComplete ? (
-                    <div className="text-center py-12">
-                      <div className="bg-white rounded-[15px] p-6 shadow-[0_0_12px_0px_rgba(0,0,0,0.1)]">
+                    <div className="text-center pt-[100px]">
+                      <div className="">
                         <div className="text-center">
-                          <div
-                              className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Users className="h-8 w-8 text-gray-400"/>
-                          </div>
-                          <p className="text-18-m leading-[1.44] text-gray-700">
-                            <strong className="text-brand-point">모집이 종료</strong>되어<br/>
+                          <p className="text-16-m leading-[1.44] text-gray-700">
+                            <strong className="text-brand-point">모집이 완료</strong>되어<br/>
                             신청자 정보를 확인하실 수 없습니다.
                           </p>
                         </div>
                       </div>
                     </div>
-                ) : applicants.length !== 0 ? (
+                ) : applicants.length === 0 ? (
                     <div className="pt-[200px] bg-white min-h-screen">
-                      <Users className="h-12 w-12 text-gray-400 mx-auto mb-4"/>
                       <p className="text-text-800 text-16-m text-center">아직 지원자가 없습니다.</p>
                     </div>
                 ) : (
@@ -991,59 +984,41 @@ export default function PostDetailPage() {
         {/* 지원자 상세 모달 */}
         {showApplicantModal && selectedApplicant && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-lg max-w-md w-full max-h-[80vh] overflow-y-auto">
-                <div className="p-4 border-b flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">전체보기</h3>
+              <div className="bg-white rounded-[15px] max-w-md w-full max-h-[80vh] overflow-y-auto">
+                <div className="relative pt-[22px] pb-[18px] flex items-center justify-between">
+                  <h3 className="w-full text-22-b text-[#333333] text-center">전체보기</h3>
                   <button
                       onClick={() => setShowApplicantModal(false)}
-                      className="p-1"
+                      className="absolute p-1 top-[18px] right-[18px]"
                   >
                     <X className="h-5 w-5"/>
                   </button>
                 </div>
 
-                <div className="p-4">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div
-                        className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
-                      <img
-                          src={getProfileImageUrl(selectedApplicant.user_profiles?.profile_image)}
-                          alt={'프로필 이미지'}
-                          className={'w-full h-full object-cover'}
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                            e.target.nextSibling.style.display = 'block';
-                          }}
-                      />
-                      <User className="h-5 w-5 text-gray-600" style={{display: 'none'}}/>
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">{selectedApplicant.user_profiles?.display_name || '익명'}</p>
-                      <p className="text-xs text-gray-600">{selectedApplicant.user_profiles?.phone || '연락처 없음'}</p>
-                    </div>
+                <div className="px-[20px]">
+                  <div className="flex items-center justify-center gap-x-[4px] mb-[24px] text-text-800">
+                      <p className="text-18-b ">{selectedApplicant.user_profiles?.display_name || '익명'}</p> |
+                      <p className="text-16-r">{selectedApplicant.user_profiles?.phone.replace(/(\d{3})(\d{3,4})(\d{4})/, "$1-$2-$3") || '연락처 없음'}</p>
                   </div>
 
-                  <div className="mb-6">
-                    <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                  <div className="mb-[24px]">
+                    <p className="text-center text-16-r text-gray-700 whitespace-pre-wrap max-h-[270px] overflow-y-auto">
                       {selectedApplicant.message}
                     </p>
                   </div>
 
                   <div className="mb-4">
-                    <p className="text-sm font-medium text-gray-600 mb-2">연락하기</p>
                     <div className="flex gap-2">
                       <button
                           onClick={() => handleCall(selectedApplicant.user_profiles?.phone)}
-                          className="flex-1 bg-brand-main text-black text-sm py-2 px-4 rounded flex items-center justify-center gap-2"
+                          className="flex-1 h-[44px] bg-[#fbf1b4] text-16-m text-[#d4a108] py-2 px-4 rounded-[7px] shadow-[0_0_5px_0px_rgba(0,0,0,0.1)]"
                   >
-                    <Phone className="h-4 w-4" />
                     전화하기
                   </button>
                   <button
                     onClick={() => handleSMS(selectedApplicant.user_profiles?.phone)}
-                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm py-2 px-4 rounded flex items-center justify-center gap-2"
+                    className="flex-1 h-[44px] bg-[#fbf1b4] text-16-m text-[#d4a108] py-2 px-4 rounded-[7px] shadow-[0_0_5px_0px_rgba(0,0,0,0.1)]"
                   >
-                    <MessageCircle className="h-4 w-4" />
                     문자하기
                   </button>
                 </div>
@@ -1057,46 +1032,35 @@ export default function PostDetailPage() {
       {showApplicationModal && myApplication && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-[15px] max-w-md w-full max-h-[80vh] overflow-y-auto shadow-[0_0_12px_0px_rgba(0,0,0,0.1)]">
-            <div className="p-6 border-b flex items-center justify-between">
-              <h3 className="text-18-b">지원 내용 확인</h3>
-              <button
-                onClick={() => setShowApplicationModal(false)}
-                className="p-1 outline-none focus:outline-none"
-              >
-                <X className="h-5 w-5" />
-              </button>
+            <div className="p-6 flex items-center justify-between">
+              <h3 className="text-20-m">지원 내용 확인</h3>
             </div>
 
-            <div className="p-6">
-              <div className="mb-6">
-                <p className="text-14-m text-gray-600 mb-2">지원일시</p>
-                <p className="text-16-r text-gray-900">
-                  {moment(myApplication.created_at).format('YYYY년 MM월 DD일 HH:mm')}
-                </p>
-              </div>
-
-              <div className="mb-6">
+            <div className="p-[20px] pt-0">
+{/*              <div className="mb-6">
                 <p className="text-14-m text-gray-600 mb-2">지원 상태</p>
                 <div className="inline-block px-[9px] py-[4px] rounded-[7px] text-14-b bg-brand-point text-white">
                   {myApplication.status === 'pending' ? '대기중' :
                    myApplication.status === 'accepted' ? '수락됨' :
                    myApplication.status === 'rejected' ? '거절됨' : '확인중'}
                 </div>
-              </div>
+              </div>*/}
 
               <div className="mb-6">
-                <p className="text-14-m text-gray-600 mb-2">지원 메시지</p>
-                <div className="p-4 bg-gray-50 rounded-[10px] min-h-[100px]">
-                  <p className="text-16-r text-gray-900 whitespace-pre-wrap leading-[1.5]">
+                <div className="px-[15px] py-[20px] bg-brand-bg rounded-[15px] min-h-[100px]">
+                  <p className="text-14-r text-gray-900 leading-[1.25] whitespace-pre-wrap break-words">
                     {myApplication.message || '메시지가 없습니다.'}
                   </p>
                 </div>
+                <p className="text-12-r text-text-800 text-right mt-[10px] mr-[10px]">
+                  {moment(myApplication.created_at).format('YY.MM.DD  HH:MM')}
+                </p>
               </div>
 
               <div className="flex gap-3">
                 <Button
-                  onClick={() => setShowApplicationModal(false)}
-                  className="flex-1 rounded-[15px] text-16-m h-[54px] bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    onClick={() => setShowApplicationModal(false)}
+                    className="flex-1 rounded-[15px] h-[54px] bg-brand-main text-black text-16-m"
                 >
                   닫기
                 </Button>

@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import moment from 'moment';
 
@@ -51,7 +50,7 @@ const MyPageCard = ({ post, activeSubTab, tab }) => {
   return (
 
       //
-      <div className={`${activeSubTab === '완료' ? 'bg-text-300' : 'bg-white shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]' } rounded-[15px] px-[22px] py-[18px] cursor-pointer relative`}>
+      <div className={`${activeSubTab === '완료' ? 'bg-text-100' : 'bg-white shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]' } rounded-[15px] px-[22px] py-[18px] cursor-pointer relative`}>
         {/* 진행중 탭에서만 D-day 표시 */}
         {activeSubTab === '진행중' && (
             <div className="absolute -top-3 left-[-5px] z-10">
@@ -89,7 +88,7 @@ const MyPageCard = ({ post, activeSubTab, tab }) => {
             <p className="text-12-r text-text-800">
               {post.dog_name} / {convertDogSize(post.dog_size)}
             </p>
-            <p className="text-9-r text-text-600">{formatDate(post.created_at)}</p>
+            <p className="text-10-r text-text-600">{formatDate(post.created_at)}</p>
             </div>
           </div>
 

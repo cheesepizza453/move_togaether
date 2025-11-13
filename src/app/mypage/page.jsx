@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
@@ -15,54 +14,11 @@ import IconLoading from "../../../public/img/icon/IconLoading";
 
 const MyPage = () => {
   const { user, profile, loading, signOut } = useAuth();
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState('지원');
   const [activeSubTab, setActiveSubTab] = useState('진행중'); // 작성 탭의 하위 탭
   const [myPosts, setMyPosts] = useState([]);
   const [appliedPosts, setAppliedPosts] = useState([]);
-
-  // D-day 계산 함수
-  const getDday = (deadline) => {
-    if (!deadline) return 0;
-    return moment(deadline).diff(moment(), 'days');
-  };
-
-  // 상태 배지 생성 함수
-  const getStatusBadge = (status, deadline) => {
-    const dday = getDday(deadline);
-
-    if (status === 'completed') {
-      return {
-        text: '완료',
-        className: 'bg-gray-500 text-white'
-      };
-    } else if (status === 'cancelled') {
-      return {
-        text: '취소',
-        className: 'bg-red-500 text-white'
-      };
-    } else if (dday < 0) {
-      return {
-        text: '마감',
-        className: 'bg-gray-400 text-white'
-      };
-    } else if (dday <= 3) {
-      return {
-        text: '긴급',
-        className: 'bg-red-500 text-white'
-      };
-    } else if (dday <= 7) {
-      return {
-        text: '마감임박',
-        className: 'bg-orange-500 text-white'
-      };
-    } else {
-      return {
-        text: '진행중',
-        className: 'bg-green-500 text-white'
-      };
-    }
-  };
+  const subTabs = ['진행중', '종료', '완료'];
 
   // 날짜 포맷팅 함수
   const formatDate = (dateString) => {
@@ -139,17 +95,6 @@ const MyPage = () => {
     }
   }, [loadedTabs, loading, user]);
 
-  // 로그인 상태 확인
-  useEffect(() => {
-    console.log('마이페이지 - 인증 상태:', { user, profile, loading });
-
-    if (!loading && !user) {
-      console.log('마이페이지 - 로그인되지 않음, 로그인 페이지로 리다이렉트');
-      // 로그인되지 않은 경우 로그인 페이지로 리다이렉트
-      router.push('/login');
-    }
-  }, [user, loading, router]);
-
   // 활성 탭 변경 시 데이터 조회
   useEffect(() => {
     if (!loading && user && profile && activeTab) {
@@ -210,24 +155,16 @@ const MyPage = () => {
     );
   }
 
-  if (!user) {
-    return null; // 리다이렉트 중
-  }
-
   return (
       <div className="min-h-screen bg-white">
         {/* Header */}
         <div className="flex items-center justify-between h-[78px] px-[30px] bg-white">
-          {/* <button
-          onClick={() => router.back()}
-        >*/}
-          <p className="text-22-m text-black">마이페이지</p>
-        {/*</button>*/}
-        <div className="w-6"></div>
-      </div>
+          <p className="text-22-m text-black">마이페이지</p>{/*</button>*/}
+          <div className="w-6"></div>
+        </div>
 
-      {/* 프로필 정보 카드 */}
-      <div className="px-[23px] pt-[27px]">
+        {/* 프로필 정보 카드 */}
+        <div className="px-[23px] pt-[27px]">
         <div className="">
           <div className="flex items-center">
             {/* 프로필 이미지 */}
@@ -324,8 +261,6 @@ const MyPage = () => {
             ) : (
                 appliedPosts.map((app) => {
                   const post = app.post;
-                  const dday = getDday(post.deadline);
-                  const statusBadge = getStatusBadge(post.status, post.deadline);
 
                   return (
                       <MyPageCard
@@ -343,37 +278,20 @@ const MyPage = () => {
             <div className="space-y-[24px]">
               {/* 하위 탭 메뉴 */}
               <div className="flex space-x-[12px] pb-[5px]">
-                <button
-                    onClick={() => handleSubTabChange('진행중')}
-                    className={`text-sm font-medium transition-colors outline-none focus:ring-0 ${
-                        activeSubTab === '진행중'
-                            ? 'text-brand-yellow-dark bg-brand-sub px-[6px] py-[2px] rounded-[3px]'
-                            : 'text-14-m text-[#8b8b8b]'
-                    }`}
-                >
-                  진행중
-                </button>
-                <button
-                    onClick={() => handleSubTabChange('종료')}
-                    className={`text-sm font-medium transition-colors outline-none focus:ring-0 ${
-                        activeSubTab === '종료'
-                            ? 'text-brand-yellow-dark bg-brand-sub px-[6px] py-[2px] rounded-[3px]'
-                            : 'text-14-m text-[#8b8b8b]'
-                    }`}
-                >
-                  종료
-                </button>
-                <button
-                    onClick={() => handleSubTabChange('완료')}
-                    className={`text-sm font-medium transition-colors outline-none focus:ring-0 ${
-                        activeSubTab === '완료'
-                            ? 'text-brand-yellow-dark bg-brand-sub px-[6px] py-[2px] rounded-[3px]'
-                    : 'text-14-m text-[#8b8b8b]'
-                }`}
-              >
-                완료
-              </button>
-            </div>
+                {subTabs.map((tab) => (
+                    <button
+                        key={tab}
+                        onClick={() => handleSubTabChange(tab)}
+                        className={`text-sm font-medium transition-colors outline-none focus:ring-0 ${
+                            activeSubTab === tab
+                                ? 'text-brand-yellow-dark bg-brand-sub px-[6px] py-[2px] rounded-[3px]'
+                                : 'text-14-m text-[#8b8b8b]'
+                        }`}
+                    >
+                      {tab}
+                    </button>
+                ))}
+              </div>
 
             {/* 하위 탭 콘텐츠 */}
             {dataLoading ? (

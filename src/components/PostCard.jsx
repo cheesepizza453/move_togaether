@@ -31,6 +31,10 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
     distance,
   } = post;
 
+  const createdAt = post.created_at ?? post.createdAt ?? null;
+  const formattedCreatedDateForTimeline = createdAt ? moment(createdAt).format('YYYY/MM/DD') : '';
+  const formattedCreatedDateForCard = createdAt ? moment(createdAt).format('YY/MM/DD') : '';
+
 
   const toggleFavorite = async (e) => {
     e.stopPropagation();
@@ -92,7 +96,6 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
   if (showTimeline) {
     const getButtonInfo = (post) => {
       if (post.status !== 'active') {
-        // ToDo 버튼 구분 필요
         return {
           text: '모집 완료',
           className: 'w-full text-text-800 bg-text-300 py-[8px] rounded-[20px] text-14-m cursor-not-allowed',
@@ -115,14 +118,12 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
       }
     };
 
-    const createdDate = moment(post.created_at).format('YYYY/MM/DD');
     const buttonInfo = getButtonInfo(post);
     const getDdayText = (dday) => {
       if (dday < 0) return `D+${Math.abs(dday)}`;
       if (dday === 0) return 'D-Day';
       return `D-${dday}`;
     };
-    console.log(post);
 
     return (
       <div className="relative flex items-start gap-6 mb-6 pl-6">
@@ -137,7 +138,7 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
 
         {/* 날짜 표시 - 노란원과 같은 높이 */}
         <div className="absolute top-0 left-6 text-sm font-medium" style={{ transform: 'translateY(-50%)' }}>
-          {createdDate}
+          {formattedCreatedDateForTimeline}
         </div>
 
         {/* 카드 - 날짜 아래에 위치 */}
@@ -153,7 +154,7 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
                   </div>
                 </div>
               )}
-              <h3 className="ml-[5px] text-12-m text-gray-900 mb-[4px] line-clamp-2 leading-[1.35]">
+              <h3 className="ml-[5px] text-14-m text-gray-900 mb-[4px] line-clamp-2 leading-[1.35]">
                 {post.title}
               </h3>
               <p className="ml-[5px] text-10-r text-text-800">
@@ -212,7 +213,7 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
         {/* D-day 배지 - border 위에 겹쳐서 표시 */}
         <div className="absolute -top-3 left-[-5px] z-10">
           <span className={`flex items-center justify-center px-[13px] h-[24px] rounded-[7px] text-12-b font-bold ${getDdayColor(dday)}`}>
-            D-{dday}
+            {dday=== 0 ? '오늘마감!' :`D-${dday}`}
           </span>
         </div>
       </div>
@@ -267,7 +268,7 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
               {dogName} / {dogSize}
             </div>
             <div className="text-post-date text-text-600 text-9-r font-light">
-              {deadline}
+              {formattedCreatedDateForCard || deadline}
             </div>
           </div>
 
