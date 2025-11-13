@@ -814,17 +814,13 @@ export default function PostDetailPage() {
 
           {/* 지원자 탭 */}
           {activeTab === 'applicants' && (
-              <div className="">
+              <div className="bg-brand-bg">
                 {isRecruitmentComplete ? (
-                    <div className="text-center py-12">
-                      <div className="bg-white rounded-[15px] p-6 shadow-[0_0_12px_0px_rgba(0,0,0,0.1)]">
+                    <div className="text-center pt-[100px]">
+                      <div className="">
                         <div className="text-center">
-                          <div
-                              className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Users className="h-8 w-8 text-gray-400"/>
-                          </div>
-                          <p className="text-18-m leading-[1.44] text-gray-700">
-                            <strong className="text-brand-point">모집이 종료</strong>되어<br/>
+                          <p className="text-16-m leading-[1.44] text-gray-700">
+                            <strong className="text-brand-point">모집이 완료</strong>되어<br/>
                             신청자 정보를 확인하실 수 없습니다.
                           </p>
                         </div>
@@ -1065,35 +1061,31 @@ export default function PostDetailPage() {
             </div>
 
             <div className="p-6">
-              <div className="mb-6">
-                <p className="text-14-m text-gray-600 mb-2">지원일시</p>
-                <p className="text-16-r text-gray-900">
-                  {moment(myApplication.created_at).format('YYYY년 MM월 DD일 HH:mm')}
-                </p>
-              </div>
-
-              <div className="mb-6">
+{/*              <div className="mb-6">
                 <p className="text-14-m text-gray-600 mb-2">지원 상태</p>
                 <div className="inline-block px-[9px] py-[4px] rounded-[7px] text-14-b bg-brand-point text-white">
                   {myApplication.status === 'pending' ? '대기중' :
                    myApplication.status === 'accepted' ? '수락됨' :
                    myApplication.status === 'rejected' ? '거절됨' : '확인중'}
                 </div>
-              </div>
+              </div>*/}
 
               <div className="mb-6">
-                <p className="text-14-m text-gray-600 mb-2">지원 메시지</p>
-                <div className="p-4 bg-gray-50 rounded-[10px] min-h-[100px]">
-                  <p className="text-16-r text-gray-900 whitespace-pre-wrap leading-[1.5]">
+                <p className="text-12-m text-gray-600 mb-2">지원 메시지</p>
+                <div className="px-[15px] py-[20px] bg-brand-bg rounded-[15px] min-h-[100px]">
+                  <p className="text-14-r text-gray-900 leading-[1.25] whitespace-pre-wrap break-words">
                     {myApplication.message || '메시지가 없습니다.'}
                   </p>
                 </div>
+                <p className="text-12-r text-gray-900 text-right mt-[10px]">
+                  {moment(myApplication.created_at).format('YYYY년 MM월 DD일 HH:mm')}
+                </p>
               </div>
 
               <div className="flex gap-3">
                 <Button
-                  onClick={() => setShowApplicationModal(false)}
-                  className="flex-1 rounded-[15px] text-16-m h-[54px] bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    onClick={() => setShowApplicationModal(false)}
+                    className="flex-1 rounded-[15px] text-16-m h-[54px] bg-brand-main text-black"
                 >
                   닫기
                 </Button>
