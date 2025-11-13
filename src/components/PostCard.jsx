@@ -96,7 +96,6 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
   if (showTimeline) {
     const getButtonInfo = (post) => {
       if (post.status !== 'active') {
-        // ToDo 버튼 구분 필요
         return {
           text: '모집 완료',
           className: 'w-full text-text-800 bg-text-300 py-[8px] rounded-[20px] text-14-m cursor-not-allowed',
