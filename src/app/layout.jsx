@@ -8,10 +8,10 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
   title: {
-    default: '무브투개더 - 유기견 이동봉사 매칭 플랫폼',
+    default: '무브투개더 - 함께 움직여 마음을 잇다',
     template: '%s | 무브투개더'
   },
-  description: '유기견들이 새로운 가족에게 안전하게 이동할 수 있도록 봉사자와 보호소/개인 구조자를 연결하는 매칭 플랫폼입니다.',
+  description: '유기견이 새로운 삶을 향해 안전하게 이동할 수 있도록, 따뜻한 마음과 발걸음을 잇는 이동봉사 매칭 플랫폼입니다.',
   keywords: ['유기견', '이동봉사', '매칭', '보호소', '입양', '봉사자', 'Move Togaether', '반려동물', '구조', '봉사활동'],
   authors: [{ name: 'Move Togaether Team' }],
   creator: 'Move Togaether',
@@ -29,22 +29,22 @@ export const metadata = {
     type: 'website',
     locale: 'ko_KR',
     url: 'https://move-togaether.com',
-    title: '무브투개더 - 유기견 이동봉사 매칭 플랫폼',
-    description: '유기견들이 새로운 가족에게 안전하게 이동할 수 있도록 봉사자와 보호소/개인 구조자를 연결하는 매칭 플랫폼입니다.',
+    title: '무브투개더 - 함께 움직여 마음을 잇다',
+    description: '유기견이 새로운 삶을 향해 안전하게 이동할 수 있도록, 따뜻한 마음과 발걸음을 잇는 이동봉사 매칭 플랫폼입니다.',
     siteName: '무브투개더',
     images: [
       {
         url: '/img/og-image.jpg',
         width: 1200,
         height: 630,
-        alt: '무브투개더 - 유기견 이동봉사 매칭 플랫폼',
+        alt: '무브투개더 - 함께 움직여 마음을 잇다',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: '무브투개더 - 유기견 이동봉사 매칭 플랫폼',
-    description: '유기견들이 새로운 가족에게 안전하게 이동할 수 있도록 봉사자와 보호소/개인 구조자를 연결하는 매칭 플랫폼입니다.',
+    title: '무브투개더 - 함께 움직여 마음을 잇다',
+    description: '유기견이 새로운 삶을 향해 안전하게 이동할 수 있도록, 따뜻한 마음과 발걸음을 잇는 이동봉사 매칭 플랫폼입니다.',
     images: ['/img/og-image.jpg'],
   },
   robots: {
