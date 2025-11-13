@@ -160,7 +160,7 @@ const Preview = ({
           className={`w-full py-4 px-6 rounded-lg font-medium transition-colors ${
             loading
               ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              : 'bg-green-500 text-white hover:bg-green-600 active:bg-green-700'
+              : 'bg-brand-main text-black'
           }`}
         >
           {loading ? (
