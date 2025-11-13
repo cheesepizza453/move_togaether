@@ -28,7 +28,7 @@ export const DialogProvider = ({ children }) => {
 
   const getButtonStyles = (type) => {
     // 모든 타입에 대해 노란색 계열 사용
-    return 'bg-yellow-500 hover:bg-yellow-600 text-black';
+    return 'bg-brand-main text-black';
   };
 
   // 다이얼로그가 닫힐 때 pending 콜백 실행
@@ -73,14 +73,14 @@ export const DialogProvider = ({ children }) => {
             }}
           >
           <DialogHeader className="text-center">
-            <DialogTitle className="mb-[15px] text-22-b">
+            <DialogTitle className="mb-[15px] text-22-b text-center">
               {dialogHook.dialog.title}
             </DialogTitle>
-            <DialogDescription className="text-[#333] text-16-r leading-relaxed whitespace-pre-line text-center">
+            <DialogDescription className="text-text-800 text-16-r leading-relaxed whitespace-pre-line text-center">
               {dialogHook.dialog.message}
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="flex gap-3 justify-center">
+          <DialogFooter className="flex justify-center">
             <Button
               onClick={() => {
                 // 콜백을 ref에 저장
