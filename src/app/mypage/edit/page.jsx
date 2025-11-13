@@ -493,7 +493,7 @@ const EditProfilePage = () => {
                 onClick={() => setShowLogoutDialog(false)}
             />
         )}
-        <CustomAlertDialogContent className="z-[9999] bg-white">
+        <CustomAlertDialogContent className="z-[9999] fixed left-[50%] top-[50%] grid w-[85vw] rounded-[15px] max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border p-6 pt-[36px] shadow-[0_0_6px_0px_rgba(0,0,0,0.25)] bg-white">
           <AlertDialogHeader>
             <AlertDialogTitle>로그아웃</AlertDialogTitle>
             <AlertDialogDescription>
