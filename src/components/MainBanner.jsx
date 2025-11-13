@@ -11,6 +11,12 @@ const MainBanner = () => {
       id: 1,
       image: "/img/main_banner_1.jpg",
       alt: "오늘은 특별한 날이에요. 새 가족을 만나러 가요!"
+    },
+    {
+      id: 2,
+      image: "/img/main_banner_2.jpg",
+      alt: "무브투개더 인스타그램 팔로우",
+      link:"https://www.instagram.com/movetogaether/"
     }
   ];
 
@@ -41,11 +47,26 @@ const MainBanner = () => {
                   index === currentSlide ? 'opacity-100' : 'opacity-0'
               }`}
           >
-            <img
-                src={banner.image}
-                alt={banner.alt}
-                className="max-w-full max-h-full object-contain"
-            />
+            {banner.link ? (
+                <a
+                    href={banner.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full h-full"
+                >
+                  <img
+                      src={banner.image}
+                      alt={banner.alt}
+                      className="w-full h-full object-contain"
+                  />
+                </a>
+            ) : (
+                <img
+                    src={banner.image}
+                    alt={banner.alt}
+                    className="w-full h-full object-contain"
+                />
+            )}
           </figure>
         ))}
       </div>
