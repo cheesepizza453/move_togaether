@@ -7,9 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDialogContext } from '@/components/DialogProvider';
 import moment from 'moment';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { MapPin, Calendar, Clock, User, Phone, Heart, MessageCircle, Users, X, Loader2 } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -828,7 +826,6 @@ export default function PostDetailPage() {
                     </div>
                 ) : applicants.length === 0 ? (
                     <div className="pt-[200px] bg-white min-h-screen">
-                      <Users className="h-12 w-12 text-gray-400 mx-auto mb-4"/>
                       <p className="text-text-800 text-16-m text-center">아직 지원자가 없습니다.</p>
                     </div>
                 ) : (
@@ -987,40 +984,25 @@ export default function PostDetailPage() {
         {/* 지원자 상세 모달 */}
         {showApplicantModal && selectedApplicant && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-lg max-w-md w-full max-h-[80vh] overflow-y-auto">
-                <div className="p-4 border-b flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">전체보기</h3>
+              <div className="bg-white rounded-[15px] max-w-md w-full max-h-[80vh] overflow-y-auto">
+                <div className="relative pt-[22px] pb-[18px] flex items-center justify-between">
+                  <h3 className="w-full text-22-b text-[#333333] text-center">전체보기</h3>
                   <button
                       onClick={() => setShowApplicantModal(false)}
-                      className="p-1"
+                      className="absolute p-1 top-[18px] right-[18px]"
                   >
                     <X className="h-5 w-5"/>
                   </button>
                 </div>
 
-                <div className="p-4">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div
-                        className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
-                      <img
-                          src={getProfileImageUrl(selectedApplicant.user_profiles?.profile_image)}
-                          alt={'프로필 이미지'}
-                          className={'w-full h-full object-cover'}
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                            e.target.nextSibling.style.display = 'block';
-                          }}
-                      />
-                      <User className="h-5 w-5 text-gray-600" style={{display: 'none'}}/>
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">{selectedApplicant.user_profiles?.display_name || '익명'}</p>
-                      <p className="text-xs text-gray-600">{selectedApplicant.user_profiles?.phone || '연락처 없음'}</p>
-                    </div>
+                <div className="px-[20px]">
+                  <div className="flex items-center justify-center gap-x-[4px] mb-[24px] text-text-800">
+                      <p className="text-18-b ">{selectedApplicant.user_profiles?.display_name || '익명'}</p> |
+                      <p className="text-16-r">{selectedApplicant.user_profiles?.phone.replace(/(\d{3})(\d{3,4})(\d{4})/, "$1-$2-$3") || '연락처 없음'}</p>
                   </div>
 
-                  <div className="mb-6">
-                    <p className="text-14-r text-gray-700 whitespace-pre-wrap max-h-[270px] overflow-y-auto">
+                  <div className="mb-[24px]">
+                    <p className="text-center text-16-r text-gray-700 whitespace-pre-wrap max-h-[270px] overflow-y-auto">
                       {selectedApplicant.message}
                     </p>
                   </div>
@@ -1050,17 +1032,11 @@ export default function PostDetailPage() {
       {showApplicationModal && myApplication && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-[15px] max-w-md w-full max-h-[80vh] overflow-y-auto shadow-[0_0_12px_0px_rgba(0,0,0,0.1)]">
-            <div className="p-6 border-b flex items-center justify-between">
-              <h3 className="text-18-b">지원 내용 확인</h3>
-              <button
-                onClick={() => setShowApplicationModal(false)}
-                className="p-1 outline-none focus:outline-none"
-              >
-                <X className="h-5 w-5" />
-              </button>
+            <div className="p-6 flex items-center justify-between">
+              <h3 className="text-20-m">지원 내용 확인</h3>
             </div>
 
-            <div className="p-6">
+            <div className="p-[20px] pt-0">
 {/*              <div className="mb-6">
                 <p className="text-14-m text-gray-600 mb-2">지원 상태</p>
                 <div className="inline-block px-[9px] py-[4px] rounded-[7px] text-14-b bg-brand-point text-white">
@@ -1071,21 +1047,20 @@ export default function PostDetailPage() {
               </div>*/}
 
               <div className="mb-6">
-                <p className="text-12-m text-gray-600 mb-2">지원 메시지</p>
                 <div className="px-[15px] py-[20px] bg-brand-bg rounded-[15px] min-h-[100px]">
                   <p className="text-14-r text-gray-900 leading-[1.25] whitespace-pre-wrap break-words">
                     {myApplication.message || '메시지가 없습니다.'}
                   </p>
                 </div>
-                <p className="text-12-r text-gray-900 text-right mt-[10px]">
-                  {moment(myApplication.created_at).format('YYYY년 MM월 DD일 HH:mm')}
+                <p className="text-12-r text-text-800 text-right mt-[10px] mr-[10px]">
+                  {moment(myApplication.created_at).format('YY.MM.DD  HH:MM')}
                 </p>
               </div>
 
               <div className="flex gap-3">
                 <Button
                     onClick={() => setShowApplicationModal(false)}
-                    className="flex-1 rounded-[15px] text-16-m h-[54px] bg-brand-main text-black"
+                    className="flex-1 rounded-[15px] h-[54px] bg-brand-main text-black text-16-m"
                 >
                   닫기
                 </Button>
