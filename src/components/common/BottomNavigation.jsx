@@ -1,11 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Home, Plus, Heart, User } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { toast } from 'sonner';
-// import { useSplash } from './SplashProvider';
+import { useSplash } from '../SplashProvider';
 import {IconMenuBarHome, IconMenuBarMap, IconMenuBarHeart, IconMenuBarMy, IconMenuBarPlus} from "@/components/icon/IconMenuBar";
 import { useLoginDialog } from '@/components/LoginDialog';
 
@@ -37,7 +35,7 @@ const BottomNavigation = () => {
   const pathname = usePathname();
   const [pendingTab, setPendingTab] = useState(null);
   const { showLoginDialog } = useLoginDialog();
-  // const { showSplash } = useSplash();
+  const { showSplash } = useSplash();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
 
@@ -49,9 +47,9 @@ const BottomNavigation = () => {
   const activeTab = pendingTab ?? derivedActiveTab;
 
   // Splash가 표시되는 동안 하단 네비게이션 숨김
-  // if (showSplash) {
-  //   return null;
-  // }
+  if (showSplash) {
+     return null;
+   }
 
   const tabs = [
     {

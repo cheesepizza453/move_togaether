@@ -28,31 +28,20 @@ const SplashScreen = ({ onComplete }) => {
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-yellow-400 transition-opacity duration-500 ${
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-brand-main transition-opacity duration-500 ${
         isFading ? 'opacity-0' : 'opacity-100'
       }`}
     >
       <div className="text-center">
         {/* 로고 이미지 */}
         <div className="mb-4">
-          <div className="w-32 h-32 mx-auto flex items-center justify-center">
+          <div className="w-[201px] h-auto flex items-center justify-center">
             <img
-              src="/splash.png"
+              src="/img/splash.png"
               alt="Move Togaether Logo"
             />
           </div>
         </div>
-
-        {/* 서비스명 */}
-        <h1 className="text-3xl font-bold text-white mb-2 font-spoqa">
-          무브투게더
-        </h1>
-
-        {/* 서비스 설명 */}
-        <p className="text-white/90 text-lg font-spoqa">
-          유기견 이동봉사
-        </p>
-
         {/* 로딩 애니메이션 */}
         <div className="mt-8 flex justify-center space-x-2">
           <div className="w-2 h-2 bg-white rounded-full animate-bounce"></div>

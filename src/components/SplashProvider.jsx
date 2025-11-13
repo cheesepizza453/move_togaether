@@ -3,8 +3,7 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import SplashScreen from './common/SplashScreen';
 
-// Splash 상태를 전역으로 관리하는 Context
-const SplashContext = createContext();
+const SplashContext = createContext(null);
 
 export const useSplash = () => {
   const context = useContext(SplashContext);
@@ -14,29 +13,28 @@ export const useSplash = () => {
   return context;
 };
 
-const SplashProvider = ({ children }) => {
-  const [showSplash, setShowSplash] = useState(true);
+export const SplashProvider = ({ children }) => {
+  const [showSplash, setShowSplash] = useState(false); // ✅ 처음엔 false
 
   useEffect(() => {
-    // 페이지 로드 시 splash 표시
-    setShowSplash(true);
+    const hasShown = sessionStorage.getItem('mt_splash_shown');
+
+    if (!hasShown) {
+      setShowSplash(true);
+      sessionStorage.setItem('mt_splash_shown', 'true');
+    }
   }, []);
 
   const handleSplashComplete = () => {
     setShowSplash(false);
   };
 
-  const value = {
-    showSplash,
-    setShowSplash
-  };
+  const value = { showSplash, setShowSplash };
 
   return (
-    <SplashContext.Provider value={value}>
-      {/*{showSplash && <SplashScreen onComplete={handleSplashComplete} />}*/}
-      {children}
-    </SplashContext.Provider>
+      <SplashContext.Provider value={value}>
+        {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
+        {children}
+      </SplashContext.Provider>
   );
 };
-
-export default SplashProvider;
