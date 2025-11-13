@@ -111,7 +111,7 @@ const FavoriteCard = ({ post, onFavoriteToggle, isCompleted = false }) => {
   return (
     <>
       <div
-        className="bg-white rounded-[30px] px-8 py-6 mb-6 shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-shadow"
+        className="bg-white rounded-[30px] px-8 py-6 shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-shadow"
         onClick={handleCardClick}
       >
         <div className="flex items-start gap-4">
