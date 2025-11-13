@@ -211,7 +211,18 @@ const MyPage = () => {
   }
 
   if (!user) {
-    return null; // 리다이렉트 중
+    return (
+    <div className={'bg-white min-h-screen'}>
+      <div className="flex items-center justify-between h-[78px] px-[30px] bg-white">
+        <p className="text-22-m text-black">마이페이지</p>
+        {/*</button>*/}
+        <div className="w-6"></div>
+      </div>
+      <div className={'w-full flex justify-center pt-[60px]'}>
+        <IconLoading/>
+      </div>
+    </div>
+    )
   }
 
   return (
@@ -221,13 +232,12 @@ const MyPage = () => {
           {/* <button
           onClick={() => router.back()}
         >*/}
-          <p className="text-22-m text-black">마이페이지</p>
-        {/*</button>*/}
-        <div className="w-6"></div>
-      </div>
+          <p className="text-22-m text-black">마이페이지</p>{/*</button>*/}
+          <div className="w-6"></div>
+        </div>
 
-      {/* 프로필 정보 카드 */}
-      <div className="px-[23px] pt-[27px]">
+        {/* 프로필 정보 카드 */}
+        <div className="px-[23px] pt-[27px]">
         <div className="">
           <div className="flex items-center">
             {/* 프로필 이미지 */}
