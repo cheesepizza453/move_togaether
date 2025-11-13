@@ -830,7 +830,7 @@ export default function PostDetailPage() {
                         </div>
                       </div>
                     </div>
-                ) : applicants.length !== 0 ? (
+                ) : applicants.length === 0 ? (
                     <div className="pt-[200px] bg-white min-h-screen">
                       <Users className="h-12 w-12 text-gray-400 mx-auto mb-4"/>
                       <p className="text-text-800 text-16-m text-center">아직 지원자가 없습니다.</p>
