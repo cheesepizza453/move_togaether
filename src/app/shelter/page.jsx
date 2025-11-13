@@ -263,7 +263,21 @@ const ShelterMapPage = () => {
         averageCenter: true, // 클러스터에 포함된 마커들의 평균 위치를 클러스터 마커 위치로 설정
         minLevel: 1, // 클러스터 할 최소 지도 레벨 (1로 더 낮춤)
         disableClickZoom: false, // 클러스터 마커 클릭 시 확대/축소 비활성화
-        gridSize: 60 // 클러스터링을 위한 격자 크기 (더 크게)
+        gridSize: 60,
+        styles: [
+          {
+            width: '60px',
+            height: '60px',
+            background: 'rgba(255,208,68,0.7)',
+            borderRadius: '999px',
+            color: '#000',
+            fontSize: '16px',
+            fontWeight: '700',
+            textAlign: 'center',
+            lineHeight: '60px',
+            border:'1px solid rgba(255,208,68,1)'
+          }
+        ]
       });
 
       clustererRef.current = clusterer;
@@ -350,7 +364,21 @@ const ShelterMapPage = () => {
         averageCenter: true, // 클러스터에 포함된 마커들의 평균 위치를 클러스터 마커 위치로 설정
         minLevel: 1, // 클러스터 할 최소 지도 레벨 (1로 더 낮춤)
         disableClickZoom: false, // 클러스터 마커 클릭 시 확대/축소 비활성화
-        gridSize: 60 // 클러스터링을 위한 격자 크기 (더 크게)
+        gridSize: 60,
+        styles: [
+          {
+            width: '60px',
+            height: '60px',
+            background: 'rgba(255,208,68,0.7)',
+            borderRadius: '999px',
+            color: '#000',
+            fontSize: '16px',
+            fontWeight: '700',
+            textAlign: 'center',
+            lineHeight: '60px',
+            border:'1px solid rgba(255,208,68,1)'
+          }
+        ]
       });
 
       clustererRef.current = clusterer;
