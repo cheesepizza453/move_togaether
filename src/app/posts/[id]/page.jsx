@@ -1024,26 +1024,23 @@ export default function PostDetailPage() {
                   </div>
 
                   <div className="mb-6">
-                    <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                    <p className="text-14-r text-gray-700 whitespace-pre-wrap max-h-[270px] overflow-y-auto">
                       {selectedApplicant.message}
                     </p>
                   </div>
 
                   <div className="mb-4">
-                    <p className="text-sm font-medium text-gray-600 mb-2">연락하기</p>
                     <div className="flex gap-2">
                       <button
                           onClick={() => handleCall(selectedApplicant.user_profiles?.phone)}
-                          className="flex-1 bg-brand-main text-black text-sm py-2 px-4 rounded flex items-center justify-center gap-2"
+                          className="flex-1 h-[44px] bg-[#fbf1b4] text-16-m text-[#d4a108] py-2 px-4 rounded-[7px] shadow-[0_0_5px_0px_rgba(0,0,0,0.1)]"
                   >
-                    <Phone className="h-4 w-4" />
                     전화하기
                   </button>
                   <button
                     onClick={() => handleSMS(selectedApplicant.user_profiles?.phone)}
-                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm py-2 px-4 rounded flex items-center justify-center gap-2"
+                    className="flex-1 h-[44px] bg-[#fbf1b4] text-16-m text-[#d4a108] py-2 px-4 rounded-[7px] shadow-[0_0_5px_0px_rgba(0,0,0,0.1)]"
                   >
-                    <MessageCircle className="h-4 w-4" />
                     문자하기
                   </button>
                 </div>
