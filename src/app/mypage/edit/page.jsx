@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import { cn } from "@/lib/utils";
+import IconLoading from "../../../../public/img/icon/IconLoading";
 
 // 커스텀 AlertDialogContent (오버레이 없이)
 const CustomAlertDialogContent = React.forwardRef(({ className, ...props }, ref) => (
@@ -391,12 +392,13 @@ const EditProfilePage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">로딩 중...</p>
+        <div className="min-h-screen bg-white flex items-center justify-center">
+          <div className="flex justify-center items-center">
+            <div className={'w-full flex justify-center pt-[24vh]'}>
+              <IconLoading/>
+            </div>
+          </div>
         </div>
-      </div>
     );
   }
 
