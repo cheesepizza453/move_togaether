@@ -206,7 +206,7 @@ const ForgotPasswordPage = () => {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors ${
+              className={`w-full py-3 px-4 rounded-[15px] font-semibold transition-colors ${
                 loading
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   : 'bg-brand-main text-black'
