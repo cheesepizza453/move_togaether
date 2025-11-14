@@ -439,7 +439,7 @@ const UserProfileForm = (props) => {
                   ID(유저네임)을 입력해주세요. ex) movetogaether
                 </p>
                 <input
-                    type="url"
+                    type="text"
                     value={channelInputs.instagram}
                     onChange={(e) => onChannelInputChange('instagram', e.target.value)}
                     placeholder="인스타그램 링크를 입력해 주세요."
