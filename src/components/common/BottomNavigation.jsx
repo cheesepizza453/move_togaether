@@ -61,7 +61,7 @@ const BottomNavigation = () => {
     },
     {
       id: 'shelter',
-      label: '보호소 위치',
+      label: '내 주변',
       icon: IconMenuBarMap,
       href: '/shelter',
       customIcon: ''
