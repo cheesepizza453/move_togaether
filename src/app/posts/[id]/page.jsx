@@ -779,12 +779,12 @@ export default function PostDetailPage() {
                         className="flex flex-col p-[18px] bg-white rounded-[15px] shadow-[0_0_12px_0px_rgba(0,0,0,0.1)]">
                       <div className="flex items-center gap-x-[10px] mb-[4px]">
                     <span
-                        className="px-[6px] py-[4px] rounded-full text-12-m inline-flex bg-brand-point text-white">출발지</span>
+                        className="shrink-0 px-[6px] py-[4px] rounded-full text-12-m inline-flex bg-brand-point text-white">출발지</span>
                         <p className="text-16-m">{post.departure_address}</p>
                       </div>
                       <div className="mb-[12px] flex items-center gap-x-[10px]">
                     <span
-                        className="px-[6px] py-[5px] rounded-full text-12-m inline-flex bg-brand-point text-white">도착지</span>
+                        className="shrink-0 px-[6px] py-[5px] rounded-full text-12-m inline-flex bg-brand-point text-white">도착지</span>
                         <p className="text-16-m">{post.arrival_address}</p>
                       </div>
                       <div className={'flex gap-x-[4px]'}>

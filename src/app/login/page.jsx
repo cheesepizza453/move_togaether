@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import IconLoading from "../../../public/img/icon/IconLoading";
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -189,47 +190,51 @@ const LoginPage = () => {
   // 인증 상태 로딩 중일 때 로딩 화면 표시
   if (isCheckingAuth || authLoading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-yellow-500 mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">로그인 상태 확인 중...</h2>
-          <p className="text-gray-500">잠시만 기다려주세요.</p>
+        <div className="min-h-screen bg-white flex items-center justify-center">
+          <div className="flex justify-center items-center">
+            <div className={'w-full flex justify-center pt-[24vh]'}>
+              <IconLoading/>
+            </div>
+          </div>
         </div>
-      </div>
     );
   }
 
   // 이미 로그인된 사용자는 리다이렉트 처리 (useEffect에서 처리되지만 추가 안전장치)
   if (user) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-yellow-500 mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">메인 페이지로 이동 중...</h2>
-          <p className="text-gray-500">이미 로그인되어 있습니다.</p>
+        <div className="min-h-screen bg-white flex items-center justify-center">
+          <div className="flex justify-center items-center py-4">
+            <div className="mt-8 flex justify-center space-x-2">
+              <div className="w-2 h-2 bg-brand-main rounded-full animate-bounce"></div>
+              <div className="w-2 h-2 bg-brand-main rounded-full animate-bounce"
+                   style={{animationDelay: '0.1s'}}></div>
+              <div className="w-2 h-2 bg-brand-main rounded-full animate-bounce"
+                   style={{animationDelay: '0.2s'}}></div>
+            </div>
+          </div>
         </div>
-      </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4">
-      {/* 뒤로 가기 버튼 */}
-      <div className="absolute top-6 left-6">
-        <button
-          onClick={handleGoBack}
-          className="flex items-center justify-center w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
-        >
-          <ArrowLeft size={20} className="text-gray-600" />
-        </button>
-      </div>
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4">
+        {/* 뒤로 가기 버튼 */}
+        <div className="absolute top-6 left-6">
+          <button
+              onClick={handleGoBack}
+              className="flex items-center justify-center w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
+          >
+            <ArrowLeft size={20} className="text-gray-600"/>
+          </button>
+        </div>
 
-      {/* 로고 및 브랜드명 */}
-      <div className="text-center mb-8">
-        <div className="mb-4">
-          <img
-            src="/img/login_logo.png"
-            alt="무브투개더 로고"
+        {/* 로고 및 브랜드명 */}
+        <div className="text-center mb-8">
+          <div className="mb-4">
+            <img
+                src="/img/login_logo.png"
+                alt="무브투개더 로고"
             className="max-w-[70%] mx-auto"
           />
         </div>

@@ -98,20 +98,20 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
       if (post.status !== 'active') {
         return {
           text: '모집 완료',
-          className: 'w-full text-text-800 bg-text-300 py-[8px] rounded-[20px] text-14-m cursor-not-allowed',
+          className: 'w-full text-text-800 bg-text-300 py-[10px] rounded-[20px] text-14-m cursor-not-allowed',
           disabled: true
         };
       } else {
         if (post.dday >= 0) {
         return {
             text: '문의하기',
-            className: 'w-full bg-brand-main text-[#333] py-[8px] rounded-[20px] text-14-m',
+            className: 'w-full bg-brand-main text-[#333] py-[10px] rounded-[20px] text-14-m',
             disabled: false
           };
         } else {
           return {
             text: '아직 못 갔어요 🥺',
-            className: 'w-full bg-[#FFE066] text-gray-900 py-3 px-4 rounded-[20px] font-medium text-sm hover:bg-[#FFD700] transition-colors',
+            className: 'w-full bg-brand-main text-[#333] py-[10px] rounded-[20px] text-14-m',
             disabled: false
           };
         }
@@ -121,7 +121,7 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
     const buttonInfo = getButtonInfo(post);
     const getDdayText = (dday) => {
       if (dday < 0) return `D+${Math.abs(dday)}`;
-      if (dday === 0) return 'D-Day';
+      if (dday === 0) return '오늘마감!';
       return `D-${dday}`;
     };
 
@@ -147,7 +147,7 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
           <div className="flex items-start gap-4">
             <div className="flex-1 min-w-0">
               {/* D-day 표시 */}
-              {post.status === 'active' && post.dday > 0 && (
+              {post.status === 'active' && post.dday >= 0 && (
                 <div className="mb-2">
                   <div className={`inline-block px-[9px] py-[2px] rounded-[7px] text-14-b ${getDdayColor(post.dday)}`}>
                     {getDdayText(post.dday)}

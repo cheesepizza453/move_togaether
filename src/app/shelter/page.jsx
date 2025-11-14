@@ -404,7 +404,7 @@ const ShelterMapPage = () => {
           <div className="flex items-center justify-between h-[78px] px-[30px] bg-white">
             <p className="text-22-m text-black">내 주변</p>
           </div>
-          <div className="flex pt-[60px] justify-center h-screen bg-gray-50">
+          <div className="flex pt-[23vh] justify-center h-screen bg-gray-50">
             <div className="w-[120px]">
               <IconLoading/>
             </div>
@@ -457,7 +457,7 @@ const ShelterMapPage = () => {
                   className="block w-full h-full"
                   href={`/posts/${selectedPost.id}`}
               >
-                <div className="bg-white rounded-[30px] px-[25px] py-[20px] cursor-pointer relative shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]">
+                <div className="bg-white rounded-[30px] mx-[12px] px-[25px] py-[20px] cursor-pointer relative shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]">
                   {/* D-day 배지 */}
                   <div className="flex justify-end items-start">
                     <div className="absolute top-[8px] left-[16px] z-10">

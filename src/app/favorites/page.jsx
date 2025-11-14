@@ -173,7 +173,7 @@ export default function FavoritesPage() {
       </div>
 
       {/* 메인 콘텐츠 - 흰색 카드 */}
-      <main className="w-full bg-[#F9F9F5] rounded-t-[30px] px-[30px] pt-6 pb-6 min-h-[calc(100vh-120px)]">
+      <main className="w-full bg-[#F9F9F5] rounded-t-[30px] px-[30px] pt-6 pb-6 min-h-[89vh]">
 
         {/* 탭 메뉴 */}
         <div className="flex border-gray-200 mb-4">
@@ -202,7 +202,7 @@ export default function FavoritesPage() {
         {/* 콘텐츠 */}
         {loading ? (
           <div className="flex justify-center items-center">
-            <div className={'w-full flex justify-center pt-[60px]'}>
+            <div className={'w-full flex justify-center pt-[24vh]'}>
               <IconLoading/>
             </div>
           </div>
@@ -230,7 +230,7 @@ export default function FavoritesPage() {
             )}
           </div>
         ) : (
-          <div className="space-y-0">
+          <div className="space-y-[20px]">
             {getCurrentFavorites().map((post) => (
               <FavoriteCard
                 key={post.id}

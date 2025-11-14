@@ -606,18 +606,18 @@ export default function Home() {
       <main className="w-full bg-brand-bg px-[23px] pt-[15px]">
         {/* 메인 배너 */}
         <section className="mb-[27px]">
-          <MainBanner />
+          <MainBanner/>
         </section>
 
         {/* 정렬 옵션 */}
         <section className="mb-6">
-          <SortOptions onSortChange={handleSortChange} activeSort={sortOption} />
+          <SortOptions onSortChange={handleSortChange} activeSort={sortOption}/>
         </section>
 
         {/* 게시물 목록 */}
         <section className="pb-6">
           {(() => {
-            console.log('렌더링 상태 확인:', { loading, error, postsLength: posts.length, isFetching });
+            console.log('렌더링 상태 확인:', {loading, error, postsLength: posts.length, isFetching});
             return null;
           })()}
           {loading ? (
@@ -629,51 +629,57 @@ export default function Home() {
           ) : error ? (
               <div className="flex justify-center items-center py-8">
                 <div className="text-red-500">{error}</div>
-            </div>
+              </div>
           ) : posts.length === 0 ? (
-            <div className="flex justify-center items-center py-8">
-              <div className="text-gray-500">등록된 게시물이 없습니다.</div>
-            </div>
+              <div className="flex justify-center items-center py-8">
+                <div className="text-gray-500">등록된 게시물이 없습니다.</div>
+              </div>
           ) : (
-            <>
-              <div className="space-y-[18px]">
-                {allPosts.map((post) => (
-                  <PostCard
-                    key={post.id}
-                    post={post}
-                    isFavorite={favoritePostIds.has(post.id)}
-                    onFavoriteToggle={handleFavoriteToggle}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="space-y-[18px]">
+                  {allPosts.map((post) => (
+                      <PostCard
+                          key={post.id}
+                          post={post}
+                          isFavorite={favoritePostIds.has(post.id)}
+                          onFavoriteToggle={handleFavoriteToggle}
+                      />
+                  ))}
+                </div>
 
-              {/* 무한 스크롤 트리거 및 로딩 인디케이터 */}
-              <div id="load-more-trigger" className="py-4">
-                {isLoadingMore ? (
-                  <div className="flex justify-center items-center py-4">
-                    <div className="text-gray-500">더 많은 게시물을 불러오는 중...</div>
-                  </div>
-                ) : (
-                  <div className="h-4"></div> // 트리거용 빈 공간
-                )}
-              </div>
-            </>
+                {/* 무한 스크롤 트리거 및 로딩 인디케이터 */}
+                <div id="load-more-trigger" className="py-4">
+                  {isLoadingMore ? (
+                      <div className="flex justify-center items-center py-4">
+                        <div className="mt-8 flex justify-center space-x-2">
+                          <div className="w-2 h-2 bg-brand-main rounded-full animate-bounce"></div>
+                          <div className="w-2 h-2 bg-brand-main rounded-full animate-bounce"
+                               style={{animationDelay: '0.1s'}}></div>
+                          <div className="w-2 h-2 bg-brand-main rounded-full animate-bounce"
+                               style={{animationDelay: '0.2s'}}></div>
+                        </div>
+                      </div>
+                  ) : (
+                      <div className="h-4"></div> // 트리거용 빈 공간
+                  )}
+                </div>
+              </>
           )}
         </section>
       </main>
 
       {/* 위치 검색 다이얼로그 */}
-      <Suspense fallback={<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+{/*      <Suspense fallback={<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white p-4 rounded-lg">
-          <IconLoading className="w-8 h-8 animate-spin" />
+          <IconLoading className="w-8 h-8 animate-spin"/>
         </div>
       </div>}>
         <LocationSearchDialog
-          isOpen={showLocationDialog}
-          onClose={() => setShowLocationDialog(false)}
-          onLocationConfirm={handleLocationConfirm}
+            isOpen={showLocationDialog}
+            onClose={() => setShowLocationDialog(false)}
+            onLocationConfirm={handleLocationConfirm}
         />
-      </Suspense>
+      </Suspense>*/}
     </div>
   );
 }

@@ -87,20 +87,20 @@ const FavoriteCard = ({ post, onFavoriteToggle, isCompleted = false }) => {
       if (status !== 'active') {
         return {
           text: '입양 완료',
-          className: 'w-full bg-gray-400 text-white py-3 px-4 rounded-[20px] font-medium text-sm cursor-not-allowed',
+          className: 'w-full text-text-800 bg-text-300 py-[10px] rounded-[20px] text-14-m cursor-not-allowed',
           disabled: true
         };
       } else {
         return {
           text: '아직 못 갔어요 🥺',
-          className: 'w-full bg-[#FFE066] text-gray-900 py-3 px-4 rounded-[20px] font-medium text-sm hover:bg-[#FFD700] transition-colors',
+          className: 'w-full bg-brand-main text-[#333] py-[10px] rounded-[20px] text-14-m',
           disabled: false
         };
       }
     } else {
       return {
         text: '문의하기',
-        className: 'w-full bg-[#FFE066] text-gray-900 py-3 px-4 rounded-[20px] font-medium text-sm hover:bg-[#FFD700] transition-colors',
+        className: 'w-full bg-brand-main text-[#333] py-[10px] rounded-[20px] text-14-m',
         disabled: false
       };
     }
@@ -111,7 +111,7 @@ const FavoriteCard = ({ post, onFavoriteToggle, isCompleted = false }) => {
   return (
     <>
       <div
-        className="bg-white rounded-[30px] px-8 py-6 mb-6 shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-shadow"
+        className="bg-white rounded-[30px] px-8 py-6 shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-shadow"
         onClick={handleCardClick}
       >
         <div className="flex items-start gap-4">
