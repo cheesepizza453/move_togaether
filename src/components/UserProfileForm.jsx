@@ -37,6 +37,7 @@ const UserProfileForm = (props) => {
   } = props;
 
   const [phoneVisibility, setPhoneVisibility] = useState('public');
+  const [isSecurityVisible, setIsSecurityVisible] = useState(mode !== 'edit');
   const fileInputRef = useRef(null);
 
   // 공통으로 쓸 수 있는 압축 함수
@@ -240,28 +241,8 @@ const UserProfileForm = (props) => {
       )}
 
       {/* 전화번호 */}
-      {showPhone && (
-        <div>
-          <label className="block text-16-m mb-[12px]">
-            전화번호<span className="text-brand-point">*</span>
-          </label>
-          <input
-            type="tel"
-            value={formData.phone}
-            onChange={(e) => setFormData(prev => ({...prev, phone: e.target.value }))}
-            placeholder="전화번호를 입력해주세요."
-            className={`w-full px-[15px] py-[18px] text-16-r rounded-[15px] border text-text-800 ${
-              errors.phone
-                ? 'border-brand-point bg-brand-point-bg text-brand-point focus:border-brand-point focus:ring-brand-point'
-                : 'border-text-600 bg-text-050 focus:bg-brand-sub focus:text-brand-yellow-dark focus:border-brand-main focus:ring-brand-main'
-            } focus:outline-none focus:ring-1 transition-colors`}
-          />
-          {errors.phone && (
-            <p className="text-9-r text-brand-point mt-[4px]">{errors.phone}</p>
-          )}
-
-          {/* 전화번호 공개 설정 (편집 모드에서만) */}
-          {mode === 'edit' && (
+      {/* 전화번호 공개 설정 (편집 모드에서만) */}
+      {/*          {mode === 'edit' && (
             <div className="mt-3">
               <p className="text-14-r text-text-800 mb-2">전화번호 공개 설정</p>
               <div className="flex gap-4">
@@ -303,8 +284,30 @@ const UserProfileForm = (props) => {
                 </label>
               </div>
             </div>
-          )}
-        </div>
+          )}*/}
+      {showPhone && (
+          <div>
+            <label className="block text-16-m mb-[12px]">
+              전화번호<span className="text-brand-point">*</span>
+            </label>
+            <p className="text-14-r text-text-800 mb-4">봉사 문의를 남겼을 때에만 이동 요청자에게 공개돼요.</p>
+            <input
+                type="tel"
+                value={formData.phone}
+                maxLength={11}
+                onChange={(e) => setFormData(prev => ({...prev, phone: e.target.value}))}
+                placeholder="전화번호를 입력해주세요."
+                className={`w-full px-[15px] py-[18px] text-16-r rounded-[15px] border text-text-800 ${
+                    errors.phone
+                        ? 'border-brand-point bg-brand-point-bg text-brand-point focus:border-brand-point focus:ring-brand-point'
+                        : 'border-text-600 bg-text-050 focus:bg-brand-sub focus:text-brand-yellow-dark focus:border-brand-main focus:ring-brand-main'
+                } focus:outline-none focus:ring-1 transition-colors`}
+            />
+            {errors.phone && (
+                <p className="text-9-r text-brand-point mt-[4px]">{errors.phone}</p>
+            )}
+
+          </div>
       )}
 
       {/* 비밀번호 (회원가입 모드에서만) */}
@@ -487,63 +490,80 @@ const UserProfileForm = (props) => {
 
       {/* 보안 질문/답변 (회원가입 모드 또는 수정 모드에서 이메일 가입 사용자) */}
       {showSecurityQuestion && (
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              보안 질문 <span className="text-brand-point">*</span>
-            </label>
-            <p className="text-xs text-gray-500 mb-3">
-              {mode === 'signup'
-                ? '아이디 찾기 시 사용할 보안 질문을 선택해주세요.'
-                : '아이디 찾기 시 사용할 보안 질문을 수정할 수 있습니다.'
-              }
-            </p>
-            <select
-              value={formData.securityQuestion || ''}
-              onChange={(e) => setFormData(prev => ({...prev, securityQuestion: e.target.value }))}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-main focus:border-transparent"
-            >
-              <option value="">보안 질문을 선택해주세요</option>
-              {SECURITY_QUESTIONS.map((question) => (
-                <option key={question.id} value={question.id}>
-                  {question.question}
-                </option>
-              ))}
-            </select>
-            {errors.securityQuestion && (
-              <p className="text-xs text-red-500 mt-1">{errors.securityQuestion}</p>
+          <div className="space-y-4">
+            {/* edit 모드일 때만 보기/숨기기 버튼 노출 */}
+            {mode === 'edit' && (
+                <div className="flex justify-between items-center mb-2">
+                  <button
+                      type="button"
+                      onClick={() => setIsSecurityVisible(prev => !prev)}
+                      className="text-12-r text-text-800 underline"
+                  >
+                    {isSecurityVisible ? '보안 질문 숨기기' : '보안 질문 보기'}
+                  </button>
+                </div>
             )}
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              보안 질문 답변 <span className="text-brand-point">*</span>
-            </label>
-            <input
-              type="text"
-              value={formData.securityAnswer || ''}
-              onChange={(e) => setFormData(prev => ({...prev, securityAnswer: e.target.value }))}
-              placeholder="보안 질문에 대한 답변을 입력해주세요"
-              maxLength={50}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-main focus:border-transparent"
-            />
-            <div className="flex justify-between items-center mt-1">
-              <p className="text-xs text-gray-500">아이디 찾기 시 사용됩니다</p>
-              <p className="text-xs text-gray-400">
-                {(formData.securityAnswer || '').length}/50
-              </p>
-            </div>
-            {errors.securityAnswer && (
-              <p className="text-xs text-red-500 mt-1">{errors.securityAnswer}</p>
+            {/* 실제 입력 폼은 isSecurityVisible 이 true일 때만 노출 */}
+            {isSecurityVisible && (
+                <>
+                  <div>
+                    <label className="block text-16-m mb-[12px]">
+                      보안 질문<span className="text-brand-point">*</span>
+                    </label>
+                    <select
+                        value={formData.securityQuestion || ''}
+                        onChange={(e) =>
+                            setFormData(prev => ({ ...prev, securityQuestion: e.target.value }))
+                        }
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-main focus:border-transparent"
+                    >
+                      <option value="">보안 질문을 선택해주세요</option>
+                      {SECURITY_QUESTIONS.map((question) => (
+                          <option key={question.id} value={question.id}>
+                            {question.question}
+                          </option>
+                      ))}
+                    </select>
+                    {errors.securityQuestion && (
+                        <p className="text-xs text-red-500 mt-1">{errors.securityQuestion}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-16-m mb-[12px]">
+                      보안 질문 답변<span className="text-brand-point">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        value={formData.securityAnswer || ''}
+                        onChange={(e) =>
+                            setFormData(prev => ({ ...prev, securityAnswer: e.target.value }))
+                        }
+                        placeholder="보안 질문에 대한 답변을 입력해주세요"
+                        maxLength={50}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-main focus:border-transparent"
+                    />
+                    <div className="flex justify-end mt-[4px]">
+            <span className="text-12-l text-text-800">
+              {(formData.securityAnswer || '').length}/50
+            </span>
+                    </div>
+
+                    {errors.securityAnswer && (
+                        <p className="text-xs text-red-500 mt-1">{errors.securityAnswer}</p>
+                    )}
+                  </div>
+                </>
             )}
           </div>
-        </div>
       )}
+
 
       {/* 약관 동의 (회원가입 모드에서만) */}
       {showTerms && mode === 'signup' && (
-        <div className="space-y-3">
-          <div className="flex items-center">
+          <div className="space-y-3">
+            <div className="flex items-center">
             <input
               type="checkbox"
               id="terms"

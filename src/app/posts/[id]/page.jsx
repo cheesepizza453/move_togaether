@@ -458,7 +458,7 @@ export default function PostDetailPage() {
 
   const handleRecruitmentComplete = () => {
     dialog.showConfirm(
-      '모집 완료 시 상태를 변경할 수 없습니다.\n완료 하시겠습니까?',
+      '모집 완료 시 상태를 변경할 수 없으며\n 더이상 지원자를 확인할 수 없습니다.\n완료 하시겠습니까?',
       '모집 완료 확인',
       {
         confirmText: '확인',
@@ -572,7 +572,7 @@ export default function PostDetailPage() {
           <div>
             <div>
               {/* 강아지 이미지 */}
-              <div className="relative flex justify-center items-center w-full h-auto aspect-[402/343] bg-brand-bg">
+              <div className="relative flex justify-center items-center w-full h-auto aspect-[1/1] bg-brand-bg">
                 <IconLoading/>
               </div>
 
@@ -704,7 +704,7 @@ export default function PostDetailPage() {
 
         {/* 작성자 정보 */}
         {!isOwner &&
-            <div className={'relative w-full h-[92px] px-[25px] rounded-b-[15px] bg-white z-20 overflow-hidden'}>
+            <div className={'relative w-full h-[92px] px-[25px] bg-white z-20 overflow-hidden'}>
               <div className="w-full pt-[10px] flex items-center justify-between">
                 {/* 링크 추가 */}
                 <a className={'flex items-center gap-[9px]'} href={`/authors/${post.user_id}`}>
@@ -715,8 +715,6 @@ export default function PostDetailPage() {
                   />
                   <div>
                     <p className="pr-[30px] mb-[2px] text-18-b">{post.user_profiles?.display_name || '익명'}</p>
-                    {/* 실제 전화번호 표시 */}
-                    <p className="text-14-l text-[#6c6c6c]">{post.user_profiles?.phone || '연락처 없음'}</p>
                   </div>
                 </a>
                 {/* 링크 추가 */}
@@ -728,12 +726,12 @@ export default function PostDetailPage() {
               </div>
             </div>
         }
-        <div className={`${isOwner && activeTab === 'post' && 'mt-[-15px]'} ${isOwner && activeTab === 'applicants' && 'bg-white pt-[30px] px-[22px] mb-[10px]'}`}>
+        <div className={`${isOwner && activeTab === 'applicants' && 'pt-[30px] px-[22px] mb-[10px]'}`}>
           {/* 게시물 탭 */}
           {activeTab === 'post' && (
               <div>
                 {/* 강아지 이미지 */}
-                <div className="mt-[-15px] relative w-full aspect-[402/343]">
+                <div className="relative w-full aspect-[1/1]">
                   <Image
                       width={600}
                       height={600}
@@ -828,11 +826,11 @@ export default function PostDetailPage() {
                       </div>
                     </div>
                 ) : applicants.length === 0 ? (
-                    <div className="pt-[200px] bg-white min-h-screen">
+                    <div className="pt-[200px] min-h-screen">
                       <p className="text-text-800 text-16-m text-center">아직 지원자가 없습니다.</p>
                     </div>
                 ) : (
-                    <div className="space-y-[10px]">
+                    <div className="space-y-[10px] pb-[80px]">
                       {applicants.map((applicant) => (
                           <div key={applicant.id}
                                className="py-[30px] px-[24px] bg-white rounded-[15px] shadow-[0_0_12px_0px_rgba(0,0,0,0.1)]">
@@ -840,8 +838,6 @@ export default function PostDetailPage() {
                               <div className="flex flex-col">
                                 <div className={'mb-[4px] flex items-center text-[#535353] gap-x-[5px]'}>
                                   <p className="text-18-b">{applicant.user_profiles?.display_name || '익명'}</p>
-                                  |
-                                  <p className="text-16-r text-text-800">{applicant.user_profiles?.phone || '연락처 없음'}</p>
                                 </div>
                                 <p className="text-12-r text-[#8a8a8a]">
                                   {moment(applicant.created_at).format('YY.MM.DD HH:mm')}
@@ -864,7 +860,7 @@ export default function PostDetailPage() {
                               <div className={'mt-[10px] pb-[16px] border-b border-[#d9d9d9]'}>
                                 <button
                                     onClick={() => handleApplicantClick(applicant)}
-                                    className="text-blue-500 text-12-r"
+                                    className="text-brand-yellow-dark underline text-12-r"
                                 >
                                   전체보기
                                 </button>
@@ -987,56 +983,57 @@ export default function PostDetailPage() {
         {/* 지원자 상세 모달 */}
         {showApplicantModal && selectedApplicant && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-[15px] max-w-md w-full max-h-[80vh] overflow-y-auto">
-                <div className="relative pt-[22px] pb-[18px] flex items-center justify-between">
-                  <h3 className="w-full text-22-b text-[#333333] text-center">전체보기</h3>
-                  <button
-                      onClick={() => setShowApplicantModal(false)}
-                      className="absolute p-1 top-[18px] right-[18px]"
-                  >
-                    <X className="h-5 w-5"/>
-                  </button>
-                </div>
+              <div className="relative bg-white rounded-[15px] max-w-md w-full max-h-[80vh] overflow-y-auto">
+                <button
+                    onClick={() => setShowApplicantModal(false)}
+                    className="absolute p-1 top-[7px] right-[7px]"
+                >
+                  <X className="h-5 w-5"/>
+                </button>
 
-                <div className="px-[20px]">
+                <div className="px-[20px] pt-[30px]">
                   <div className="flex items-center justify-center gap-x-[4px] mb-[24px] text-text-800">
-                      <p className="text-18-b ">{selectedApplicant.user_profiles?.display_name || '익명'}</p> |
-                      <p className="text-16-r">{selectedApplicant.user_profiles?.phone.replace(/(\d{3})(\d{3,4})(\d{4})/, "$1-$2-$3") || '연락처 없음'}</p>
+                    <p className="text-18-b ">{selectedApplicant.user_profiles?.display_name || '익명'}</p>
                   </div>
 
                   <div className="mb-[24px]">
                     <p className="text-center text-16-r text-gray-700 whitespace-pre-wrap max-h-[270px] overflow-y-auto">
                       {selectedApplicant.message}
                     </p>
+                    <p className="mt-[10px] text-center text-12-r text-[#8a8a8a]">
+                      {moment(selectedApplicant.created_at).format('YY.MM.DD HH:mm')}
+                    </p>
                   </div>
+
 
                   <div className="mb-4">
                     <div className="flex gap-2">
                       <button
                           onClick={() => handleCall(selectedApplicant.user_profiles?.phone)}
                           className="flex-1 h-[44px] bg-[#fbf1b4] text-16-m text-[#d4a108] py-2 px-4 rounded-[7px] shadow-[0_0_5px_0px_rgba(0,0,0,0.1)]"
-                  >
-                    전화하기
-                  </button>
-                  <button
-                    onClick={() => handleSMS(selectedApplicant.user_profiles?.phone)}
-                    className="flex-1 h-[44px] bg-[#fbf1b4] text-16-m text-[#d4a108] py-2 px-4 rounded-[7px] shadow-[0_0_5px_0px_rgba(0,0,0,0.1)]"
-                  >
-                    문자하기
-                  </button>
+                      >
+                        전화하기
+                      </button>
+                      <button
+                          onClick={() => handleSMS(selectedApplicant.user_profiles?.phone)}
+                          className="flex-1 h-[44px] bg-[#fbf1b4] text-16-m text-[#d4a108] py-2 px-4 rounded-[7px] shadow-[0_0_5px_0px_rgba(0,0,0,0.1)]"
+                      >
+                        문자하기
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+        )}
 
-      {/* 지원내용 확인 모달 */}
-      {showApplicationModal && myApplication && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-[15px] max-w-md w-full max-h-[80vh] overflow-y-auto shadow-[0_0_12px_0px_rgba(0,0,0,0.1)]">
+        {/* 지원내용 확인 모달 */}
+        {showApplicationModal && myApplication && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div
+                  className="bg-white rounded-[15px] max-w-md w-full max-h-[80vh] overflow-y-auto shadow-[0_0_12px_0px_rgba(0,0,0,0.1)]">
             <div className="p-6 flex items-center justify-between">
-              <h3 className="text-20-m">지원 내용 확인</h3>
+              <h3 className="w-full text-20-m text-center">지원 내용 확인</h3>
             </div>
 
             <div className="p-[20px] pt-0">
