@@ -191,7 +191,7 @@ const LoginPage = () => {
   if (isCheckingAuth || authLoading) {
     return (
         <div className="min-h-screen bg-white flex items-center justify-center">
-          <div className="flex justify-center items-center">
+          <div className="flex justify-center">
             <div className={'w-full flex justify-center pt-[24vh]'}>
               <IconLoading/>
             </div>
