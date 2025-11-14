@@ -295,7 +295,10 @@ const UserProfileForm = (props) => {
                 type="tel"
                 value={formData.phone}
                 maxLength={11}
-                onChange={(e) => setFormData(prev => ({...prev, phone: e.target.value}))}
+                onChange={(e) => {
+                  const onlyNumbers = e.target.value.replace(/[^0-9]/g, '');
+                  setFormData(prev => ({ ...prev, phone: onlyNumbers }));
+                }}
                 placeholder="전화번호를 입력해주세요."
                 className={`w-full px-[15px] py-[18px] text-16-r rounded-[15px] border text-text-800 ${
                     errors.phone
