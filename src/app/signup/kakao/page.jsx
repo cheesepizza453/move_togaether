@@ -35,7 +35,7 @@ const KakaoSignupPage = () => {
     kakaoOpenChat: ''
   });
 
-  const [errors, setErrors] = useState<any>({});
+  const [errors, setErrors] = useState({});
   const [nicknameValidation, setNicknameValidation] = useState(null);
   const [nicknameChecking, setNicknameChecking] = useState(false);
 
