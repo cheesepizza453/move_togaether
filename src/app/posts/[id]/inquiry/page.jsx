@@ -165,8 +165,7 @@ export default function InquiryPage() {
                 />
               </div>
               <div className={'flex items-center gap-x-[5px]'}>
-                <p className="text-18-b">{profile?.display_name || '사용자'}</p>
-                {profile?.phone && <><span>|</span><p className="text-16-r">{profile?.phone.replace(/(\d{3})(\d{3,4})(\d{4})/, "$1-$2-$3")}</p></>}
+                <p className="text-18-b">{profile?.display_name || '익명'}</p>
               </div>
             </div>
           </CardContent>
