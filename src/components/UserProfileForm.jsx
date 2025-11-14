@@ -295,7 +295,10 @@ const UserProfileForm = (props) => {
                 type="tel"
                 value={formData.phone}
                 maxLength={11}
-                onChange={(e) => setFormData(prev => ({...prev, phone: e.target.value}))}
+                onChange={(e) => {
+                  const onlyNumbers = e.target.value.replace(/[^0-9]/g, '');
+                  setFormData(prev => ({ ...prev, phone: onlyNumbers }));
+                }}
                 placeholder="전화번호를 입력해주세요."
                 className={`w-full px-[15px] py-[18px] text-16-r rounded-[15px] border text-text-800 ${
                     errors.phone
@@ -385,7 +388,7 @@ const UserProfileForm = (props) => {
               </div>
 
               {/* 네이버 카페 */}
-              <div className="flex items-center justify-between">
+{/*              <div className="flex items-center justify-between">
                 <label className="flex items-center cursor-pointer">
                   <input
                     type="checkbox"
@@ -402,7 +405,7 @@ const UserProfileForm = (props) => {
                     <span className="text-14-r text-text-800">네이버 카페</span>
                   </div>
                 </label>
-              </div>
+              </div>*/}
 
               {/* 카카오톡 오픈채팅 */}
               <div className="flex items-center justify-between">
@@ -428,41 +431,47 @@ const UserProfileForm = (props) => {
 
           {/* 인스타그램 */}
           {contactChannels.instagram && (
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                인스타그램
-              </label>
-              <input
-                type="url"
-                value={channelInputs.instagram}
-                onChange={(e) => onChannelInputChange('instagram', e.target.value)}
-                placeholder="인스타그램 링크를 입력해 주세요."
-                className="w-full px-[15px] py-[18px] text-16-r rounded-[15px] border border-text-600 text-text-800  bg-text-050  focus:border-brand-main focus:ring-1  focus:ring-brand-main focus:bg-brand-sub focus:text-brand-yellow-dark"
-              />
-              {errors.instagram && (
-                <p className="text-xs text-red-500 mt-1">{errors.instagram}</p>
-              )}
-            </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  인스타그램
+                </label>
+                <p className="mb-[8px] text-14-r text-text-800">
+                  ID(유저네임)을 입력해주세요. ex) movetogaether
+                </p>
+                <input
+                    type="url"
+                    value={channelInputs.instagram}
+                    onChange={(e) => onChannelInputChange('instagram', e.target.value)}
+                    placeholder="인스타그램 링크를 입력해 주세요."
+                    className="w-full px-[15px] py-[18px] text-16-r rounded-[15px] border border-text-600 text-text-800  bg-text-050  focus:border-brand-main focus:ring-1  focus:ring-brand-main focus:bg-brand-sub focus:text-brand-yellow-dark"
+                />
+                {errors.instagram && (
+                    <p className="text-10-r text-brand-point mt-[4px]">{errors.instagram}</p>
+                )}
+              </div>
           )}
 
           {/* 네이버 카페 */}
-          {contactChannels.naverCafe && (
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                네이버 카페
-              </label>
-              <input
-                type="url"
-                value={channelInputs.naverCafe}
-                onChange={(e) => onChannelInputChange('naverCafe', e.target.value)}
-                placeholder="네이버 카페 링크를 입력해 주세요."
-                className="w-full px-[15px] py-[18px] text-16-r rounded-[15px] border border-text-600 text-text-800  bg-text-050  focus:border-brand-main focus:ring-1  focus:ring-brand-main focus:bg-brand-sub focus:text-brand-yellow-dark"
-              />
-              {errors.naverCafe && (
-                <p className="text-xs text-red-500 mt-1">{errors.naverCafe}</p>
-              )}
-            </div>
-          )}
+{/*          {contactChannels.naverCafe && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  네이버 카페
+                </label>
+                <p className="mb-[8px] text-14-r text-text-800">
+                  'https://www'를 포함해주세요. ex) https://www.move-togaether.com
+                </p>
+                <input
+                    type="url"
+                    value={channelInputs.naverCafe}
+                    onChange={(e) => onChannelInputChange('naverCafe', e.target.value)}
+                    placeholder="네이버 카페 링크를 입력해 주세요."
+                    className="w-full px-[15px] py-[18px] text-16-r rounded-[15px] border border-text-600 text-text-800  bg-text-050  focus:border-brand-main focus:ring-1  focus:ring-brand-main focus:bg-brand-sub focus:text-brand-yellow-dark"
+                />
+                {errors.naverCafe && (
+                    <p className="text-10-r text-brand-point mt-[4px]">{errors.naverCafe}</p>
+                )}
+              </div>
+          )}*/}
 
           {/* 카카오톡 오픈채팅 */}
           {contactChannels.kakaoOpenChat && (
@@ -481,7 +490,7 @@ const UserProfileForm = (props) => {
                     className="w-full px-[15px] py-[18px] text-16-r rounded-[15px] border border-text-600 text-text-800  bg-text-050  focus:border-brand-main focus:ring-1  focus:ring-brand-main focus:bg-brand-sub focus:text-brand-yellow-dark"
                 />
                 {errors.kakaoOpenChat && (
-                    <p className="text-brand-point ">{errors.kakaoOpenChat}</p>
+                    <p className="text-10-r text-brand-point mt-[4px]">{errors.kakaoOpenChat}</p>
                 )}
               </div>
           )}

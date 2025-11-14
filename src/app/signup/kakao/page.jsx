@@ -358,6 +358,32 @@ const KakaoSignupPage = () => {
     }));
   };
 
+  // 인스타그램 username 검증
+  // 규칙: 영문 소문자 + 숫자 + 언더바(_)만 허용, 1~30자, 한글 X, URL X
+  const isValidInstagramUsername = (value) => {
+    if (!value) return false;
+
+    // 한글 포함 여부
+    const hasKorean = /[가-힣]/.test(value);
+    if (hasKorean) return false;
+
+    // 인스타그램 유저네임 패턴
+    const regex = /^[a-z0-9_]{1,30}$/; // .(dot)허용: /^[a-z0-9._]{1,30}$/
+
+    return regex.test(value);
+  };
+
+  // 카카오 옵챗 URL 검증: http(s) + 한글 없음
+  const isValidUrl = (value) => {
+    if (!value) return false;
+    const lower = value.toLowerCase();
+    const hasValidProtocol =
+        lower.startsWith('http://') || lower.startsWith('https://');
+    const hasKorean = /[가-힣]/.test(value);
+
+    return hasValidProtocol && !hasKorean;
+  };
+
   const validateForm = () => {
     const newErrors = {};
 
@@ -372,14 +398,36 @@ const KakaoSignupPage = () => {
     }
 
     // 선택된 채널에 대한 입력값 검증
-    if (contactChannels.instagram && !channelInputs.instagram.trim()) {
-      newErrors.instagram = '인스타그램 ID를 입력해주세요.';
+    if (contactChannels.instagram) {
+      const ig = channelInputs.instagram.trim();
+
+      if (!ig) {
+        newErrors.instagram = '인스타그램 ID(영문 유저네임)를 입력해주세요.';
+      } else if (/http(s)?:\/\//i.test(ig)) {
+        newErrors.instagram = 'URL이 아닌 인스타그램 ID(영문 유저네임)을 입력해주세요.';
+      } else if (!isValidInstagramUsername(ig)) {
+        newErrors.instagram = '영문 소문자, 숫자, 언더바(_)만 사용해 1~30자로 입력해주세요.';
+      }
     }
-    if (contactChannels.naverCafe && !channelInputs.naverCafe.trim()) {
-      newErrors.naverCafe = '네이버 카페 링크를 입력해주세요.';
-    }
-    if (contactChannels.kakaoOpenChat && !channelInputs.kakaoOpenChat.trim()) {
-      newErrors.kakaoOpenChat = '카카오톡 오픈채팅 링크를 입력해주세요.';
+
+/*    if (contactChannels.naverCafe) {
+      const naver = channelInputs.naverCafe.trim();
+
+      if (!naver) {
+        newErrors.naverCafe = '네이버 카페 링크를 입력해주세요.';
+      } else if (!isValidUrl(naver)) {
+        newErrors.naverCafe = '한글 없이 https:// 로 시작하는 오픈채팅 링크를 입력해주세요.';
+      }
+    }*/
+
+    if (contactChannels.kakaoOpenChat) {
+      const kakao = channelInputs.kakaoOpenChat.trim();
+
+      if (!kakao) {
+        newErrors.kakaoOpenChat = '카카오톡 오픈채팅 링크를 입력해주세요.';
+      } else if (!isValidUrl(kakao)) {
+        newErrors.kakaoOpenChat = '한글 없이 https:// 로 시작하는 오픈채팅 링크를 입력해주세요.';
+      }
     }
 
     setErrors(newErrors);
@@ -469,7 +517,7 @@ const KakaoSignupPage = () => {
         bio: formData.introduction || null,
         phone: formData.phone || null,
         instagram: contactChannels.instagram ? channelInputs.instagram : null,
-        naver_cafe: contactChannels.naverCafe ? channelInputs.naverCafe : null,
+        // naver_cafe: contactChannels.naverCafe ? channelInputs.naverCafe : null,
         kakao_openchat: contactChannels.kakaoOpenChat ? channelInputs.kakaoOpenChat : null,
         provider: 'kakao',
         created_at: new Date().toISOString(),
@@ -499,26 +547,22 @@ const KakaoSignupPage = () => {
 
       console.log('6. 프로필 생성 성공:', insertedProfile);
 
-      // 프로필 생성 완료 후 로그아웃
-      await supabase.auth.signOut();
+      toast.success('회원가입이 완료되었습니다!');
 
       // sessionStorage 정리
       sessionStorage.removeItem('kakaoUserInfo');
+      sessionStorage.removeItem('redirectAfterLogin');
+
       // 신규 사용자 플래그 리셋
       setIsNewUser(false);
-      toast.success('회원가입이 완료되었습니다!');
 
-      // 가입 성공 후 리다이렉트 경로 확인
-      const redirectPath = sessionStorage.getItem('redirectAfterLogin');
-      if (redirectPath) {
-        console.log('저장된 리다이렉트 경로로 이동:', redirectPath);
-        sessionStorage.removeItem('redirectAfterLogin');
-        router.push(redirectPath);
-      } else {
-        console.log('기본 경로로 이동: 마이페이지');
-        router.push('/mypage');
-      }
+      // 로그아웃을 기다리지 않고 바로 이동
+      router.push('/signup/success');
 
+      // 로그아웃은 비동기로 처리 (페이지 이동에 영향 없음)
+      supabase.auth.signOut().catch(err => {
+        console.error('로그아웃 오류:', err);
+      });
     } catch (error) {
       console.error('카카오톡 회원가입 오류:', error);
       toast.error('회원가입 처리 중 오류가 발생했습니다.');

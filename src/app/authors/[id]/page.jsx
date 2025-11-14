@@ -372,13 +372,13 @@ export default function AuthorDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">작성자 정보를 불러오는 중...</p>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className={'w-full flex justify-center'}>
+            <IconLoading/>
+          </div>
         </div>
-      </div>
-    );
+  )
+
   }
 
   if (error) {
@@ -437,7 +437,6 @@ export default function AuthorDetailPage() {
           />
           <div>
             <p className="text-18-b text-black mb-1">{author?.display_name || '익명'}</p>
-            <p className="mb-[5px] text-14-l text-[#535353]">{author?.phone?.replace(/(\d{3})(\d{3,4})(\d{4})/, "$1-$2-$3") || '-'}</p>
             {/* 소개글 */}
             {author.bio && (
             <p className="text-12-r text-text-800 leading-relaxed whitespace-normal">

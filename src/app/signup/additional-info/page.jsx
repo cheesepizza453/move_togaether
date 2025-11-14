@@ -165,6 +165,31 @@ const AdditionalInfoContent = () => {
     }));
   };
 
+  // 인스타그램 username 검증
+  // 규칙: 영문 소문자 + 숫자 + 언더바(_)만 허용, 1~30자, 한글 X, URL X
+  const isValidInstagramUsername = (value) => {
+    if (!value) return false;
+
+    // 한글 포함 여부
+    const hasKorean = /[가-힣]/.test(value);
+    if (hasKorean) return false;
+
+    // 인스타그램 유저네임 패턴
+    const regex = /^[a-z0-9_]{1,30}$/; // .(dot)허용: /^[a-z0-9._]{1,30}$/
+
+    return regex.test(value);
+  };
+
+  // 카카오 옵챗 URL 검증: http(s) + 한글 없음
+  const isValidUrl = (value) => {
+    if (!value) return false;
+    const lower = value.toLowerCase();
+    const hasValidProtocol =
+        lower.startsWith('http://') || lower.startsWith('https://');
+    const hasKorean = /[가-힣]/.test(value);
+
+    return hasValidProtocol && !hasKorean;
+  };
 
   // 폼 유효성 검사
   const validateForm = () => {
@@ -191,14 +216,36 @@ const AdditionalInfoContent = () => {
     }
 
     // 선택된 채널에 대한 입력값 검증
-    if (contactChannels.instagram && !channelInputs.instagram.trim()) {
-      newErrors.instagram = '인스타그램 ID를 입력해주세요.';
+    if (contactChannels.instagram) {
+      const ig = channelInputs.instagram.trim();
+
+      if (!ig) {
+        newErrors.instagram = '인스타그램 ID(영문 유저네임)를 입력해주세요.';
+      } else if (/http(s)?:\/\//i.test(ig)) {
+        newErrors.instagram = 'URL이 아닌 인스타그램 ID(영문 유저네임)을 입력해주세요.';
+      } else if (!isValidInstagramUsername(ig)) {
+        newErrors.instagram = '영문 소문자, 숫자, 언더바(_)만 사용해 1~30자로 입력해주세요.';
+      }
     }
-    if (contactChannels.naverCafe && !channelInputs.naverCafe.trim()) {
-      newErrors.naverCafe = '네이버 카페 링크를 입력해주세요.';
-    }
-    if (contactChannels.kakaoOpenChat && !channelInputs.kakaoOpenChat.trim()) {
-      newErrors.kakaoOpenChat = '카카오톡 오픈채팅 링크를 입력해주세요.';
+
+    /*    if (contactChannels.naverCafe) {
+          const naver = channelInputs.naverCafe.trim();
+
+          if (!naver) {
+            newErrors.naverCafe = '네이버 카페 링크를 입력해주세요.';
+          } else if (!isValidUrl(naver)) {
+            newErrors.naverCafe = '한글 없이 https:// 로 시작하는 오픈채팅 링크를 입력해주세요.';
+          }
+        }*/
+
+    if (contactChannels.kakaoOpenChat) {
+      const kakao = channelInputs.kakaoOpenChat.trim();
+
+      if (!kakao) {
+        newErrors.kakaoOpenChat = '카카오톡 오픈채팅 링크를 입력해주세요.';
+      } else if (!isValidUrl(kakao)) {
+        newErrors.kakaoOpenChat = '한글 없이 https:// 로 시작하는 오픈채팅 링크를 입력해주세요.';
+      }
     }
 
     setErrors(newErrors);
