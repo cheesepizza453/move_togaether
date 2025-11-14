@@ -202,7 +202,7 @@ export default function FavoritesPage() {
         {/* 콘텐츠 */}
         {loading ? (
           <div className="flex justify-center items-center">
-            <div className={'w-full flex justify-center pt-[60px]'}>
+            <div className={'w-full flex justify-center pt-[24vh]'}>
               <IconLoading/>
             </div>
           </div>

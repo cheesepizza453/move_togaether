@@ -404,7 +404,7 @@ const ShelterMapPage = () => {
           <div className="flex items-center justify-between h-[78px] px-[30px] bg-white">
             <p className="text-22-m text-black">내 주변</p>
           </div>
-          <div className="flex pt-[60px] justify-center h-screen bg-gray-50">
+          <div className="flex pt-[23vh] justify-center h-screen bg-gray-50">
             <div className="w-[120px]">
               <IconLoading/>
             </div>

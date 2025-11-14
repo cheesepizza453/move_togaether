@@ -370,12 +370,6 @@ export default function AuthorDetailPage() {
     };
   }, [completedHasMore, completedIsLoadingMore, completedIsFetching, activeTab, completedPage, fetchCompletedPosts]);
 
-  const channelButton = [
-    { label: '인스타그램', icon: <IconChannelInstagram />, href: '/' },
-    { label: '네이버 카페', icon: <IconChannelNaverCafe />, href: '/' },
-    { label: '카카오톡 채널', icon: <IconChannelKakaoTalk />, href: '/' },
-  ];
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -459,7 +453,7 @@ export default function AuthorDetailPage() {
               {author.instagram && (
                   <button
                       onClick={() => window.open(author.instagram, '_blank')}
-                      className="flex items-center justify-center px-[20px] py-[5px] rounded-[7px] bg-brand-bg border border-brand-yellow-dark text-12-m text-[#C3950B]"
+                      className="flex flex-1 items-center justify-center min-w-[90px] py-[5px] rounded-[7px] bg-brand-bg border border-brand-yellow-dark text-12-m text-[#C3950B]"
                   >
                     <span className={'ml-[-4px] mr-[3px] inline-block w-[17px] h-[17px]'}><IconChannelInstagram/></span>
                     인스타그램
@@ -468,7 +462,7 @@ export default function AuthorDetailPage() {
               {author.naver_cafe && (
                   <button
                       onClick={() => window.open(author.naver_cafe, '_blank')}
-                      className="flex items-center justify-center px-[20px] py-[5px] rounded-[7px] bg-brand-bg border border-brand-yellow-dark text-12-m text-[#C3950B]"
+                      className="flex flex-1 items-center justify-center min-w-[90px] py-[5px] rounded-[7px] bg-brand-bg border border-brand-yellow-dark text-12-m text-[#C3950B]"
                   >
                     <span className={'ml-[-4px] mr-[3px] inline-block w-[17px] h-[17px]'}><IconChannelNaverCafe/></span>
                     네이버 카페
@@ -477,7 +471,7 @@ export default function AuthorDetailPage() {
         {author.kakao_openchat && (
             <button
                 onClick={() => window.open(author.kakao_openchat, '_blank')}
-                className="flex items-center justify-center px-[20px] py-[5px] rounded-[7px] bg-brand-bg border border-brand-yellow-dark text-12-m text-[#C3950B]"
+                className="flex flex-1 items-center justify-center min-w-[90px] py-[5px] rounded-[7px] bg-brand-bg border border-brand-yellow-dark text-12-m text-[#C3950B]"
             >
               <span className={'ml-[-4px] mr-[3px] inline-block w-[17px] h-[17px]'}><IconChannelKakaoTalk/></span>
               카카오톡 채널
@@ -542,30 +536,36 @@ export default function AuthorDetailPage() {
                 {/* 무한 스크롤 트리거 및 로딩 인디케이터 */}
                 <div id="active-load-more-trigger" className="py-4">
                   {activeIsLoadingMore ? (
-                    <div className="flex justify-center items-center py-4">
-                      <div className="text-gray-500">더 많은 게시물을 불러오는 중...</div>
-                    </div>
+                      <div className="flex justify-center items-center py-4">
+                        <div className="mt-8 flex justify-center space-x-2">
+                          <div className="w-2 h-2 bg-brand-main rounded-full animate-bounce"></div>
+                          <div className="w-2 h-2 bg-brand-main rounded-full animate-bounce"
+                               style={{animationDelay: '0.1s'}}></div>
+                          <div className="w-2 h-2 bg-brand-main rounded-full animate-bounce"
+                               style={{animationDelay: '0.2s'}}></div>
+                        </div>
+                      </div>
                   ) : (
-                    <div className="h-4"></div>
+                      <div className="h-4"></div>
                   )}
                 </div>
               </>
             )}
           </>
         ) : (
-          <>
-            {completedIsFetching && completedPosts.length === 0 ? (
-              <div className="flex justify-center items-center py-8">
-                <div className="w-full flex justify-center pt-[60px]">
-                  <IconLoading/>
-                </div>
-              </div>
-            ) : (
-              <>
-                <PostTimeline
-                  posts={completedPosts}
-                  onPostClick={handlePostClick}
-                  emptyMessage={{
+            <>
+              {completedIsFetching && completedPosts.length === 0 ? (
+                  <div className="flex justify-center items-center py-8">
+                    <div className="w-full flex justify-center pt-[60px]">
+                      <IconLoading/>
+                    </div>
+                  </div>
+              ) : (
+                  <>
+                    <PostTimeline
+                        posts={completedPosts}
+                        onPostClick={handlePostClick}
+                        emptyMessage={{
                     title: '모집이 종료된 게시물이 없습니다',
                     description: '완료된 봉사활동이 여기에 표시됩니다'
                   }}
@@ -573,16 +573,22 @@ export default function AuthorDetailPage() {
                 {/* 무한 스크롤 트리거 및 로딩 인디케이터 */}
                 <div id="completed-load-more-trigger" className="py-4">
                   {completedIsLoadingMore ? (
-                    <div className="flex justify-center items-center py-4">
-                      <div className="text-gray-500">더 많은 게시물을 불러오는 중...</div>
-                    </div>
+                      <div className="flex justify-center items-center py-4">
+                        <div className="mt-8 flex justify-center space-x-2">
+                          <div className="w-2 h-2 bg-brand-main rounded-full animate-bounce"></div>
+                          <div className="w-2 h-2 bg-brand-main rounded-full animate-bounce"
+                               style={{animationDelay: '0.1s'}}></div>
+                          <div className="w-2 h-2 bg-brand-main rounded-full animate-bounce"
+                               style={{animationDelay: '0.2s'}}></div>
+                        </div>
+                      </div>
                   ) : (
-                    <div className="h-4"></div>
+                      <div className="h-4"></div>
                   )}
                 </div>
-              </>
-            )}
-          </>
+                  </>
+              )}
+            </>
         )}
       </main>
     </div>

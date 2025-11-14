@@ -148,7 +148,7 @@ const MyPage = () => {
             {/*</button>*/}
             <div className="w-6"></div>
           </div>
-          <div className={'w-full flex justify-center pt-[60px]'}>
+          <div className={'w-full flex justify-center pt-[20vh]'}>
             <IconLoading/>
           </div>
         </div>
@@ -232,7 +232,7 @@ const MyPage = () => {
         {activeTab === '지원' && (
           <div className="space-y-[24px]">
             {dataLoading ? (
-                <div className={'w-full flex justify-center pt-[60px]'}>
+                <div className={'w-full flex justify-center pt-[20vh]'}>
                   <IconLoading/>
                 </div>
             ) : error ? (
@@ -295,7 +295,7 @@ const MyPage = () => {
 
             {/* 하위 탭 콘텐츠 */}
             {dataLoading ? (
-                <div className={'w-full flex justify-center pt-[60px]'}>
+                <div className={'w-full flex justify-center pt-[20vh]'}>
                   <IconLoading/>
                 </div>
             ) : error ? (
