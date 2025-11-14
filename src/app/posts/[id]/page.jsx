@@ -704,7 +704,7 @@ export default function PostDetailPage() {
 
         {/* 작성자 정보 */}
         {!isOwner &&
-            <div className={'relative w-full h-[92px] px-[25px] rounded-b-[15px] bg-white z-20 overflow-hidden'}>
+            <div className={'relative w-full h-[92px] px-[25px] bg-white z-20 overflow-hidden'}>
               <div className="w-full pt-[10px] flex items-center justify-between">
                 {/* 링크 추가 */}
                 <a className={'flex items-center gap-[9px]'} href={`/authors/${post.user_id}`}>
@@ -728,12 +728,12 @@ export default function PostDetailPage() {
               </div>
             </div>
         }
-        <div className={`${isOwner && activeTab === 'post' && 'mt-[-15px]'} ${isOwner && activeTab === 'applicants' && 'bg-white pt-[30px] px-[22px] mb-[10px]'}`}>
+        <div className={`${isOwner && activeTab === 'applicants' && 'bg-white pt-[30px] px-[22px] mb-[10px]'}`}>
           {/* 게시물 탭 */}
           {activeTab === 'post' && (
               <div>
                 {/* 강아지 이미지 */}
-                <div className="mt-[-15px] relative w-full aspect-[402/343]">
+                <div className="relative w-full aspect-[402/343]">
                   <Image
                       width={600}
                       height={600}
