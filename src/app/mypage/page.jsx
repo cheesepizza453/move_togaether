@@ -159,7 +159,7 @@ const MyPage = () => {
       <div className="min-h-screen bg-white">
         {/* Header */}
         <div className="flex items-center justify-between h-[78px] px-[30px] bg-white">
-          <p className="text-22-m text-black">마이페이지</p>{/*</button>*/}
+          <p className="text-22-m text-black">마이페이지</p>
           <div className="w-6"></div>
         </div>
 
@@ -180,11 +180,6 @@ const MyPage = () => {
               <h2 className="mb-[4px] text-18-b text-black">
                 {profile?.display_name || '사용자'}
               </h2>
-              <p className="mb-[5px] text-14-l text-[#535353]">
-                {profile?.phone?.replace(
-                    /(\d{3})(\d{4})(\d{4})/,
-                    "$1-$2-$3") || ''}
-              </p>
               <p className="text-12-r text-text-800 leading-relaxed">
                 {profile?.bio || '소개글이 없습니다.'}
               </p>
