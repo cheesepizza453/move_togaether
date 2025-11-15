@@ -84,28 +84,6 @@ const SignupSuccessPage = () => {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      {/* 헤더 */}
-      <div className="bg-white">
-        <div className="w-full h-[72px] flex items-center justify-between px-[30px] py-[28px]">
-          <div className={'flex items-center'}>
-            <button
-                onClick={() => router.back()}
-                className={'p-[12px] pl-0 outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none'}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="9" height="16" viewBox="0 0 9 16" fill="none">
-                <path d="M8 15L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
-                      strokeLinecap="round"/>
-                <path d="M8 0.999999L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
-                      strokeLinecap="round"/>
-              </svg>
-            </button>
-            <h1 className="text-22-m text-black">
-              회원가입
-            </h1>
-          </div>
-        </div>
-      </div>
-
       {/* 메인 콘텐츠 */}
       <div className="flex-1 flex flex-col items-center justify-center mt-[-100px]">
         {/* 가운데 이미지 */}
