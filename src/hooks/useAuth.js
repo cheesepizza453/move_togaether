@@ -290,7 +290,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   // 회원가입
-  const signUp = async ({ email, password, nickname, introduction, phone, contactChannels, channelInputs }) => {
+  const signUp = async ({ email, password, nickname, introduction, phone, contactChannels, channelInputs, securityQuestion, securityAnswer}) => {
     try {
       setLoading(true);
 
@@ -302,7 +302,9 @@ export const AuthProvider = ({ children }) => {
         introduction,
         phone,
         contactChannels,
-        channelInputs
+        channelInputs,
+        securityQuestion,
+        securityAnswer,
       });
 
       console.log('서버 회원가입 응답:', result);
