@@ -12,7 +12,7 @@ const PhotoUpload = ({
     const fileInputRef = useRef(null);
 
     // 이미지 리사이징 & 압축 함수
-    const resizeImage = (file, maxWidth = 1024, quality = 0.85) => {
+    const resizeImage = (file, maxWidth = 550, quality = 0.85) => {
         return new Promise((resolve, reject) => {
             const img = new window.Image();
             const canvas = document.createElement('canvas');
