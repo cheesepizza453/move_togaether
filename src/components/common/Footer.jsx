@@ -1,7 +1,4 @@
-import moment from "moment";
-
 const Footer = () => {
-  // const currentYear = moment().year();
   return (
     <footer className="block bg-gray-50 border-t border-gray-200">
       <div className="w-full px-4 pt-8 pb-24">
