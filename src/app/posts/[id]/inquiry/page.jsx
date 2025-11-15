@@ -153,8 +153,8 @@ export default function InquiryPage() {
             <CardTitle className="text-16-b mb-[6px]">지원자 정보</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="mb-[20px] text-14-r text-[#676767] leading-[1.25]">
-              문의자의 연락처가 임보자에게 공개됩니다. 남기신 문의는 삭제할 수 없으며 입양 완료 시 임보자는 지원자의 정보를 확인할 수 없습니다.
+            <p className="mb-[20px] text-12-r text-[#676767] leading-[1.25]">
+              문의는 한 번 남기면 지울 수 없어요! 문의가 전달되면 내 연락처가 요청자에게만 공개되며, 강아지가 이동을 마치면 임보자는 지원자님의 정보를 다시 확인할 수 없답니다.
             </p>
             <div className="flex items-center gap-3">
               <div className="bg-yellow-100 overflow-hidden rounded-full shadow-[0_0_9px_0_rgba(0,0,0,0.2)]">
