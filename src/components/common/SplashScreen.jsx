@@ -42,12 +42,6 @@ const SplashScreen = ({ onComplete }) => {
             />
           </div>
         </div>
-        {/* 로딩 애니메이션 */}
-        <div className="mt-8 flex justify-center space-x-2">
-          <div className="w-2 h-2 bg-white rounded-full animate-bounce"></div>
-          <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-          <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-        </div>
       </div>
     </div>
   );
