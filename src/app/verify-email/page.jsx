@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import IconLoading from "../../../public/img/icon/IconLoading";
 
 // useSearchParams를 사용하는 컴포넌트를 별도로 분리
 const VerifyEmailContent = () => {
@@ -55,7 +55,7 @@ const VerifyEmailContent = () => {
       setTimeout(() => {
         if (verificationType === 'signup') {
           setVerificationStatus('success');
-          setMessage('이메일 인증이 완료되었습니다. 이제 로그인할 수 있습니다.');
+          setMessage('무브투개더를 찾아주셔서 감사합니다. 이메일 인증이 완료되었습니다.');
         } else if (verificationType === 'recovery') {
           setVerificationStatus('success');
           setMessage('비밀번호 재설정 이메일이 발송되었습니다.');
@@ -75,19 +75,6 @@ const VerifyEmailContent = () => {
     }
   };
 
-
-
-  const getStatusIcon = () => {
-    switch (verificationStatus) {
-      case 'success':
-        return <CheckCircle className="w-16 h-16 text-green-500" />;
-      case 'error':
-        return <XCircle className="w-16 h-16 text-red-500" />;
-      default:
-        return <AlertCircle className="w-16 h-16 text-blue-500" />;
-    }
-  };
-
   const getStatusTitle = () => {
     switch (verificationStatus) {
       case 'success':
@@ -104,7 +91,7 @@ const VerifyEmailContent = () => {
       return (
         <Link
           href="/login"
-          className="inline-block bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors"
+          className="inline-flex justify-center items-center px-[20px] bg-brand-main text-black text-16-m h-[50px] rounded-[15px]"
         >
           로그인하기
         </Link>
@@ -115,31 +102,24 @@ const VerifyEmailContent = () => {
 
   if (loading) {
     return (
-      <div className="py-10 bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">이메일 인증 중...</h2>
-          <p className="text-gray-500">잠시만 기다려주세요.</p>
-        </div>
+    <div className="min-h-screen bg-white flex justify-center">
+      <div className={'w-full flex justify-center pt-[25vh]'}>
+        <IconLoading/>
       </div>
+    </div>
     );
   }
 
   return (
-    <div className="py-10 bg-gray-50 flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
-        {/* 상태 아이콘 */}
-        <div className="mb-6">
-          {getStatusIcon()}
-        </div>
-
+    <div className="bg-brand-bg min-h-screen flex items-center justify-center px-4">
+      <div className="max-w-md w-full bg-white rounded-[30px] p-8 text-center">
         {/* 상태 제목 */}
-        <h1 className="text-2xl font-bold text-gray-800 mb-4">
+        <h1 className="text-18-b text-gray-800 mb-[12px]">
           {getStatusTitle()}
         </h1>
 
         {/* 메시지 */}
-        <p className="text-gray-600 mb-8 leading-relaxed">
+        <p className="text-gray-600 mb-8 leading-relaxed text-14-r">
           {message}
         </p>
 
@@ -150,18 +130,11 @@ const VerifyEmailContent = () => {
           </div>
         )}
 
-        {/* 추가 정보 */}
-        {verificationStatus === 'success' && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm text-green-700">
-            <p>이제 로그인하여 서비스를 이용할 수 있습니다.</p>
-          </div>
-        )}
-
         {/* 홈으로 돌아가기 */}
         <div className="mt-6 pt-6 border-t border-gray-200">
           <Link
             href="/"
-            className="text-blue-500 hover:text-blue-600 text-sm font-medium"
+            className="text-12-r text-brand-yellow-dark underline"
           >
             홈으로 돌아가기
           </Link>

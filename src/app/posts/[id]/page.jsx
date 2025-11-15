@@ -5,7 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { useDialogContext } from '@/components/DialogProvider';
-import moment from 'moment';
+import moment from "moment-timezone";
 import { Button } from '@/components/ui/button';
 import { X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -840,7 +840,7 @@ export default function PostDetailPage() {
                                   <p className="text-18-b">{applicant.user_profiles?.display_name || '익명'}</p>
                                 </div>
                                 <p className="text-12-r text-[#8a8a8a]">
-                                  {moment(applicant.created_at).format('YY.MM.DD HH:mm')}
+                                  {moment(applicant.created_at).tz('Asia/Seoul').format('YY.MM.DD HH:mm')}
                                 </p>
                               </div>
                             </div>
@@ -1001,7 +1001,7 @@ export default function PostDetailPage() {
                       {selectedApplicant.message}
                     </p>
                     <p className="mt-[10px] text-center text-12-r text-[#8a8a8a]">
-                      {moment(selectedApplicant.created_at).format('YY.MM.DD HH:mm')}
+                      {moment(selectedApplicant.created_at).tz('Asia/Seoul').format('YY.MM.DD HH:mm')}
                     </p>
                   </div>
 
@@ -1053,7 +1053,7 @@ export default function PostDetailPage() {
                   </p>
                 </div>
                 <p className="text-12-r text-text-800 text-right mt-[10px] mr-[10px]">
-                  {moment(myApplication.created_at).format('YY.MM.DD  HH:MM')}
+                  {moment(myApplication.created_at).tz("Asia/Seoul").format("YY.MM.DD HH:mm")}
                 </p>
               </div>
 

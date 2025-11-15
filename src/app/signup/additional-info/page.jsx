@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import UserProfileForm from '@/components/UserProfileForm';
+import IconLoading from "../../../../public/img/icon/IconLoading";
 
 // useSearchParams를 사용하는 컴포넌트를 별도로 분리
 const AdditionalInfoContent = () => {
@@ -14,19 +15,19 @@ const AdditionalInfoContent = () => {
     introduction: '',
     phone: '',
     securityQuestion: '',
-    securityAnswer: ''
+    securityAnswer: '',
   });
 
   const [contactChannels, setContactChannels] = useState({
     instagram: false,
     naverCafe: false,
-    kakaoOpenChat: false
+    kakaoOpenChat: false,
   });
 
   const [channelInputs, setChannelInputs] = useState({
     instagram: '',
     naverCafe: '',
-    kakaoOpenChat: ''
+    kakaoOpenChat: '',
   });
 
   const [errors, setErrors] = useState({});
@@ -54,16 +55,18 @@ const AdditionalInfoContent = () => {
 
   // 닉네임 유효성 검사
   const validateNickname = (nickname) => {
-    if (!nickname.trim()) return null;
+    const trimmed = nickname.trim();
+    if (!trimmed) return null;
 
-    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(nickname);
-    const isValidLength = nickname.length >= 2 && nickname.length <= 20;
+    const hasSpecialChar =
+        /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(trimmed);
+    const isValidLength = trimmed.length >= 2 && trimmed.length <= 20;
 
     if (hasSpecialChar) {
       return {
         isValid: false,
         message: '특수문자 사용 불가',
-        type: 'special_char'
+        type: 'special_char',
       };
     }
 
@@ -71,98 +74,87 @@ const AdditionalInfoContent = () => {
       return {
         isValid: false,
         message: '2-20자로 입력해주세요',
-        type: 'length'
+        type: 'length',
       };
     }
 
+    // 형식만 통과했을 때
     return {
       isValid: true,
-      message: '사용 가능한 닉네임입니다',
-      type: 'success'
+      message: '멋진 닉네임을 지어주세요🐾',
+      type: 'success',
     };
   };
 
+
   // 닉네임 변경 시 유효성 검사
   const handleNicknameChange = (value) => {
-    setFormData(prev => ({ ...prev, nickname: value }));
+    setFormData((prev) => ({ ...prev, nickname: value }));
 
-    if (value.trim()) {
-      const validation = validateNickname(value);
-      setNicknameValidation(validation);
-    } else {
+    const trimmed = value.trim();
+
+    if (!trimmed) {
       setNicknameValidation(null);
-    }
-
-    // 에러 메시지 제거
-    if (errors.nickname) {
-      setErrors(prev => ({ ...prev, nickname: '' }));
-    }
-  };
-
-  // 닉네임 blur 이벤트로 중복 체크
-  const handleNicknameBlur = async (value) => {
-    console.log('닉네임 blur 이벤트 발생:', value);
-    console.log('현재 nicknameValidation:', nicknameValidation);
-
-    // 빈 값이거나 유효성 검사에 통과하지 못한 경우 스킵
-    if (!value.trim() || !nicknameValidation || !nicknameValidation.isValid) {
-      console.log('닉네임 중복 체크 건너뜀 - 조건 불만족');
+      setErrors((prev) => ({ ...prev, nickname: '' }));
       return;
     }
 
-    console.log('닉네임 중복 체크 시작');
+    const validation = validateNickname(trimmed);
+    setNicknameValidation(validation);
+
+    setErrors((prev) => ({
+      ...prev,
+      nickname: validation && !validation.isValid ? validation.message : '',
+    }));
+  };
+
+
+  // 닉네임 blur 이벤트로 중복 체크
+  const handleNicknameBlur = async (value) => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+
+    // 로컬 유효성 통과 못하면 중복체크 안 함
+    if (!nicknameValidation || !nicknameValidation.isValid) {
+      return;
+    }
+
     setNicknameChecking(true);
     try {
-      const result = await checkNicknameDuplicate(value);
-      console.log('닉네임 중복 체크 결과:', result);
+      const result = await checkNicknameDuplicate(trimmed);
 
       if (result.isDuplicate) {
+        const message = result.message || '이미 사용 중인 닉네임입니다';
         setNicknameValidation({
           isValid: false,
-          message: result.message || '이미 사용 중인 닉네임입니다',
-          type: 'duplicate'
+          message,
+          type: 'duplicate',
+          available: false,
         });
+        setErrors((prev) => ({ ...prev, nickname: message }));
       } else {
+        const message = result.message || '사용 가능한 닉네임입니다';
         setNicknameValidation({
           isValid: true,
-          message: result.message || '사용 가능한 닉네임입니다',
-          type: 'success'
+          message,
+          type: 'success',
+          available: true,
         });
+        setErrors((prev) => ({ ...prev, nickname: '' }));
       }
     } catch (error) {
       console.error('닉네임 중복 체크 오류:', error);
+      const message = '중복 체크 중 오류가 발생했습니다';
       setNicknameValidation({
         isValid: false,
-        message: '중복 체크 중 오류가 발생했습니다',
-        type: 'error'
+        message,
+        type: 'error',
+        available: false,
       });
+      setErrors((prev) => ({ ...prev, nickname: message }));
     } finally {
       setNicknameChecking(false);
     }
-  };
-
-  // 연락채널 선택 변경
-  const handleChannelChange = (channel) => {
-    setContactChannels(prev => ({
-      ...prev,
-      [channel]: !prev[channel]
-    }));
-
-    // 채널 해제 시 입력값 초기화
-    if (contactChannels[channel]) {
-      setChannelInputs(prev => ({
-        ...prev,
-        [channel]: ''
-      }));
-    }
-  };
-
-  // 채널 입력값 변경
-  const handleChannelInputChange = (channel, value) => {
-    setChannelInputs(prev => ({
-      ...prev,
-      [channel]: value
-    }));
   };
 
   // 인스타그램 username 검증
@@ -176,7 +168,6 @@ const AdditionalInfoContent = () => {
 
     // 인스타그램 유저네임 패턴
     const regex = /^[a-z0-9_]{1,30}$/; // .(dot)허용: /^[a-z0-9._]{1,30}$/
-
     return regex.test(value);
   };
 
@@ -191,62 +182,164 @@ const AdditionalInfoContent = () => {
     return hasValidProtocol && !hasKorean;
   };
 
-  // 폼 유효성 검사
+  //// 폼 유효성 검사용 헬퍼들
+
+  // 전화번호 검증
+  const validatePhone = (phone) => {
+    const value = (phone || '').trim();
+    if (!value) return '연락처를 입력해주세요.';
+    if (value.length < 10) return '연락처를 정확히 입력해주세요.';
+    return '';
+  };
+
+  // 보안 질문 검증
+  const validateSecurityQuestionField = (q) => {
+    if (!q) return '보안 질문을 선택해주세요.';
+    return '';
+  };
+
+  // 보안 답변 검증
+  const validateSecurityAnswerField = (answer) => {
+    const value = (answer || '').trim();
+    if (!value) return '보안 질문 답변을 입력해주세요.';
+    if (value.length < 2) return '답변은 2자 이상 입력해주세요.';
+    return '';
+  };
+
+  // 인스타그램 입력 검증
+  const validateInstagramField = (enabled, value) => {
+    if (!enabled) return '';
+
+    const ig = (value || '').trim();
+
+    if (!ig) {
+      return '인스타그램 ID(영문 유저네임)를 입력해주세요.';
+    } else if (/http(s)?:\/\//i.test(ig)) {
+      return 'URL이 아닌 인스타그램 ID(영문 유저네임)을 입력해주세요.';
+    } else if (!isValidInstagramUsername(ig)) {
+      return '영문 소문자, 숫자, 언더바(_)만 사용해 1~30자로 입력해주세요.';
+    }
+
+    return '';
+  };
+
+  // 카카오 오픈채팅 검증
+  const validateKakaoField = (enabled, value) => {
+    if (!enabled) return '';
+
+    const kakao = (value || '').trim();
+
+    if (!kakao) {
+      return '카카오톡 오픈채팅 링크를 입력해주세요.';
+    } else if (!isValidUrl(kakao)) {
+      return '한글 없이 https:// 로 시작하는 오픈채팅 링크를 입력해주세요.';
+    }
+
+    return '';
+  };
+
+  // 연락채널 선택 변경
+  const handleChannelChange = (channel) => {
+    setContactChannels((prev) => {
+      const next = { ...prev, [channel]: !prev[channel] };
+
+      // 끌 때 입력값/에러 같이 초기화
+      if (!next[channel]) {
+        setChannelInputs((prevInputs) => ({ ...prevInputs, [channel]: '' }));
+        setErrors((prevErrors) => ({ ...prevErrors, [channel]: '' }));
+      }
+
+      return next;
+    });
+  };
+
+  // 채널 입력값 변경 (실시간 검증 포함)
+  const handleChannelInputChange = (channel, value) => {
+    setChannelInputs((prev) => ({
+      ...prev,
+      [channel]: value,
+    }));
+
+    setErrors((prev) => {
+      const newErrors = { ...prev };
+
+      if (channel === 'instagram') {
+        newErrors.instagram = validateInstagramField(
+            contactChannels.instagram,
+            value
+        );
+      }
+
+      if (channel === 'kakaoOpenChat') {
+        newErrors.kakaoOpenChat = validateKakaoField(
+            contactChannels.kakaoOpenChat,
+            value
+        );
+      }
+
+      return newErrors;
+    });
+  };
+
+  // 전화번호 변경 (실시간 검증)
+  const handlePhoneChange = (value) => {
+    const onlyNumbers = value.replace(/[^0-9]/g, '');
+    setFormData((prev) => ({ ...prev, phone: onlyNumbers }));
+
+    const msg = validatePhone(onlyNumbers);
+    setErrors((prev) => ({ ...prev, phone: msg }));
+  };
+
+  // 보안 질문 변경 (실시간 검증)
+  const handleSecurityQuestionChange = (value) => {
+    setFormData((prev) => ({ ...prev, securityQuestion: value }));
+    const msg = validateSecurityQuestionField(value);
+    setErrors((prev) => ({ ...prev, securityQuestion: msg }));
+  };
+
+  // 보안 답변 변경 (실시간 검증)
+  const handleSecurityAnswerChange = (value) => {
+    setFormData((prev) => ({ ...prev, securityAnswer: value }));
+    const msg = validateSecurityAnswerField(value);
+    setErrors((prev) => ({ ...prev, securityAnswer: msg }));
+  };
+
+  // 최종 폼 유효성 검사 (가입 버튼 클릭 시)
   const validateForm = () => {
     const newErrors = {};
 
+    // 닉네임
     if (!formData.nickname.trim()) {
       newErrors.nickname = '닉네임을 입력해주세요.';
     } else if (nicknameValidation && !nicknameValidation.isValid) {
       newErrors.nickname = nicknameValidation.message;
     }
 
-    if (!formData.phone.trim()) {
-      newErrors.phone = '연락처를 입력해주세요.';
-    }
+    // 전화번호
+    const phoneError = validatePhone(formData.phone);
+    if (phoneError) newErrors.phone = phoneError;
 
-    // 보안 질문/답변 검증
-    if (!formData.securityQuestion) {
-      newErrors.securityQuestion = '보안 질문을 선택해주세요.';
-    }
-    if (!formData.securityAnswer.trim()) {
-      newErrors.securityAnswer = '보안 질문 답변을 입력해주세요.';
-    } else if (formData.securityAnswer.length < 2) {
-      newErrors.securityAnswer = '답변은 2자 이상 입력해주세요.';
-    }
+    // 보안 질문
+    const sqError = validateSecurityQuestionField(formData.securityQuestion);
+    if (sqError) newErrors.securityQuestion = sqError;
 
-    // 선택된 채널에 대한 입력값 검증
-    if (contactChannels.instagram) {
-      const ig = channelInputs.instagram.trim();
+    // 보안 답변
+    const saError = validateSecurityAnswerField(formData.securityAnswer);
+    if (saError) newErrors.securityAnswer = saError;
 
-      if (!ig) {
-        newErrors.instagram = '인스타그램 ID(영문 유저네임)를 입력해주세요.';
-      } else if (/http(s)?:\/\//i.test(ig)) {
-        newErrors.instagram = 'URL이 아닌 인스타그램 ID(영문 유저네임)을 입력해주세요.';
-      } else if (!isValidInstagramUsername(ig)) {
-        newErrors.instagram = '영문 소문자, 숫자, 언더바(_)만 사용해 1~30자로 입력해주세요.';
-      }
-    }
+    // 인스타그램
+    const igError = validateInstagramField(
+        contactChannels.instagram,
+        channelInputs.instagram
+    );
+    if (igError) newErrors.instagram = igError;
 
-    /*    if (contactChannels.naverCafe) {
-          const naver = channelInputs.naverCafe.trim();
-
-          if (!naver) {
-            newErrors.naverCafe = '네이버 카페 링크를 입력해주세요.';
-          } else if (!isValidUrl(naver)) {
-            newErrors.naverCafe = '한글 없이 https:// 로 시작하는 오픈채팅 링크를 입력해주세요.';
-          }
-        }*/
-
-    if (contactChannels.kakaoOpenChat) {
-      const kakao = channelInputs.kakaoOpenChat.trim();
-
-      if (!kakao) {
-        newErrors.kakaoOpenChat = '카카오톡 오픈채팅 링크를 입력해주세요.';
-      } else if (!isValidUrl(kakao)) {
-        newErrors.kakaoOpenChat = '한글 없이 https:// 로 시작하는 오픈채팅 링크를 입력해주세요.';
-      }
-    }
+    // 카카오톡 오픈채팅
+    const kakaoError = validateKakaoField(
+        contactChannels.kakaoOpenChat,
+        channelInputs.kakaoOpenChat
+    );
+    if (kakaoError) newErrors.kakaoOpenChat = kakaoError;
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -275,7 +368,7 @@ const AdditionalInfoContent = () => {
         contactChannels,
         channelInputs,
         securityQuestion: formData.securityQuestion,
-        securityAnswer: formData.securityAnswer
+        securityAnswer: formData.securityAnswer,
       });
 
       if (result.success) {
@@ -287,11 +380,14 @@ const AdditionalInfoContent = () => {
         toast.success('회원가입이 완료되었습니다! 이메일을 확인해주세요.');
 
         // 회원가입 성공 - 이메일 인증 안내 페이지로 이동 (닉네임 전달)
-        router.push(`/signup/success?nickname=${encodeURIComponent(formData.nickname)}`);
+        router.push(
+            `/signup/success?nickname=${encodeURIComponent(formData.nickname)}`
+        );
       } else {
-        // 에러 메시지를 Toast로 표시
         toast.error(result.error || '회원가입 중 오류가 발생했습니다.');
-        setErrors({ general: result.error || '회원가입 중 오류가 발생했습니다.' });
+        setErrors({
+          general: result.error || '회원가입 중 오류가 발생했습니다.',
+        });
       }
     } catch (error) {
       console.error('회원가입 오류:', error);
@@ -325,7 +421,6 @@ const AdditionalInfoContent = () => {
           </div>
         </div>
 
-
         {/* 메인 컨텐츠 */}
         <div className="px-6 py-8">
           <UserProfileForm
@@ -344,6 +439,9 @@ const AdditionalInfoContent = () => {
               onChannelChange={handleChannelChange}
               onChannelInputChange={handleChannelInputChange}
               onProfileImageChange={() => {}} // 회원가입에서는 프로필 이미지 변경 불가
+              onPhoneChange={handlePhoneChange}
+              onSecurityQuestionChange={handleSecurityQuestionChange}
+              onSecurityAnswerChange={handleSecurityAnswerChange}
               mode="signup"
               showProfileImage={true}
               showIntroduction={true}
@@ -356,10 +454,10 @@ const AdditionalInfoContent = () => {
           <button
               onClick={handleSignup}
               disabled={loading}
-              className={`w-full mt-8 py-3 rounded-lg font-semibold transition-colors ${
+              className={`w-full mt-8 h-[54px] rounded-[15px] text-16-m transition-colors ${
                   loading
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-[#FFDD44] text-black hover:bg-yellow-500'
+                      : 'bg-brand-main text-black hover:bg-yellow-500'
               }`}
           >
             {loading ? '처리 중...' : '가입하기'}
@@ -371,10 +469,9 @@ const AdditionalInfoContent = () => {
 
 // 로딩 컴포넌트
 const LoadingFallback = () => (
-    <div className="min-h-screen bg-white flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mx-auto mb-4"></div>
-        <p className="text-gray-600">로딩 중...</p>
+    <div className="min-h-screen bg-white flex justify-center">
+      <div className={'w-full flex justify-center pt-[20vh]'}>
+        <IconLoading/>
       </div>
     </div>
 );

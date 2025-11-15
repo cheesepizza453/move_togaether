@@ -40,7 +40,7 @@ const KakaoSignupPage = () => {
   const [nicknameChecking, setNicknameChecking] = useState(false);
 
   const router = useRouter();
-  const { signInWithKakao, checkNicknameDuplicate } = useAuth();
+  const { checkNicknameDuplicate } = useAuth();
 
   // =========================
   // 1. 카카오 OAuth 콜백 처리
@@ -105,7 +105,6 @@ const KakaoSignupPage = () => {
             return;
           }
         } else {
-          // 세션이 없으면 기존 코드(flow)를 태워야 한다면 여기서 handleKakaoCallback 사용
           console.log('세션이 없음, 카카오 인증 정보 없음');
           toast.error('카카오톡 인증 정보가 없습니다.');
           router.push('/login');
@@ -122,17 +121,18 @@ const KakaoSignupPage = () => {
     handleOAuthCallback();
   }, [router]);
 
-  // (예전 handleKakaoCallback은 필요하면 그대로 두고, 이 예시에는 생략)
-
   // =========================
-  // 2. 닉네임 / 채널 관련 유틸
+  // 2. 유효성 검사 유틸
   // =========================
 
+  // 닉네임 유효성 검사 (로컬 규칙)
   const validateNickname = (nickname) => {
-    if (!nickname.trim()) return null;
+    const trimmed = nickname.trim();
+    if (!trimmed) return null;
 
-    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(nickname);
-    const isValidLength = nickname.length >= 2 && nickname.length <= 20;
+    const hasSpecialChar =
+        /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(trimmed);
+    const isValidLength = trimmed.length >= 2 && trimmed.length <= 20;
 
     if (hasSpecialChar) {
       return {
@@ -150,82 +150,52 @@ const KakaoSignupPage = () => {
       };
     }
 
+    // 형식만 통과했을 때
     return {
       isValid: true,
-      message: '사용 가능한 닉네임입니다',
+      message: '멋진 닉네임을 지어주세요🐾',
       type: 'success'
     };
   };
 
-  const handleNicknameChange = (value) => {
-    setFormData(prev => ({ ...prev, nickname: value }));
-
-    if (value.trim()) {
-      const validation = validateNickname(value);
-      setNicknameValidation(validation);
-    } else {
-      setNicknameValidation(null);
-    }
-
-    if (errors.nickname) {
-      setErrors(prev => ({ ...prev, nickname: '' }));
-    }
+  // 전화번호 검증
+  const validatePhone = (phone) => {
+    const value = (phone || '').trim();
+    if (!value) return '연락처를 입력해주세요.';
+    if (value.length < 10) return '연락처를 정확히 입력해주세요.';
+    return '';
   };
 
-  const handleNicknameBlur = async (value) => {
-    if (!value.trim() || nicknameValidation?.type !== 'success') {
-      return;
+  // 인스타그램 입력 검증
+  const validateInstagramField = (enabled, value) => {
+    if (!enabled) return '';
+
+    const ig = (value || '').trim();
+
+    if (!ig) {
+      return '인스타그램 ID(영문 유저네임)를 입력해주세요.';
+    } else if (/http(s)?:\/\//i.test(ig)) {
+      return 'URL이 아닌 인스타그램 ID(영문 유저네임)을 입력해주세요.';
+    } else if (!isValidInstagramUsername(ig)) {
+      return '영문 소문자, 숫자, 언더바(_)만 사용해 1~30자로 입력해주세요.';
     }
 
-    setNicknameChecking(true);
-    try {
-      const result = await checkNicknameDuplicate(value);
-      if (result.isDuplicate) {
-        setNicknameValidation({
-          isValid: false,
-          message: result.message,
-          type: 'duplicate'
-        });
-      } else {
-        setNicknameValidation({
-          isValid: true,
-          message: result.message,
-          type: 'success'
-        });
-      }
-    } catch (error) {
-      console.error('닉네임 중복 체크 오류:', error);
-      setNicknameValidation({
-        isValid: false,
-        message: '중복 체크 중 오류가 발생했습니다',
-        type: 'error'
-      });
-    } finally {
-      setNicknameChecking(false);
+    return '';
+  };
+
+  // 카카오 오픈채팅 검증
+  const validateKakaoField = (enabled, value) => {
+    if (!enabled) return '';
+
+    const kakao = (value || '').trim();
+
+    if (!kakao) {
+      return '카카오톡 오픈채팅 링크를 입력해주세요.';
+    } else if (!isValidKakaoUrl(kakao)) {
+      return '한글 없이 https:// 로 시작하는 오픈채팅 링크를 입력해주세요.';
     }
-  };
 
-  const handleChannelChange = (channel) => {
-    setContactChannels(prev => {
-      const next = { ...prev, [channel]: !prev[channel] };
-
-      // 끈 경우 input 초기화
-      if (prev[channel]) {
-        setChannelInputs(prevInputs => ({
-          ...prevInputs,
-          [channel]: ''
-        }));
-      }
-
-      return next;
-    });
-  };
-
-  const handleChannelInputChange = (channel, value) => {
-    setChannelInputs(prev => ({
-      ...prev,
-      [channel]: value
-    }));
+    return '';
   };
 
   // 인스타그램 username 검증: 영문 소문자 + 숫자 + _ 만, 1~30자, 한글 X, URL X
@@ -247,51 +217,167 @@ const KakaoSignupPage = () => {
   };
 
   // =========================
-  // 3. 폼 검증
+  // 3. 인풋 핸들러들
+  // =========================
+
+  // 닉네임 변경
+  const handleNicknameChange = (value) => {
+    setFormData(prev => ({ ...prev, nickname: value }));
+
+    const trimmed = value.trim();
+
+    if (!trimmed) {
+      setNicknameValidation(null);
+      setErrors(prev => ({ ...prev, nickname: '' }));
+      return;
+    }
+
+    const validation = validateNickname(trimmed);
+    setNicknameValidation(validation);
+
+    setErrors(prev => ({
+      ...prev,
+      nickname: validation && !validation.isValid ? validation.message : ''
+    }));
+  };
+
+  // 닉네임 blur → 중복 체크
+  const handleNicknameBlur = async (value) => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+
+    // 로컬 유효성 통과 못하면 중복체크 안 함
+    if (!nicknameValidation || !nicknameValidation.isValid) {
+      return;
+    }
+
+    setNicknameChecking(true);
+    try {
+      const result = await checkNicknameDuplicate(trimmed);
+
+      if (result.isDuplicate) {
+        const message = result.message || '이미 사용 중인 닉네임입니다';
+        setNicknameValidation({
+          isValid: false,
+          message,
+          type: 'duplicate',
+          available: false
+        });
+        setErrors(prev => ({ ...prev, nickname: message }));
+      } else {
+        const message = result.message || '사용 가능한 닉네임입니다';
+        setNicknameValidation({
+          isValid: true,
+          message,
+          type: 'success',
+          available: true
+        });
+        setErrors(prev => ({ ...prev, nickname: '' }));
+      }
+    } catch (error) {
+      console.error('닉네임 중복 체크 오류:', error);
+      const message = '중복 체크 중 오류가 발생했습니다';
+      setNicknameValidation({
+        isValid: false,
+        message,
+        type: 'error',
+        available: false
+      });
+      setErrors(prev => ({ ...prev, nickname: message }));
+    } finally {
+      setNicknameChecking(false);
+    }
+  };
+
+  // 전화번호 변경 (실시간 검증)
+  const handlePhoneChange = (value) => {
+    const onlyNumbers = value.replace(/[^0-9]/g, '');
+    setFormData(prev => ({ ...prev, phone: onlyNumbers }));
+
+    const msg = validatePhone(onlyNumbers);
+    setErrors(prev => ({ ...prev, phone: msg }));
+  };
+
+  // 연락채널 선택 변경
+  const handleChannelChange = (channel) => {
+    setContactChannels(prev => {
+      const next = { ...prev, [channel]: !prev[channel] };
+
+      // 끈 경우 input / 에러 초기화
+      if (!next[channel]) {
+        setChannelInputs(prevInputs => ({ ...prevInputs, [channel]: '' }));
+        setErrors(prevErrors => ({ ...prevErrors, [channel]: '' }));
+      }
+
+      return next;
+    });
+  };
+
+  // 연락채널 입력값 변경 (실시간 검증 포함)
+  const handleChannelInputChange = (channel, value) => {
+    setChannelInputs(prev => ({
+      ...prev,
+      [channel]: value
+    }));
+
+    setErrors(prev => {
+      const newErrors = { ...prev };
+
+      if (channel === 'instagram') {
+        newErrors.instagram = validateInstagramField(
+            contactChannels.instagram,
+            value
+        );
+      }
+
+      if (channel === 'kakaoOpenChat') {
+        newErrors.kakaoOpenChat = validateKakaoField(
+            contactChannels.kakaoOpenChat,
+            value
+        );
+      }
+
+      return newErrors;
+    });
+  };
+
+  // =========================
+  // 4. 최종 폼 검증
   // =========================
   const validateForm = () => {
     const newErrors = {};
 
+    // 닉네임
     if (!formData.nickname.trim()) {
       newErrors.nickname = '닉네임을 입력해주세요.';
     } else if (nicknameValidation && !nicknameValidation.isValid) {
       newErrors.nickname = nicknameValidation.message;
     }
 
-    if (!formData.phone.trim()) {
-      newErrors.phone = '연락처를 입력해주세요.';
-    }
+    // 전화번호
+    const phoneError = validatePhone(formData.phone);
+    if (phoneError) newErrors.phone = phoneError;
 
     // 인스타그램
-    if (contactChannels.instagram) {
-      const ig = channelInputs.instagram.trim();
+    const igError = validateInstagramField(
+        contactChannels.instagram,
+        channelInputs.instagram
+    );
+    if (igError) newErrors.instagram = igError;
 
-      if (!ig) {
-        newErrors.instagram = '인스타그램 ID(영문 유저네임)를 입력해주세요.';
-      } else if (/http(s)?:\/\//i.test(ig)) {
-        newErrors.instagram = 'URL이 아닌 인스타그램 ID(영문 유저네임)을 입력해주세요.';
-      } else if (!isValidInstagramUsername(ig)) {
-        newErrors.instagram = '영문 소문자, 숫자, 언더바(_)만 사용해 1~30자로 입력해주세요.';
-      }
-    }
-
-    // 카카오 오픈채팅
-    if (contactChannels.kakaoOpenChat) {
-      const kakao = channelInputs.kakaoOpenChat.trim();
-
-      if (!kakao) {
-        newErrors.kakaoOpenChat = '카카오톡 오픈채팅 링크를 입력해주세요.';
-      } else if (!isValidKakaoUrl(kakao)) {
-        newErrors.kakaoOpenChat = '한글 없이 https:// 로 시작하는 오픈채팅 링크를 입력해주세요.';
-      }
-    }
+    // 카카오톡 오픈채팅
+    const kakaoError = validateKakaoField(
+        contactChannels.kakaoOpenChat,
+        channelInputs.kakaoOpenChat
+    );
+    if (kakaoError) newErrors.kakaoOpenChat = kakaoError;
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   // =========================
-  // 4. 프로필 생성 & 가입 완료
+  // 5. 프로필 생성 & 가입 완료
   // =========================
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -402,9 +488,7 @@ const KakaoSignupPage = () => {
       sessionStorage.removeItem('redirectAfterLogin');
       setIsNewUser(false);
 
-      // ✅ 먼저 로딩 해제
       setSubmitLoading(false);
-      // ✅ 그 다음 성공 페이지로 이동
       router.push('/signup/success');
 
       // 로그아웃은 뒤에서 비동기로
@@ -419,7 +503,7 @@ const KakaoSignupPage = () => {
   };
 
   // =========================
-  // 5. 렌더링
+  // 6. 렌더링
   // =========================
 
   // OAuth 콜백 처리 중
@@ -503,13 +587,12 @@ const KakaoSignupPage = () => {
                 errors={errors}
                 setErrors={setErrors}
                 nicknameValidation={nicknameValidation}
-                setNicknameValidation={setNicknameValidation}
                 nicknameChecking={nicknameChecking}
-                setNicknameChecking={setNicknameChecking}
                 onNicknameChange={handleNicknameChange}
                 onNicknameBlur={handleNicknameBlur}
                 onChannelChange={handleChannelChange}
                 onChannelInputChange={handleChannelInputChange}
+                onPhoneChange={handlePhoneChange}
                 showProfileImage={false}
                 showIntroduction={true}
                 showPhone={true}
