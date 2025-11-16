@@ -217,7 +217,7 @@ const AdditionalInfoContent = () => {
     } else if (/http(s)?:\/\//i.test(ig)) {
       return 'URL이 아닌 인스타그램 ID(영문 유저네임)을 입력해주세요.';
     } else if (!isValidInstagramUsername(ig)) {
-      return '영문 소문자, 숫자, 언더바(_)만 사용해 1~30자로 입력해주세요.';
+      return '영문 소문자, 숫자, 온점(.), 언더바(_)만 사용해 1~30자로 입력해주세요.';
     }
 
     return '';
