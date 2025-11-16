@@ -203,7 +203,7 @@ const KakaoSignupPage = () => {
     if (!value) return false;
     const hasKorean = /[가-힣]/.test(value);
     if (hasKorean) return false;
-    const regex = /^[a-z0-9_]{1,30}$/;
+    const regex = /^[a-z0-9._]{1,30}$/;
     return regex.test(value);
   };
 

@@ -167,7 +167,7 @@ const AdditionalInfoContent = () => {
     if (hasKorean) return false;
 
     // 인스타그램 유저네임 패턴
-    const regex = /^[a-z0-9_]{1,30}$/; // .(dot)허용: /^[a-z0-9._]{1,30}$/
+    const regex = /^[a-z0-9._]{1,30}$/;
     return regex.test(value);
   };
 
