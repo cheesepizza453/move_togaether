@@ -451,7 +451,7 @@ export default function AuthorDetailPage() {
             <div className="flex gap-x-[6px] px-[30px] mb-[23px]">
               {author.instagram && (
                   <button
-                      onClick={() => window.open(author.instagram, '_blank')}
+                      onClick={() => window.open(`https://www.instagram.com/${author.instagram}`, '_blank')}
                       className="flex flex-1 items-center justify-center min-w-[90px] py-[5px] rounded-[7px] bg-brand-bg border border-brand-yellow-dark text-12-m text-[#C3950B]"
                   >
                     <span className={'ml-[-4px] mr-[3px] inline-block w-[17px] h-[17px]'}><IconChannelInstagram/></span>
@@ -466,16 +466,16 @@ export default function AuthorDetailPage() {
                     <span className={'ml-[-4px] mr-[3px] inline-block w-[17px] h-[17px]'}><IconChannelNaverCafe/></span>
                     네이버 카페
                   </button>
-        )}
-        {author.kakao_openchat && (
-            <button
-                onClick={() => window.open(author.kakao_openchat, '_blank')}
-                className="flex flex-1 items-center justify-center min-w-[90px] py-[5px] rounded-[7px] bg-brand-bg border border-brand-yellow-dark text-12-m text-[#C3950B]"
-            >
-              <span className={'ml-[-4px] mr-[3px] inline-block w-[17px] h-[17px]'}><IconChannelKakaoTalk/></span>
-              카카오톡 채널
-            </button>
-        )}
+              )}
+              {author.kakao_openchat && (
+                  <button
+                      onClick={() => window.open(author.kakao_openchat, '_blank')}
+                      className="flex flex-1 items-center justify-center min-w-[90px] py-[5px] rounded-[7px] bg-brand-bg border border-brand-yellow-dark text-12-m text-[#C3950B]"
+                  >
+                    <span className={'ml-[-4px] mr-[3px] inline-block w-[17px] h-[17px]'}><IconChannelKakaoTalk/></span>
+                    카카오톡 채널
+                  </button>
+              )}
             </div>
         )}
       </div>
