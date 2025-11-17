@@ -155,12 +155,7 @@ const FavoriteCard = ({ post, onFavoriteToggle, isCompleted = false }) => {
         {/* 하단 버튼 영역 */}
         <div className="mt-4">
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!buttonInfo.disabled) {
-                // 문의하기 기능 (추후 구현)
-              }
-            }}
+            onClick={handleCardClick}
             className={buttonInfo.className}
             disabled={buttonInfo.disabled}
           >
