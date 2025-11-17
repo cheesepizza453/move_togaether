@@ -598,7 +598,7 @@ const KakaoSignupPage = () => {
                 showPhone={true}
                 showSocialChannels={true}
                 showPassword={false}
-                showTerms={false}
+                showTerms={true}
             />
 
             {/* 가입 버튼 */}

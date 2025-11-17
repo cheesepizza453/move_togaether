@@ -448,6 +448,7 @@ const AdditionalInfoContent = () => {
               showPhone={true}
               showSocialChannels={true}
               showSecurityQuestion={true}
+              showTerms={true}
           />
 
           {/* 회원가입 완료 버튼 */}
