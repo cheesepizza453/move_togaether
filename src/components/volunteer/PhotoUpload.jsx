@@ -80,7 +80,7 @@ const PhotoUpload = ({
 
         try {
             // 1) 리사이즈 & 압축
-            const resizedDataUrl = await resizeImage(file, 1024, 0.85);
+            const resizedDataUrl = await resizeImage(file);
 
             // 2) 대략적인 용량 계산
             const base64 = resizedDataUrl.split(',')[1] || '';
