@@ -1,6 +1,7 @@
 
 
 import React from "react";
+import TermsText from "@/components/terms/TermsText";
 
 const TermsPage = () => {
 
@@ -10,157 +11,13 @@ const TermsPage = () => {
       <div className="bg-white">
         <div className="flex items-center justify-between">
           <div className="flex items-center py-[28px] px-[30px]">
-{/*            <button
-                onClick={handleGoBack}
-                className="mr-[12px]"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="9" height="16" viewBox="0 0 9 16" fill="none">
-                <path d="M8 15L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
-                      strokeLinecap="round"/>
-                <path d="M8 0.999999L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
-                      strokeLinecap="round"/>
-              </svg>
-            </button>*/}
             <div>
               <h1 className="text-22-m text-black">이용약관</h1>
             </div>
           </div>
         </div>
       </div>
-      <div className={'px-[30px] pt-[10px] pb-[30px] text-14-r leading-[1.35]'}>
-        <p>
-          본 약관은 <strong>무브투개더</strong>(이하 “회사”)가 제공하는 온라인 서비스(이하 “서비스”)의 이용 조건 및 절차,
-          회사와 회원 간의 권리·의무 및 책임사항 등 기본적인 사항을 규정함을 목적으로 합니다.
-        </p>
-
-        <div className="section pt-[20px] border-t border-gray-200 mt-[20px]">
-          <h2>제1조 (용어의 정의)</h2>
-          <ul>
-            <li>① “서비스”란 회사가 운영하는 무브투개더 웹사이트 및 관련 서비스를 말합니다.</li>
-            <li>② “회원”이란 본 약관에 동의하고 개인정보를 제공하여 회원가입을 완료한 자를 말합니다.</li>
-            <li>③ “아이디(ID)”란 회원의 식별과 서비스 이용을 위하여 회원이 정하고 회사가 승인한 이메일 주소 등을 말합니다.</li>
-            <li>④ “게시물”이란 회원이 서비스 이용과 관련하여 서비스 상에 게시한 글, 사진, 댓글 등 일체의 콘텐츠를 말합니다.</li>
-          </ul>
-        </div>
-
-        <div className="section mt-[20px] pt-[20px] border-t border-gray-200">
-          <h2>제2조 (약관의 효력 및 변경)</h2>
-          <ul>
-            <li>① 본 약관은 서비스 화면에 게시하거나 기타의 방법으로 회원에게 공지함으로써 효력이 발생합니다.</li>
-            <li>② 회사는 관련 법령을 위반하지 않는 범위 내에서 약관을 개정할 수 있습니다.</li>
-            <li>③ 회사가 약관을 개정하는 경우, 적용일자 및 개정사유를 명시하여 서비스 내 공지사항 등을 통해 사전 공지합니다.</li>
-            <li>④ 회원이 변경된 약관에 동의하지 않을 경우 회원 탈퇴를 요청할 수 있으며, 변경된 약관 공지 이후에도 서비스를 계속 이용할 경우 약관 변경에 동의한 것으로 간주합니다.</li>
-          </ul>
-        </div>
-
-        <div className="section mt-[20px] pt-[20px] border-t border-gray-200">
-          <h2>제3조 (회원가입 및 계정 관리)</h2>
-          <ul>
-            <li>① 회원가입은 서비스가 정한 절차에 따라 약관 및 개인정보 처리방침에 동의하고, 회사가 요구하는 정보를 정확히 입력함으로써 이루어집니다.</li>
-            <li>② 회원은 가입 시 기재한 정보에 변경이 있을 경우, 즉시 서비스 내 “내 정보” 등의 기능을 통해 이를 수정해야 합니다.</li>
-            <li>③ 아이디 및 비밀번호에 대한 관리 책임은 회원 본인에게 있으며, 이를 제3자가 사용하도록 허용해서는 안 됩니다.</li>
-            <li>④ 회사는 다음 각 호의 어느 하나에 해당하는 경우, 회원 가입을 승낙하지 않거나 사후에 회원 자격을 제한 또는 상실시킬 수 있습니다.
-              <ul>
-                <li>1. 타인의 명의 또는 허위 정보를 사용한 경우</li>
-                <li>2. 서비스 운영을 고의로 방해하는 경우</li>
-                <li>3. 관련 법령 또는 본 약관을 위반한 경우</li>
-              </ul>
-            </li>
-          </ul>
-        </div>
-
-        <div className="section mt-[20px] pt-[20px] border-t border-gray-200">
-          <h2>제4조 (개인정보의 보호)</h2>
-          <ul>
-            <li>① 회사는 회원의 개인정보를 관련 법령 및 개인정보 처리방침에 따라 안전하게 관리합니다.</li>
-            <li>② 개인정보 처리에 관한 상세한 내용은 별도의 「개인정보 처리방침」을 통해 확인할 수 있습니다.</li>
-          </ul>
-        </div>
-
-        <div className="section mt-[20px] pt-[20px] border-t border-gray-200">
-          <h2>제5조 (서비스의 제공 및 변경)</h2>
-          <ul>
-            <li>① 회사는 다음과 같은 서비스를 제공합니다.
-              <ul>
-                <li>1. 회원 계정 생성 및 관리 서비스</li>
-                <li>2. 동물 이동 관련 게시물 작성 및 열람 서비스</li>
-                <li>3. 회원 간 문의 및 연락을 지원하는 서비스</li>
-                <li>4. 기타 회사가 정하는 서비스</li>
-              </ul>
-            </li>
-            <li>② 회사는 서비스의 내용 및 제공 방식을 변경할 수 있으며, 중요한 변경 사항이 있을 경우 사전에 공지합니다.</li>
-            <li>③ 회사는 아래와 같은 경우 사전 공지 없이 서비스의 전부 또는 일부를 일시 중단할 수 있습니다.
-              <ul>
-                <li>1. 서비스 설비의 보수, 점검, 교체, 고장 또는 통신 두절 등의 사유가 발생한 경우</li>
-                <li>2. 천재지변, 정전, 시스템 장애 등 불가항력적인 사유가 있는 경우</li>
-              </ul>
-            </li>
-          </ul>
-        </div>
-
-        <div className="section mt-[20px] pt-[20px] border-t border-gray-200">
-          <h2>제6조 (회원의 의무)</h2>
-          <ul>
-            <li>① 회원은 관련 법령, 본 약관, 서비스 이용 안내 및 회사가 고지하는 사항을 준수해야 합니다.</li>
-            <li>② 회원은 다음 각 호의 행위를 하여서는 안 됩니다.
-              <ul>
-                <li>1. 타인의 정보를 도용하거나 허위 정보를 입력하는 행위</li>
-                <li>2. 서비스와 관련된 정보를 무단으로 복제, 유통, 상업적으로 이용하는 행위</li>
-                <li>3. 욕설, 비방, 명예훼손, 혐오 표현 등 타인에게 피해를 주는 행위</li>
-                <li>4. 불법적인 콘텐츠를 게시하거나 관련 법령을 위반하는 행위</li>
-                <li>5. 서비스의 정상적인 운영을 방해하는 행위</li>
-              </ul>
-            </li>
-            <li>③ 회원이 본 약관 또는 관련 법령을 위반할 경우, 회사는 서비스 이용 제한, 게시물 삭제, 계정 정지 또는 탈퇴 등의 조치를 취할 수 있습니다.</li>
-          </ul>
-        </div>
-
-        <div className="section mt-[20px] pt-[20px] border-t border-gray-200">
-          <h2>제7조 (게시물의 관리)</h2>
-          <ul>
-            <li>① 게시물에 대한 책임은 이를 게시한 회원에게 있으며, 회사는 회원의 게시물이 관련 법령을 위반하거나 타인의 권리를 침해한다고 판단되는 경우 사전 통지 없이 삭제 또는 숨김 처리할 수
-              있습니다.
-            </li>
-            <li>② 회원은 자신이 게시한 콘텐츠에 대하여 회사에 서비스 운영, 홍보 등을 위한 비독점적 사용권을 부여합니다.</li>
-          </ul>
-        </div>
-
-        <div className="section mt-[20px] pt-[20px] border-t border-gray-200">
-          <h2>제8조 (책임의 한계)</h2>
-          <ul>
-            <li>① 회사는 회원 간에 이루어지는 동물 이동·돌봄 등 실제 활동에 대하여 직접적인 책임을 지지 않으며, 회원 간 분쟁이 발생하는 경우 원칙적으로 당사자 간에 해결해야 합니다.</li>
-            <li>② 회사는 서비스 제공을 위해 합리적인 노력을 다하나, 천재지변, 시스템 장애 등 불가항력적인 사유로 발생한 손해에 대해서는 책임을 지지 않습니다.</li>
-          </ul>
-        </div>
-
-        <div className="section mt-[20px] pt-[20px] border-t border-gray-200">
-          <h2>제9조 (서비스 이용계약의 해지)</h2>
-          <ul>
-            <li>① 회원은 언제든지 서비스 내 회원 탈퇴 기능을 통해 이용계약을 해지할 수 있습니다.</li>
-            <li>② 회원이 약관을 위반하거나 서비스 운영을 심각하게 방해한 경우, 회사는 사전 통지 후 회원의 서비스 이용을 제한하거나 계정을 해지할 수 있습니다.</li>
-          </ul>
-        </div>
-
-        <div className="section mt-[20px] pt-[20px] border-t border-gray-200">
-          <h2>제10조 (준거법 및 분쟁 해결)</h2>
-          <ul>
-            <li>① 본 약관은 대한민국 법령을 준거법으로 합니다.</li>
-            <li>② 회사와 회원 간에 발생한 분쟁에 관한 소송은 민사소송법 등 관련 법령에서 정한 절차에 따릅니다.</li>
-          </ul>
-        </div>
-
-        <div className="section mt-[20px] pt-[20px] border-t border-gray-200">
-          <h2>제11조 (문의처)</h2>
-          <p>서비스 이용과 관련된 문의, 불만, 의견 제시는 아래 연락처로 해주시기 바랍니다.</p>
-          <ul>
-            <li><strong>담당자</strong>: 김미리</li>
-            <li><strong>이메일</strong>: earlykim@grader.kr</li>
-          </ul>
-        </div>
-
-        <p className="date">본 이용약관은 <strong>2025년 11월 10일</strong>부터 시행됩니다.</p>
-
-      </div>
+      <TermsText/>
     </div>
   );
 };
