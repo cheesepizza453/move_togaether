@@ -765,7 +765,7 @@ export default function PostDetailPage() {
                   <div className={'flex gap-x-[4px] text-14-r'}>
                     <p>{post.dog_name || '미입력'}</p>
                     <p className={' text-text-800'}>{post.dogSize}</p>
-                    <p className={'text-text-800'}>{post.dog_breed || '미입력'}</p>
+                    <p className={'text-text-800'}>{post.dog_breed || ''}</p>
                   </div>
                 </div>
 
