@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import ProfileImage from '@/components/common/ProfileImage';
 import { Plus } from 'lucide-react';
 import { IconRadioActive, IconCheckBoxActive } from '../../public/img/icon/IconCheck';
 import { SECURITY_QUESTIONS } from '@/constants/securityQuestions';
 import { toast } from 'sonner';
+import TermsText from "@/components/terms/TermsText";
+import PrivacyText from "@/components/privacy/PrivacyText";
 
 const UserProfileForm = (props) => {
   const {
@@ -41,6 +43,8 @@ const UserProfileForm = (props) => {
 
   const [phoneVisibility, setPhoneVisibility] = useState('public');
   const [isSecurityVisible, setIsSecurityVisible] = useState(mode !== 'edit');
+  const [showTermsDetail, setShowTermsDetail] = useState(false);
+  const [showPrivacyDetail, setShowPrivacyDetail] = useState(false);
   const fileInputRef = useRef(null);
 
   // 공통으로 쓸 수 있는 압축 함수
@@ -233,10 +237,10 @@ const UserProfileForm = (props) => {
                   rows={4}
                   maxLength={200}
               />
-              <div className="flex justify-end mt-[4px]">
-            <span className="text-12-l text-text-800">
-              {formData.introduction.length}/200
-            </span>
+              <div className="flex justify-end">
+                <span className="text-12-l text-text-800">
+                  {formData.introduction.length}/200
+                </span>
               </div>
             </div>
         )}
@@ -272,9 +276,11 @@ const UserProfileForm = (props) => {
                           : 'border-text-600 bg-text-050 focus:bg-brand-sub focus:text-brand-yellow-dark focus:border-brand-main focus:ring-brand-main'
                   } focus:outline-none focus:ring-1 transition-colors`}
               />
-              {errors.phone && (
-                  <p className="text-9-r text-brand-point mt-[4px]">{errors.phone}</p>
-              )}
+              <div className={'min-h-[12px]'}>
+                {errors.phone && (
+                    <p className=" text-9-r text-brand-point mt-[4px]">{errors.phone}</p>
+                )}
+              </div>
             </div>
         )}
 
@@ -354,9 +360,9 @@ const UserProfileForm = (props) => {
                       />
                       <div className="flex items-center gap-3">
                         {contactChannels.instagram ? (
-                            <IconCheckBoxActive className="w-5 h-5" />
+                            <IconCheckBoxActive className="w-5 h-5"/>
                         ) : (
-                            <div className="w-[24px] h-[24px] border-2 border-text-300" />
+                            <div className="w-[24px] h-[24px] border-2 border-text-300"/>
                         )}
                         <span className="text-14-r text-text-800">인스타그램</span>
                       </div>
@@ -376,14 +382,16 @@ const UserProfileForm = (props) => {
                       />
                       <div className="flex items-center gap-3">
                         {contactChannels.kakaoOpenChat ? (
-                            <IconCheckBoxActive className="w-5 h-5" />
+                            <IconCheckBoxActive className="w-5 h-5"/>
                         ) : (
-                            <div className="w-[24px] h-[24px] border-2 border-text-300" />
+                            <div className="w-[24px] h-[24px] border-2 border-text-300"/>
                         )}
                         <span className="text-14-r text-text-800">카카오톡 오픈채팅</span>
                       </div>
                     </label>
                   </div>
+                </div>
+                <div className={'min-h-[12px]'}>
                 </div>
               </div>
 
@@ -391,7 +399,7 @@ const UserProfileForm = (props) => {
               {contactChannels.instagram && (
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      인스타그램
+                    인스타그램
                     </label>
                     <p className="mb-[8px] text-14-r text-text-800">
                       ID(유저네임)을 입력해주세요. ex) movetogaether
@@ -491,6 +499,8 @@ const UserProfileForm = (props) => {
                             {errors.securityQuestion}
                           </p>
                       )}
+                      <div className={'min-h-[12px]'}>
+                      </div>
                     </div>
 
                     <div>
@@ -536,42 +546,105 @@ const UserProfileForm = (props) => {
 
         {/* 약관 동의 (회원가입 모드에서만) */}
         {showTerms && mode === 'signup' && (
-            <div className="space-y-3">
+          <div className="space-y-3">
+            {/* 이용약관 */}
+            <div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                        type="checkbox"
+                        id="terms"
+                        checked={formData.agreeTerms || false}
+                        onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              agreeTerms: e.target.checked,
+                            }))
+                        }
+                        className="sr-only"
+                    />
+                    <div className="flex items-center gap-3">
+                      {formData.agreeTerms ? (
+                          <IconCheckBoxActive className="w-5 h-5"/>
+                      ) : (
+                          <div className="w-[24px] h-[24px] border-2 border-text-300"/>
+                      )}
+                      <span className="text-14-r text-text-800">이용약관에 동의합니다<span className="text-brand-point">*</span></span>
+                    </div>
+                  </label>
+                </div>
+                <button
+                    type="button"
+                    onClick={() => setShowTermsDetail((prev) => !prev)}
+                    className="text-10-r text-brand-yellow-dark underline"
+                >
+                  보기
+                </button>
+              </div>
+
+              {showTermsDetail && (
+              <div className="mt-2 p-[10px] bg-gray-100 rounded-md text-xs leading-relaxed text-gray-700">
+                <div className="flex items-center py-[28px] px-[30px]">
+                  <div>
+                    <p className="text-22-m text-black">이용약관</p>
+                  </div>
+                </div>
+                <TermsText/>
+              </div>
+              )}
+          </div>
+
+          {/* 개인정보처리방침 */}
+          <div>
+            <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <input
-                    type="checkbox"
-                    id="terms"
-                    checked={formData.agreeTerms || false}
-                    onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          agreeTerms: e.target.checked,
-                        }))
-                    }
-                    className="w-4 h-4 text-brand-main border-gray-300 rounded focus:ring-brand-main"
-                />
-                <label htmlFor="terms" className="ml-2 text-sm text-gray-700">
-                  <span className="text-brand-point">*</span> 이용약관에 동의합니다
+                <label className="flex items-center cursor-pointer">
+                  <input
+                      type="checkbox"
+                      id="terms"
+                      checked={formData.agreePrivacy || false}
+                      onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            agreePrivacy: e.target.checked,
+                          }))
+                      }
+                      className="sr-only"
+                  />
+                  <div className="flex items-center gap-3">
+                    {formData.agreePrivacy ? (
+                        <IconCheckBoxActive className="w-5 h-5"/>
+                    ) : (
+                        <div className="w-[24px] h-[24px] border-2 border-text-300"/>
+                    )}
+                    <span className="text-14-r text-text-800">개인정보처리방침에 동의합니다<span
+                        className="text-brand-point">*</span></span>
+                  </div>
                 </label>
               </div>
-              <div className="flex items-center">
-                <input
-                    type="checkbox"
-                    id="privacy"
-                    checked={formData.agreePrivacy || false}
-                    onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          agreePrivacy: e.target.checked,
-                        }))
-                    }
-                    className="w-4 h-4 text-brand-main border-gray-300 rounded focus:ring-brand-main"
-                />
-                <label htmlFor="privacy" className="ml-2 text-sm text-gray-700">
-                  <span className="text-brand-point">*</span> 개인정보처리방침에 동의합니다
-                </label>
-              </div>
+
+              <button
+                  type="button"
+                  onClick={() => setShowPrivacyDetail((prev) => !prev)}
+                  className="text-10-r text-brand-yellow-dark underline"
+              >
+                보기
+              </button>
             </div>
+
+            {showPrivacyDetail && (
+                <div className="mt-2 p-[10px] bg-gray-100 rounded-md text-xs leading-relaxed text-gray-700">
+                  <div className="flex items-center py-[28px] px-[30px]">
+                    <div>
+                      <p className="text-22-m text-black">이용약관</p>
+                    </div>
+                  </div>
+                  <PrivacyText/>
+                </div>
+            )}
+          </div>
+          </div>
         )}
       </div>
   );

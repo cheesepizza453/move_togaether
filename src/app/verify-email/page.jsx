@@ -4,7 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
-import IconLoading from "../../../public/img/icon/IconLoading";
+import Loading from "@/components/ui/loading";
 
 // useSearchParams를 사용하는 컴포넌트를 별도로 분리
 const VerifyEmailContent = () => {
@@ -102,11 +102,7 @@ const VerifyEmailContent = () => {
 
   if (loading) {
     return (
-    <div className="min-h-screen bg-white flex justify-center">
-      <div className={'w-full flex justify-center pt-[25vh]'}>
-        <IconLoading/>
-      </div>
-    </div>
+      <Loading/>
     );
   }
 

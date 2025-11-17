@@ -1,68 +1,32 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
 import moment from 'moment';
-import Header from '@/components/common/Header';
-import BottomNavigation from '@/components/common/BottomNavigation';
 import FavoriteCard from '@/components/FavoriteCard';
 import { Button } from '@/components/ui/button';
 import { favoritesAPI, handleAPIError } from '@/lib/api-client';
 import { useAuth } from '@/hooks/useAuth';
 import { convertDogSize, formatDeadline } from '@/lib/utils';
 import { useLoginDialog } from '@/components/LoginDialog';
-import IconLoading from "../../../public/img/icon/IconLoading";
+import Loading from "@/components/ui/loading";
 
 export default function FavoritesPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [allFavorites, setAllFavorites] = useState([]);
   const [activeFavorites, setActiveFavorites] = useState([]);
   const [completedFavorites, setCompletedFavorites] = useState([]);
   const [error, setError] = useState(null);
-  const { showLoginDialog } = useLoginDialog();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeTab, setActiveTab] = useState('active');
 
-  // 로그인 상태 확인 (AuthContext 사용)
-  const checkAuthStatus = async () => {
-    try {
-      if (user) {
-        setIsLoggedIn(true);
-        return true;
-      } else {
-        setIsLoggedIn(false);
-        return false;
-      }
-    } catch (error) {
-      console.error('인증 상태 확인 오류:', error);
-      setIsLoggedIn(false);
-      return false;
-    }
-  };
-
   // 즐겨찾기 목록 조회
-  const fetchFavorites = async () => {
+  const fetchFavorites = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      if (!user) {
-        showLoginDialog({
-          title: '로그인이 필요합니다',
-          message: '저장목록을 사용하려면 로그인해주세요.',
-          redirectPath: '/favorites',
-          onCancel: () => {
-            console.log('취소 버튼 클릭 - 메인 페이지로 이동');
-            router.push('/');
-          }
-        });
-        return;
-      }
-
-      // 즐겨찾기한 게시물의 상세 정보 조회
       const response = await favoritesAPI.getList();
       console.log('찜한 목록 API 응답:', response);
       const posts = response.posts || [];
@@ -74,9 +38,13 @@ export default function FavoritesPage() {
         return;
       }
 
-      // 데이터 포맷팅 (favorites 타입은 {favorite_id, favorited_at, post} 구조)
       const formattedPosts = posts.map(item => {
         const post = item.post;
+        // D-day 계산 개선 (시간 포함하여 더 정확하게)
+        const dday = post.deadline
+            ? moment(post.deadline).startOf('day').diff(moment().startOf('day'), 'days')
+            : 0;
+
         return {
           id: post.id,
           title: post.title,
@@ -88,23 +56,21 @@ export default function FavoritesPage() {
           deadline: formatDeadline(post.deadline),
           images: post.images || [],
           status: post.status,
-          dday: post.deadline ? moment(post.deadline).diff(moment(), 'days') : 0,
+          dday,
           created_at: post.created_at
         };
       });
 
       setAllFavorites(formattedPosts);
 
-      // 모집중: deadline이 지나지 않았고 status가 active인 항목
+      // 모집중: status가 active이고 마감일이 지나지 않은 것 (당일 포함)
       const active = formattedPosts.filter(post =>
-        post.status === 'active' &&
-        post.dday >= 0
+          post.status === 'active' && post.dday >= 0
       );
 
-      // 모집종료: deadline이 지났거나 status가 active가 아닌 항목
+      // 모집종료: status가 active가 아니거나 마감일이 지난 것
       const completed = formattedPosts.filter(post =>
-        post.status !== 'active' ||
-        post.dday < 0
+          post.status !== 'active' || post.dday < 0
       );
 
       setActiveFavorites(active);
@@ -113,54 +79,54 @@ export default function FavoritesPage() {
     } catch (error) {
       console.error('즐겨찾기 조회 오류:', error);
       const errorInfo = handleAPIError(error);
-      setError(errorInfo.message);
+      setError(errorInfo.message || '즐겨찾기 목록을 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // 즐겨찾기 상태 토글 핸들러
-  const handleFavoriteToggle = (postId, isFavorited) => {
+  const handleFavoriteToggle = useCallback((postId, isFavorited) => {
     if (!isFavorited) {
       // 즐겨찾기에서 제거된 경우 모든 목록에서도 제거
       setAllFavorites(prev => prev.filter(post => post.id !== postId));
       setActiveFavorites(prev => prev.filter(post => post.id !== postId));
       setCompletedFavorites(prev => prev.filter(post => post.id !== postId));
     }
-  };
+  }, []);
 
   // 탭 변경 핸들러
-  const handleTabChange = (tab) => {
+  const handleTabChange = useCallback((tab) => {
     setActiveTab(tab);
-  };
+  }, []);
 
   // 현재 탭에 따른 표시할 데이터
-  const getCurrentFavorites = () => {
+  const getCurrentFavorites = useCallback(() => {
     return activeTab === 'active' ? activeFavorites : completedFavorites;
-  };
+  }, [activeTab, activeFavorites, completedFavorites]);
 
   // 페이지 로드 시 인증 상태 확인 및 데이터 로드
   useEffect(() => {
-    const initializePage = async () => {
-      const isAuthenticated = await checkAuthStatus();
-      if (isAuthenticated) {
-        await fetchFavorites();
-      } else {
-        setLoading(false);
-        showLoginDialog({
-          title: '로그인이 필요합니다',
-          message: '저장목록을 사용하려면 로그인해주세요.',
-          redirectPath: '/favorites',
-          onCancel: () => {
-            console.log('취소 버튼 클릭 - 메인 페이지로 이동 (initializePage)');
-            router.push('/');
-          }
-        });
-      }
-    };
+    // 1) Auth 아직 초기화 중이면 아무것도 안함
+    if (authLoading) return;
 
-    initializePage();
-  }, []);
+    // 2) 로그인 안 된 상태 → 조용히 메인으로 보내기
+    if (!user) {
+      setLoading(false);
+      router.replace('/');
+      return;
+    }
+
+    // 3) 로그인 된 상태 → 즐겨찾기 조회
+    fetchFavorites();
+  }, [authLoading, user, router, fetchFavorites]);
+
+  // 로딩 중일 때 (인증 또는 데이터 로딩)
+  if (authLoading || (loading && !error)) {
+    return (
+        <Loading/>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#FFDB6F]">
@@ -168,7 +134,7 @@ export default function FavoritesPage() {
       <div className="w-full px-[30px] pt-[15px]">
         <h1 className="text-22-m text-black pt-[30px] pb-[40px]">
           도움을 기다리는 친구들{' '}
-          <span className="text-[#F36C5E]">{loading ? '...' : activeFavorites.length}</span>
+          <span className="text-[#F36C5E]">{activeFavorites.length}</span>
         </h1>
       </div>
 
@@ -178,68 +144,64 @@ export default function FavoritesPage() {
         {/* 탭 메뉴 */}
         <div className="flex border-gray-200 mb-4">
           <button
-            onClick={() => handleTabChange('active')}
-            className={`py-3 text-center text-base relative mr-[10px] ${
-              activeTab === 'active'
-                ? 'font-black text-brand-icon'
-                : 'font-medium text-[#8b8b8b]'
-            }`}
+              onClick={() => handleTabChange('active')}
+              className={`py-3 text-center text-base relative mr-[10px] ${
+                  activeTab === 'active'
+                      ? 'font-black text-brand-icon'
+                      : 'font-medium text-[#8b8b8b]'
+              }`}
+              aria-selected={activeTab === 'active'}
           >
             모집중
           </button>
           <button
-            onClick={() => handleTabChange('completed')}
-            className={`py-3 text-center text-base relative ${
-              activeTab === 'completed'
-                ? 'font-black text-brand-icon'
-                : 'font-medium text-[#8b8b8b]'
-            }`}
+              onClick={() => handleTabChange('completed')}
+              className={`py-3 text-center text-base relative ${
+                  activeTab === 'completed'
+                      ? 'font-black text-brand-icon'
+                      : 'font-medium text-[#8b8b8b]'
+              }`}
+              aria-selected={activeTab === 'completed'}
           >
             모집종료
           </button>
         </div>
 
         {/* 콘텐츠 */}
-        {loading ? (
-          <div className="flex justify-center items-center">
-            <div className={'w-full flex justify-center'}>
-              <IconLoading/>
-            </div>
-          </div>
-        ) : error ? (
+        {error ? (
             <div className="flex flex-col items-center justify-center py-8">
-            <div className="text-red-500 mb-4">{error}</div>
-            <Button onClick={fetchFavorites} variant="outline">
-              다시 시도
-            </Button>
-          </div>
-        ) : getCurrentFavorites().length === 0 ? (
-          <div className="flex flex-col items-center justify-center pt-[60px]">
-            <div className="text-black text-center mb-4">
-              <p className="text-18-b font-medium">
-                {activeTab === 'active'
-                  ? '모집중인 저장 목록이 없어요.'
-                  : '모집종료된 저장 목록이 없어요.'
-                }
-              </p>
-            </div>
-            {activeTab === 'active' && (
-              <Button onClick={() => router.push('/')} variant="outline">
-                메인으로 이동
+              <div className="text-red-500 mb-4 text-center">{error}</div>
+              <Button onClick={fetchFavorites} variant="outline">
+                다시 시도
               </Button>
-            )}
-          </div>
+            </div>
+        ) : getCurrentFavorites().length === 0 ? (
+            <div className="flex flex-col items-center justify-center pt-[60px]">
+              <div className="text-black text-center mb-4">
+                <p className="text-18-b font-medium">
+                  {activeTab === 'active'
+                      ? '모집중인 저장 목록이 없어요.'
+                      : '모집종료된 저장 목록이 없어요.'
+                  }
+                </p>
+              </div>
+              {activeTab === 'active' && (
+                  <Button onClick={() => router.push('/')} variant="outline">
+                    메인으로 이동
+                  </Button>
+              )}
+            </div>
         ) : (
-          <div className="space-y-[20px]">
-            {getCurrentFavorites().map((post) => (
-              <FavoriteCard
-                key={post.id}
-                post={post}
-                onFavoriteToggle={handleFavoriteToggle}
-                isCompleted={activeTab === 'completed'}
-              />
-            ))}
-          </div>
+            <div className="space-y-[20px]">
+              {getCurrentFavorites().map((post) => (
+                  <FavoriteCard
+                      key={post.id}
+                      post={post}
+                      onFavoriteToggle={handleFavoriteToggle}
+                      isCompleted={activeTab === 'completed'}
+                  />
+              ))}
+            </div>
         )}
       </main>
 

@@ -1,7 +1,7 @@
 const Footer = () => {
   return (
     <footer className="block bg-gray-50 border-t border-gray-200">
-      <div className="w-full px-4 pt-8 pb-24">
+      <div className="w-full px-4 pt-8 pb-[120px]">
         {/* 구분선 */}
         <div className="">
           <div className="flex flex-col justify-between items-center space-y-3">
