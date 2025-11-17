@@ -25,7 +25,7 @@ const Preview = ({
       {/* 봉사자 정보 */}
       <div className="bg-white border border-gray-200 rounded-lg p-4">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium text-gray-900">봉사자 정보</h3>
+          <h3 className="text-18-m text-gray-900">봉사자 정보</h3>
           <button
             type="button"
             onClick={() => onEdit(1)}
@@ -62,7 +62,7 @@ const Preview = ({
       {/* 강아지 정보 */}
       <div className="bg-white border border-gray-200 rounded-lg p-4">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium text-gray-900">강아지 정보</h3>
+          <h3 className="text-18-m text-gray-900">강아지 정보</h3>
           <button
             type="button"
             onClick={() => onEdit(2)}
@@ -76,7 +76,6 @@ const Preview = ({
         <div className="space-y-3">
           {photoPreview && (
             <div>
-              <span className="text-sm font-medium text-gray-600">사진:</span>
               <Image
                 width={200}
                 height={200}
@@ -109,7 +108,7 @@ const Preview = ({
       {/* 추가 정보 */}
       <div className="bg-white border border-gray-200 rounded-lg p-4">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium text-gray-900">추가 정보</h3>
+          <h3 className="text-18-m text-gray-900">추가 정보</h3>
           <button
             type="button"
             onClick={() => onEdit(3)}
@@ -128,7 +127,7 @@ const Preview = ({
                 href={formData.relatedPostLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-blue-600 hover:text-blue-800 mt-1 block break-all"
+                className="underline text-sm text-blue-600 hover:text-blue-800 mt-1 block break-all"
               >
                 {formData.relatedPostLink}
               </a>
