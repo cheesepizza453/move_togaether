@@ -685,7 +685,7 @@ export default function PostDetailPage() {
           {activeTab === 'post' && (
               <div>
                 {/* 강아지 이미지 */}
-                <div className="relative w-full aspect-[1/1]">
+                <div className="relative w-full aspect-[150/123]">
                   <Image
                       width={600}
                       height={600}
@@ -765,7 +765,8 @@ export default function PostDetailPage() {
                   {/* 링크 섹션 */}
                   {post.related_link && (
                       <div>
-                        <Link className={'font-12-r text-brand-yellow-dark underline'} href={post.related_link} target="_blank" rel="noopener noreferrer">관련 게시물 보기</Link>
+                        <Link className={'text-14-b text-brand-yellow-dark underline'} href={post.related_link} target="_blank" rel="noopener noreferrer">관련 게시물 보기</Link>
+                        <p className={'text-12-r text-text-800'}>작성자가 외부에 업로드한 공고로 이동해요.</p>
                       </div>
                   )}
 
