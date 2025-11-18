@@ -637,7 +637,7 @@ const UserProfileForm = (props) => {
                 <div className="mt-2 p-[10px] bg-gray-100 rounded-md text-xs leading-relaxed text-gray-700">
                   <div className="flex items-center py-[28px] px-[30px]">
                     <div>
-                      <p className="text-22-m text-black">이용약관</p>
+                      <p className="text-22-m text-black">개인정보처리방침</p>
                     </div>
                   </div>
                   <PrivacyText/>
