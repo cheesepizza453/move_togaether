@@ -423,12 +423,14 @@ const KakaoSignupPage = () => {
         if (sessionError) {
           console.error('세션 조회 오류:', sessionError);
           toast.error('사용자 인증 정보를 가져올 수 없습니다.');
+          setSubmitLoading(false);
           return;
         }
 
         if (!session?.user) {
           console.error('세션에 사용자 정보가 없음');
           toast.error('사용자 인증 정보가 없습니다.');
+          setSubmitLoading(false);
           return;
         }
 
@@ -438,12 +440,14 @@ const KakaoSignupPage = () => {
       if (userError) {
         console.error('사용자 인증 정보 조회 오류:', userError);
         toast.error('사용자 인증 정보를 가져올 수 없습니다.');
+        setSubmitLoading(false);
         return;
       }
 
       if (!user) {
         console.error('사용자 정보가 없음');
         toast.error('사용자 인증 정보가 없습니다.');
+        setSubmitLoading(false);
         return;
       }
 
@@ -477,24 +481,24 @@ const KakaoSignupPage = () => {
       if (profileError) {
         console.error('프로필 생성 오류:', profileError);
         toast.error('프로필 생성에 실패했습니다: ' + profileError.message);
+        setSubmitLoading(false);
         return;
       }
 
       console.log('프로필 생성 성공:', insertedProfile);
-      toast.success('회원가입이 완료되었습니다!');
 
       // 세션 정리
       sessionStorage.removeItem('kakaoUserInfo');
       sessionStorage.removeItem('redirectAfterLogin');
       setIsNewUser(false);
 
-      setSubmitLoading(false);
-      router.push('/signup/success');
+      await supabase.auth.signOut();
 
-      // 로그아웃은 뒤에서 비동기로
-      supabase.auth.signOut().catch(err => {
-        console.error('로그아웃 오류:', err);
-      });
+      toast.success('회원가입이 완료되었습니다!');
+      setSubmitLoading(false);
+
+      // 로그아웃 후 이동
+      router.push('/signup/success');
     } catch (error) {
       console.error('카카오톡 회원가입 오류:', error);
       toast.error('회원가입 처리 중 오류가 발생했습니다.');
