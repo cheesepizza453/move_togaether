@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import UserProfileForm from '@/components/UserProfileForm';
 import ProfileImage from '@/components/common/ProfileImage';
+import Loading from "@/components/ui/loading";
 
 const KakaoSignupPage = () => {
   const [oauthLoading, setOauthLoading] = useState(true);
@@ -370,6 +371,7 @@ const KakaoSignupPage = () => {
 
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
+      console.log('getUser result:', data, userError);
 
       if (userError || !user) {
         console.error('사용자 인증 정보 조회 오류:', userError);
@@ -466,15 +468,9 @@ const KakaoSignupPage = () => {
   // 6. 렌더링
   // =========================
 
-  if (oauthLoading && !userInfo) {
+  if (oauthLoading) {
     return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-yellow-500 mx-auto mb-4"></div>
-            <h2 className="text-xl font-semibold text-gray-700 mb-2">카카오톡 인증 중...</h2>
-            <p className="text-gray-500">잠시만 기다려주세요.</p>
-          </div>
-        </div>
+        <Loading text={'카카오톡 인증 중~'} className={'!text-black'}/>
     );
   }
 

@@ -1,11 +1,11 @@
 import IconLoading from "../../../public/img/icon/IconLoading";
 import React from "react";
 
-const Loading = () => {
+const Loading = ({text, className}) => {
     return (
         <div className="min-h-screen bg-white flex justify-center items-center">
             <div className={'w-full flex justify-center translate-y-[-50%]'}>
-                <IconLoading/>
+                <IconLoading text={text} className={className}/>
             </div>
         </div>
     )
