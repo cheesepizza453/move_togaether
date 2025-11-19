@@ -67,7 +67,7 @@ const KakaoSignupPage = () => {
               .from('user_profiles')
               .select('*')
               .eq('auth_user_id', data.session.user.id)
-              .single();
+              .maybeSingle();
 
           if (profileError && profileError.code !== 'PGRST116') {
             console.error('프로필 조회 오류:', profileError);
