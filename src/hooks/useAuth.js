@@ -172,7 +172,7 @@ export const AuthProvider = ({ children }) => {
         .select('id')
         .eq('auth_user_id', user.id)
         .eq('is_deleted', false)
-        .single();
+        .maybeSingle();
 
       if (checkError && checkError.code !== 'PGRST116') {
         console.error('기존 프로필 확인 오류:', checkError);
@@ -264,7 +264,7 @@ export const AuthProvider = ({ children }) => {
         .select('*')
         .eq('auth_user_id', userId)
         .eq('is_deleted', false)
-        .single();
+        .maybeSingle();
 
       if (error) {
         if (error.code === 'PGRST116') {
