@@ -110,7 +110,7 @@ const SignupSuccessPage = () => {
       </div>
 
       {/* 메인으로 이동 버튼 - 화면 하단 고정 */}
-      <div className="px-[23px] pb-[24px]">
+      <div className="px-[23px] pb-[12vh]">
         <div className="w-full">
           <Link
             href="/"
