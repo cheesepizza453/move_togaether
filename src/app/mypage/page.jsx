@@ -3,14 +3,13 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/lib/supabase';
 import moment from 'moment';
-import { ChevronLeft, Edit } from 'lucide-react';
 import ProfileImage from '@/components/common/ProfileImage';
 import { myPageAPI, handleAPIError } from '@/lib/api-client';
 import MyPageCard from '@/components/MyPageCard';
 import { convertDogSize } from '@/lib/utils';
 import IconLoading from "../../../public/img/icon/IconLoading";
+import Image from "next/image";
 
 const MyPage = () => {
   const { user, profile, loading, signOut } = useAuth();
@@ -243,6 +242,9 @@ const MyPage = () => {
             ) : appliedPosts.length === 0 ? (
                 <div className="pt-[60px] bg-white text-center">
                   <div className="text-gray-500 mb-[16px]">
+                    <figure className={'flex justify-center mb-[10px]'}>
+                      <Image src={'img/empty_icon.png'} alt={''} width={120} height={120}/>
+                    </figure>
                     <p className="text-16-m text-black mb-[10px]">지원한 게시물이 없습니다</p>
                     <p className="text-12-r">관심 있는 봉사활동에 지원해보세요</p>
                   </div>
@@ -290,7 +292,7 @@ const MyPage = () => {
 
             {/* 하위 탭 콘텐츠 */}
             {dataLoading ? (
-                <div className={'w-full flex justify-center pt-[20vh]'}>
+                <div className={'w-full flex justify-center pt-[10vh]'}>
                   <IconLoading/>
                 </div>
             ) : error ? (
@@ -305,6 +307,9 @@ const MyPage = () => {
                 </div>
             ) : myPosts.length === 0 ? (
                 <div className="pt-[60px] text-center">
+                  <figure className={'flex justify-center mb-[10px]'}>
+                    <Image src={'img/empty_icon.png'} alt={''} width={120} height={120}/>
+                  </figure>
                   <div className="mb-[16px]">
                     <p className="text-16-m text-black mb-[10px]">
                       {activeSubTab === '진행중' && '진행중인 게시글이 없습니다'}
