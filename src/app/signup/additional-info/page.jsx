@@ -341,6 +341,14 @@ const AdditionalInfoContent = () => {
     );
     if (kakaoError) newErrors.kakaoOpenChat = kakaoError;
 
+    // 이용약관, 개인정보처리방침 동의
+    if (!formData.agreeTerms) {
+      newErrors.agreeTerms = '이용약관에 동의해주세요.';
+    }
+    if (!formData.agreePrivacy) {
+      newErrors.agreePrivacy = '개인정보처리방침에 동의해주세요.';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };

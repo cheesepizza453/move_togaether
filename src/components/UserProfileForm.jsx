@@ -582,7 +582,11 @@ const UserProfileForm = (props) => {
                   보기
                 </button>
               </div>
-
+              {errors.agreeTerms && (
+                  <p className="mt-[4px] text-10-r text-brand-point">
+                    {errors.agreeTerms}
+                  </p>
+              )}
               {showTermsDetail && (
               <div className="mt-2 p-[10px] bg-gray-100 rounded-md text-xs leading-relaxed text-gray-700">
                 <div className="flex items-center py-[28px] px-[30px]">
@@ -623,7 +627,6 @@ const UserProfileForm = (props) => {
                   </div>
                 </label>
               </div>
-
               <button
                   type="button"
                   onClick={() => setShowPrivacyDetail((prev) => !prev)}
@@ -632,12 +635,17 @@ const UserProfileForm = (props) => {
                 보기
               </button>
             </div>
+            {errors.agreePrivacy && (
+                <p className="mt-[4px] text-10-r text-brand-point">
+                  {errors.agreePrivacy}
+                </p>
+            )}
 
             {showPrivacyDetail && (
                 <div className="mt-2 p-[10px] bg-gray-100 rounded-md text-xs leading-relaxed text-gray-700">
                   <div className="flex items-center py-[28px] px-[30px]">
                     <div>
-                      <p className="text-22-m text-black">개인정보처리방침</p>
+                    <p className="text-22-m text-black">개인정보처리방침</p>
                     </div>
                   </div>
                   <PrivacyText/>
