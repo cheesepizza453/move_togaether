@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { convertDogSize, formatDeadline } from '@/lib/utils';
 import { useLoginDialog } from '@/components/LoginDialog';
 import Loading from "@/components/ui/loading";
+import Image from "next/image";
 
 export default function FavoritesPage() {
   const router = useRouter();
@@ -177,11 +178,14 @@ export default function FavoritesPage() {
             </div>
         ) : getCurrentFavorites().length === 0 ? (
             <div className="flex flex-col items-center justify-center pt-[60px]">
+              <figure className={'flex justify-center mb-[10px]'}>
+                <Image src={'img/empty_icon.png'} alt={''} width={120} height={120}/>
+              </figure>
               <div className="text-black text-center mb-4">
                 <p className="text-18-b font-medium">
                   {activeTab === 'active'
-                      ? '모집중인 저장 목록이 없어요.'
-                      : '모집종료된 저장 목록이 없어요.'
+                      ? '저장 목록이 비어있어요.'
+                      : '아직 모집이 종료된 저장 목록이 없어요.'
                   }
                 </p>
               </div>

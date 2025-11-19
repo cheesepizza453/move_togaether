@@ -685,7 +685,7 @@ export default function PostDetailPage() {
           {activeTab === 'post' && (
               <div>
                 {/* 강아지 이미지 */}
-                <div className="relative w-full aspect-[150/123]">
+                <div className="relative w-full aspect-[150/133]">
                   <Image
                       width={600}
                       height={600}
@@ -790,6 +790,9 @@ export default function PostDetailPage() {
                     </div>
                 ) : applicants.length === 0 ? (
                     <div className="pt-[200px] min-h-screen">
+                      <figure className={'flex justify-center mb-[10px]'}>
+                        <Image src={'img/empty_icon.png'} alt={''} width={120} height={120}/>
+                      </figure>
                       <p className="text-text-800 text-16-m text-center">아직 지원자가 없습니다.</p>
                     </div>
                 ) : (
