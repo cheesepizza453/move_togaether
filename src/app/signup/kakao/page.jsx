@@ -16,7 +16,7 @@ const KakaoSignupPage = () => {
 
   const [userInfo, setUserInfo] = useState(null);
   const [isNewUser, setIsNewUser] = useState(false);
-  const [existingProfileId, setExistingProfileId] = useState(null); // ✅ 기존 프로필 ID 저장
+  const [existingProfileId, setExistingProfileId] = useState(null);
 
   const [formData, setFormData] = useState({
     nickname: '',
@@ -86,11 +86,11 @@ const KakaoSignupPage = () => {
         }
 
         if (profile) {
-          // 프로필이 있는데 닉네임(display_name)이 없으면 → 1단계만 완료된 상태
+          // 프로필이 있는데 닉네임이 없으면 → 1단계만 완료
           if (!profile.display_name || profile.display_name.trim() === '') {
-            console.log('1단계만 완료된 프로필 발견, 2단계 진행:', profile.id);
+            console.log('1단계만 완료된 프로필, 2단계 진행:', profile.id);
             setIsNewUser(true);
-            setExistingProfileId(profile.id); // ✅ 프로필 ID 저장
+            setExistingProfileId(profile.id);
 
             const userMetadata = currentUser.user_metadata || {};
             const kakaoInfo = {
@@ -110,14 +110,14 @@ const KakaoSignupPage = () => {
 
             toast.success('카카오톡 인증이 완료되었습니다.');
           } else {
-            // 닉네임까지 있으면 → 가입 완료된 사용자
+            // 닉네임까지 있으면 → 가입 완료
             console.log('가입 완료된 사용자, 마이페이지로 이동');
             toast.success('이미 가입된 계정입니다. 로그인되었습니다!');
             router.push('/mypage');
             return;
           }
         } else {
-          // 프로필이 아예 없는 경우 (드물지만 처리)
+          // 프로필이 아예 없는 경우
           console.log('프로필 없음, 신규 가입 진행');
           setIsNewUser(true);
 
@@ -226,10 +226,12 @@ const KakaoSignupPage = () => {
     return hasValidProtocol && !hasKorean;
   };
 
-  // 닉네임 변경 시 유효성 검사
+  // =========================
+  // 3. 인풋 핸들러들
+  // =========================
+
   const handleNicknameChange = (value) => {
     setFormData(prev => ({ ...prev, nickname: value }));
-
     const trimmed = value.trim();
 
     if (!trimmed) {
@@ -240,15 +242,12 @@ const KakaoSignupPage = () => {
 
     const validation = validateNickname(trimmed);
     setNicknameValidation(validation);
-
     setErrors(prev => ({
       ...prev,
       nickname: validation && !validation.isValid ? validation.message : ''
     }));
   };
 
-
-  // 닉네임 blur 이벤트로 중복 체크
   const handleNicknameBlur = async (value) => {
     const trimmed = value.trim();
     if (!trimmed || !nicknameValidation || !nicknameValidation.isValid) return;
@@ -357,7 +356,7 @@ const KakaoSignupPage = () => {
   };
 
   // =========================
-  // 5. 프로필 생성/업데이트 & 가입 완료
+  // 5. 프로필 생성/업데이트
   // =========================
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -372,7 +371,6 @@ const KakaoSignupPage = () => {
 
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
-      console.log('getUser result:', data, userError);
 
       if (userError || !user) {
         console.error('사용자 인증 정보 조회 오류:', userError);
@@ -446,12 +444,12 @@ const KakaoSignupPage = () => {
         console.log('프로필 생성 성공:', result);
       }
 
-      // ✅ 세션 정리
+      // 세션 정리
       sessionStorage.removeItem('kakaoUserInfo');
       sessionStorage.removeItem('redirectAfterLogin');
       setIsNewUser(false);
 
-      // ✅ 로그아웃 후 성공 페이지로 이동
+      // 로그아웃 후 성공 페이지로 이동
       await supabase.auth.signOut();
       toast.success('회원가입이 완료되었습니다!');
 
@@ -470,9 +468,7 @@ const KakaoSignupPage = () => {
   // =========================
 
   if (oauthLoading) {
-    return (
-        <Loading text={'카카오톡 인증 중~'} className={'!text-black'}/>
-    );
+    return <Loading text={'카카오톡 인증 중~'} className={'!text-black'}/>;
   }
 
   if (!userInfo) {
