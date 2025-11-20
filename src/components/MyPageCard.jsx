@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import moment from 'moment';
 import Image from "next/image";
 
-const MyPageCard = ({ post, activeSubTab, tab }) => {
+const MyPageCard = ({ post, activeSubTab, tab, appliedAt }) => {
   const router = useRouter();
 
   const convertDogSize = (size) => {
@@ -110,7 +110,7 @@ const MyPageCard = ({ post, activeSubTab, tab }) => {
                   onClick={() => router.push(`/posts/${post.id}`)}
                   className="w-full bg-brand-main text-[#333] py-[8px] text-14-m rounded-[15px]"
               >
-                {formatDate(post.application_date)} 지원
+                {formatDate(appliedAt)} 지원
               </button>
             </div>
         ) : (

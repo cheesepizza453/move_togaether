@@ -7,9 +7,9 @@ import moment from 'moment';
 import ProfileImage from '@/components/common/ProfileImage';
 import { myPageAPI, handleAPIError } from '@/lib/api-client';
 import MyPageCard from '@/components/MyPageCard';
-import { convertDogSize } from '@/lib/utils';
 import IconLoading from "../../../public/img/icon/IconLoading";
 import Image from "next/image";
+import Header from "@/components/common/Header";
 
 const MyPage = () => {
   const { user, profile, loading, signOut } = useAuth();
@@ -142,11 +142,7 @@ const MyPage = () => {
   if (loading) {
     return (
         <div className={'bg-white min-h-screen'}>
-          <div className="flex items-center justify-between h-[78px] px-[30px] bg-white">
-            <p className="text-22-m text-black">마이페이지</p>
-            {/*</button>*/}
-            <div className="w-6"></div>
-          </div>
+          <Header title={'마이페이지'}/>
           <div className={'w-full flex justify-center pt-[20vh]'}>
             <IconLoading/>
           </div>
@@ -156,12 +152,7 @@ const MyPage = () => {
 
   return (
       <div className="min-h-screen bg-white">
-        {/* Header */}
-        <div className="flex items-center justify-between h-[78px] px-[30px] bg-white">
-          <p className="text-22-m text-black">마이페이지</p>
-          <div className="w-6"></div>
-        </div>
-
+        <Header title={'마이페이지'}/>
         {/* 프로필 정보 카드 */}
         <div className="px-[23px] pt-[27px]">
         <div className="">
@@ -258,12 +249,14 @@ const MyPage = () => {
             ) : (
                 appliedPosts.map((app) => {
                   const post = app.post;
+                  const appliedAt = app.application_date;
 
                   return (
                       <MyPageCard
                           key={post.id}
                           post={post}
                           tab={'apply'}
+                          appliedAt={appliedAt}
                       />
                   );
                 })
