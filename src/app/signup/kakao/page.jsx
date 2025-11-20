@@ -71,7 +71,17 @@ const KakaoSignupPage = () => {
         const currentUser = data.session.user;
         console.log('현재 세션 사용자:', currentUser.id);
 
-        // 프로필 존재 여부 확인
+        const userMetadata = currentUser.user_metadata || {};
+
+        // metadata.profile_created 플래그로 먼저 체크
+        if (userMetadata.profile_created === true) {
+          console.log('프로필 생성 완료 (metadata 확인), 마이페이지로 이동');
+          toast.success('이미 가입된 계정입니다. 로그인되었습니다!');
+          router.push('/mypage');
+          return;
+        }
+
+        // 프로필 존재 여부 확인 (이중 체크)
         const { data: profile, error: profileError } = await supabase
             .from('user_profiles')
             .select('*')
@@ -85,60 +95,43 @@ const KakaoSignupPage = () => {
           return;
         }
 
-        if (profile) {
-          // 프로필이 있는데 닉네임이 없으면 → 1단계만 완료
-          if (!profile.display_name || profile.display_name.trim() === '') {
-            console.log('1단계만 완료된 프로필, 2단계 진행:', profile.id);
-            setIsNewUser(true);
-            setExistingProfileId(profile.id);
+        if (profile && profile.display_name && profile.display_name.trim() !== '') {
+          // DB에는 프로필이 있는데 metadata 플래그가 없는 경우 → 플래그 업데이트
+          console.log('프로필 존재하지만 metadata 플래그 없음, 플래그 업데이트');
 
-            const userMetadata = currentUser.user_metadata || {};
-            const kakaoInfo = {
-              id: userMetadata.kakao_id,
-              email: currentUser.email,
-              nickname: userMetadata.kakao_nickname || userMetadata.display_name,
-              name: userMetadata.display_name,
-              profile_image: userMetadata.kakao_profile_image,
-              thumbnail_image: userMetadata.kakao_profile_image
-            };
+          await supabase.auth.updateUser({
+            data: { profile_created: true }
+          });
 
-            setUserInfo(kakaoInfo);
-            setFormData(prev => ({
-              ...prev,
-              nickname: kakaoInfo.nickname || kakaoInfo.name || ''
-            }));
-
-            toast.success('카카오톡 인증이 완료되었습니다.');
-          } else {
-            // 닉네임까지 있으면 → 가입 완료
-            console.log('가입 완료된 사용자, 마이페이지로 이동');
-            toast.success('이미 가입된 계정입니다. 로그인되었습니다!');
-            router.push('/mypage');
-            return;
-          }
-        } else {
-          // 프로필이 아예 없는 경우
-          console.log('프로필 없음, 신규 가입 진행');
-          setIsNewUser(true);
-
-          const userMetadata = currentUser.user_metadata || {};
-          const kakaoInfo = {
-            id: userMetadata.kakao_id,
-            email: currentUser.email,
-            nickname: userMetadata.kakao_nickname || userMetadata.display_name,
-            name: userMetadata.display_name,
-            profile_image: userMetadata.kakao_profile_image,
-            thumbnail_image: userMetadata.kakao_profile_image
-          };
-
-          setUserInfo(kakaoInfo);
-          setFormData(prev => ({
-            ...prev,
-            nickname: kakaoInfo.nickname || kakaoInfo.name || ''
-          }));
-
-          toast.success('카카오톡 인증이 완료되었습니다.');
+          toast.success('이미 가입된 계정입니다. 로그인되었습니다!');
+          router.push('/mypage');
+          return;
         }
+
+        // 프로필이 없거나 닉네임이 비어있음 → 가입 폼 표시
+        console.log('프로필 미완성, 가입 폼 표시');
+        setIsNewUser(true);
+
+        if (profile?.id) {
+          setExistingProfileId(profile.id);
+        }
+
+        const kakaoInfo = {
+          id: userMetadata.kakao_id,
+          email: currentUser.email,
+          nickname: userMetadata.kakao_nickname || userMetadata.display_name,
+          name: userMetadata.display_name,
+          profile_image: userMetadata.kakao_profile_image,
+          thumbnail_image: userMetadata.kakao_profile_image
+        };
+
+        setUserInfo(kakaoInfo);
+        setFormData(prev => ({
+          ...prev,
+          nickname: kakaoInfo.nickname || kakaoInfo.name || ''
+        }));
+
+        toast.success('카카오톡 인증이 완료되었습니다.');
 
       } catch (error) {
         console.error('OAuth 콜백 처리 오류:', error);
@@ -370,7 +363,8 @@ const KakaoSignupPage = () => {
     setSubmitLoading(true);
 
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const { data, error: userError } = await supabase.auth.getUser();
+      const user = data?.user;
 
       if (userError || !user) {
         console.error('사용자 인증 정보 조회 오류:', userError);
@@ -448,6 +442,12 @@ const KakaoSignupPage = () => {
       sessionStorage.removeItem('kakaoUserInfo');
       sessionStorage.removeItem('redirectAfterLogin');
       setIsNewUser(false);
+
+      // metadata에 프로필 생성 완료 플래그 설정
+      console.log('프로필 생성 완료, metadata 플래그 업데이트');
+      await supabase.auth.updateUser({
+        data: { profile_created: true }
+      });
 
       // 로그아웃 후 성공 페이지로 이동
       await supabase.auth.signOut();
