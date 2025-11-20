@@ -75,7 +75,7 @@ const BottomNavigation = () => {
     },
     {
       id: 'favorites',
-      label: '저장목록',
+      label: '무브리스트',
       icon: IconMenuBarHeart,
       href: '/favorites',
       customIcon: ''

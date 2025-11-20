@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import moment from 'moment';
 import IconLoading from "../../../public/img/icon/IconLoading";
 import Image from "next/image";
+import Header from "@/components/common/Header";
 
 
 const ShelterMapPage = () => {
@@ -433,23 +434,13 @@ const ShelterMapPage = () => {
 
   return (
       <div className="w-full relative">
+        <Header title={'내 주변'} back={false}/>
         {/* 지도 컨테이너 */}
         <div
             ref={mapRef}
             className="w-full"
             style={{height: 'calc(100vh - 80px)'}}
         />
-
-        {/* 상단 헤더 */}
-        <div
-            className="absolute top-0 left-0 right-0 z-10 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center justify-between h-[78px] px-[30px] bg-white">
-              <p className="text-22-m text-black">내 주변</p>
-            </div>
-          </div>
-        </div>
-
         {/* 선택된 게시물 카드 */}
         {selectedPost && (
             <div className="fixed bottom-[100px] w-full max-w-[500px] left-1/2 -translate-x-1/2 z-20">

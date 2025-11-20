@@ -2,7 +2,9 @@
 
 import Link from 'next/link';
 import {useAuth} from "@/hooks/useAuth";
-import ProfileImage from "@/components/common/ProfileImage";
+import {Loader2} from "lucide-react";
+import IconHeart from "../../../public/img/icon/IconHeart";
+import React from "react";
 
 const Header = (props) => {
     const { user, profile, loading, signOut } = useAuth();
@@ -11,6 +13,10 @@ const Header = (props) => {
 
     const isLoggedIn = !!user;
     const hasProfile = !!profile;
+
+    const handleGoBack = () => {
+        window.history.back()
+    };
 
 
     if (!props.title) {
@@ -55,19 +61,41 @@ const Header = (props) => {
 
     if (props.title) {
         return (
-            <div className="w-full h-[65px] flex items-center justify-start">
-                <a href="">
-                    <figure>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="9" height="16" viewBox="0 0 9 16" fill="none">
-                            <path d="M8 15L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10" strokeLinecap="round"/>
-                            <path d="M8 0.999999L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10" strokeLinecap="round"/>
-                        </svg>
-                    </figure>
-                    <p>{props.title}</p>
-                </a>
+            <div className="w-full px-[30px] h-[78px] flex items-center justify-start bg-white z-10">
+                <div className={'flex items-center relative w-full'}>
+                    {props.back && (
+                        <button className={'inline-block pr-[7px] mr-[5px]'} onClick={props.onClick || handleGoBack}>
+                            <figure>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="9" height="16" viewBox="0 0 9 16"
+                                     fill="none">
+                                    <path d="M8 15L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
+                                          strokeLinecap="round"/>
+                                    <path d="M8 0.999999L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
+                                          strokeLinecap="round"/>
+                                </svg>
+                            </figure>
+                        </button>
+                    )}
+                    <p className={'w-full text-22-m text-black'}>{props.title}</p>
+                    {props.useFavorite && (
+                        <button
+                            onClick={props.onClickFavorite ? props.onClickFavorite : ''}
+                            disabled={props.loadingFavorite ? props.loadingFavorite : ''}
+                            className={'p-0 outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed'}
+                        >
+                            <figure className="mt-[2px]">
+                                {props.loadingFavorite ? (
+                                    <Loader2 className="size-[30px] animate-spin text-gray-400"/>
+                                ) : (
+                                    <IconHeart className={'size-[30px] block'}
+                                               fill={props.favoriteState ? '#F36C5E' : '#D2D2D2'}/>
+                                )}
+                            </figure>
+                        </button>
+                    )}
+                </div>
             </div>
         )
     }
 };
-
 export default Header;

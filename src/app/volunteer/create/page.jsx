@@ -535,13 +535,13 @@ const VolunteerCreate = () => {
   const getStepInfo = () => {
     switch (currentStep) {
       case 1:
-        return { title: '이동 봉사 정보' };
+        return { title: '무브 상세 정보' };
       case 2:
-        return { title: '임보견 정보' };
+        return { title: '동행견 정보' };
       case 3:
         return { title: '추가 정보' };
       default:
-        return { title: '이동 봉사 요청' };
+        return { title: '무브 요청' };
     }
   };
 
@@ -604,7 +604,7 @@ const VolunteerCreate = () => {
 
   return (
       <FormStep
-          title="이동 봉사 요청"
+          title="신규 무브 요청"
           stepNumber={currentStep}
           totalSteps={3}
           onBack={handleGoBack}

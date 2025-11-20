@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDialogContext } from '@/components/DialogProvider';
 import moment from "moment-timezone";
 import { Button } from '@/components/ui/button';
-import { X, Loader2 } from 'lucide-react';
+import {X} from 'lucide-react';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -27,6 +27,8 @@ import IconLoading from "../../../../public/img/icon/IconLoading";
 import Image from "next/image";
 import PostSkeleton from "@/components/posts/PostSkeleton";
 import Link from "next/link";
+import Header from "@/components/common/Header";
+import ShareButton from "@/components/ui/shareButton";
 
 // 커스텀 AlertDialogContent (오버레이 없이)
 const CustomAlertDialogContent = React.forwardRef(({ className, ...props }, ref) => (
@@ -552,7 +554,15 @@ export default function PostDetailPage() {
     }
   };
 
-  console.log('현재 로딩 상태:', loading);
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast.success('링크가 복사되었습니다!');
+    } catch {
+      toast.error('복사 실패!');
+    }
+  };
+
 
   if (loading) {
     return (
@@ -592,37 +602,7 @@ export default function PostDetailPage() {
         <div className="bg-white">
           <div className={'flex flex-col items-center justify-between'}>
             {/* 네비게이션 */}
-            <div className="w-full h-[72px] flex items-center justify-between px-[30px] py-[28px]">
-              <div className={'flex items-center'}>
-                <button
-                    onClick={() => window.history.back()}
-                    className={'p-[12px] pl-0 outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none'}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="9" height="16" viewBox="0 0 9 16" fill="none">
-                    <path d="M8 15L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
-                          strokeLinecap="round"/>
-                    <path d="M8 0.999999L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
-                          strokeLinecap="round"/>
-                  </svg>
-                </button>
-                <h1 className="text-22-m text-black">
-                  {isOwner ? '작성한 게시물' : '정보'}
-                </h1>
-              </div>
-              <button
-                  onClick={handleFavoriteToggle}
-                  disabled={favoriteLoading}
-                  className={'p-0 outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed'}
-              >
-                <figure className="mt-[2px]">
-                  {favoriteLoading ? (
-                      <Loader2 className="size-[30px] animate-spin text-gray-400"/>
-                  ) : (
-                      <IconHeart className={'size-[30px] block'} fill={isFavorite ? '#F36C5E' : '#D2D2D2'}/>
-                  )}
-                </figure>
-              </button>
-            </div>
+            <Header title={isOwner ? '작성한 무브' : '무브 상세보기'} back={true} useFavorite={true} favoriteState={isFavorite} onClickFavorite={handleFavoriteToggle} loadingFavorite={favoriteLoading}/>
 
             {/* 탭 (작성자인 경우만) */}
             {isOwner && (
@@ -658,8 +638,8 @@ export default function PostDetailPage() {
 
         {/* 작성자 정보 */}
         {!isOwner &&
-            <div className={'relative w-full h-[92px] px-[25px] bg-white z-20 overflow-hidden'}>
-              <div className="w-full pt-[10px] flex items-center justify-between">
+            <div className={'relative flex justify-center items-center w-full h-[80px] px-[25px] bg-white z-20 overflow-hidden shadow-[0_5px_10px_0px_rgba(0,0,0,0.1)]'}>
+              <div className="w-full flex items-center justify-between">
                 {/* 링크 추가 */}
                 <a className={'flex items-center gap-[9px]'} href={`/authors/${post.user_id}`}>
                   <ProfileImage
@@ -709,13 +689,18 @@ export default function PostDetailPage() {
                               className={'text-16-b'}>{post.dday}</strong>일
                             남았어요!</p>}
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                    <div className="flex items-center gap-x-[5px] text-sm text-gray-600">
                       <p className="text-12-r text-[#8a8a8a]">
                         {post.created_at} 작성
                       </p>
+                      <button
+                          onClick={copyToClipboard}
+                          className="text-12-r text-[#8a8a8a] underline flex felx-1 justify-center items-center rounded-[15px] h-[28px]"
+                      >링크복사
+                      </button>
                     </div>
                   </div>
-                  <h1 className="text-18-b mb-[10px]">{post.title}</h1>
+                  <h1 className="flex text-18-b mb-[10px]">{post.title}</h1>
                   <div className={'flex gap-x-[4px] text-14-r'}>
                     <p>{post.dog_name || '미입력'}</p>
                     <p className={' text-text-800'}>{post.dogSize}</p>
@@ -791,7 +776,7 @@ export default function PostDetailPage() {
                 ) : applicants.length === 0 ? (
                     <div className="pt-[200px] min-h-screen">
                       <figure className={'flex justify-center mb-[10px]'}>
-                        <Image src={'img/empty_icon.png'} alt={''} width={120} height={120}/>
+                        <Image src={'/img/empty_icon.png'} alt={''} width={120} height={120}/>
                       </figure>
                       <p className="text-text-800 text-16-m text-center">아직 지원자가 없습니다.</p>
                     </div>
@@ -866,6 +851,12 @@ export default function PostDetailPage() {
                       >
                         {hasApplied ? '지원 내용 확인' : '지원하기'}
                       </Button>
+                      <div className={'w-full flex-1'}>
+                        <ShareButton
+                            url={`https://movetogether.co.kr/post/${postId}`}
+                            title={post.title}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>

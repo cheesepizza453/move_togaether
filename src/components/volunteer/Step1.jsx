@@ -1,6 +1,7 @@
 'use client';
 
 import AddressInput from './AddressInput';
+import React from "react";
 
 const Step1 = ({
                    title,
@@ -94,9 +95,12 @@ const Step1 = ({
 
             {/* 설명 */}
             <div>
-                <label htmlFor={'description'} className="block text-16-m mb-[12px]">
+                <label htmlFor={'description'} className="block text-16-m mb-[6px]">
                     설명<span className={'text-[#E17364] text-16-m'}>*</span>
                 </label>
+                <p className="text-12-r text-text-800 mb-[12px]">
+                    희망 일정, 동행견 설명, 켄넬 지원 여부, 공격성, 질병, 봉사자님께 전하는 말 등
+                </p>
                 <textarea
                     maxLength={800}
                     id={'description'}
@@ -115,7 +119,7 @@ const Step1 = ({
                             console.error('설명 입력 오류 (onInput):', error);
                         }
                     }}
-                    placeholder={`이동 봉사에 대한 상세한 설명을 입력해주세요.\n(희망 일정, 켄넬 지원 여부, 공격성, 질병, 임보견에 대한 설명, 봉사자님께 전하는 말 등)`}
+                    placeholder={`이동 봉사에 대한 상세한 설명을 입력해주세요.\n(희망 일정, 동행견 설명, 켄넬 지원 여부, 공격성, 질병, 봉사자님께 전하는 말 등)`}
                     rows={4}
                     className={`${inputStyle} w-full resize-none py-[14px] min-h-[140px] ${
                         errors.description ? 'border-red-500' : 'border-gray-300'

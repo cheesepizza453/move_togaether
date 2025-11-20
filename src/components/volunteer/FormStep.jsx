@@ -2,6 +2,7 @@
 
 import {IconCreateComplete, IconCreateInDone, IconCreateInProgress} from "@/components/icon/iconCreate";
 import {useEffect, useState} from "react";
+import Header from "@/components/common/Header";
 
 const FormStep = ({
   title,
@@ -27,7 +28,7 @@ const FormStep = ({
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-  const stepLabels = ['이동 봉사 정보', '임보견 정보', '추가 정보'];
+  const stepLabels = ['무브 상세 정보', '동행견 정보', '추가 정보'];
     const renderStepIcon = (step) => {
         if (step < stepNumber) {
             // 완료된 단계 - 체크 아이콘
@@ -65,29 +66,7 @@ const FormStep = ({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 헤더 */}
-      <div className="bg-white">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center py-[28px] px-[30px]">
-            {showBackButton && (
-                <button
-                    onClick={onBack}
-                    className="mr-[12px]"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="9" height="16" viewBox="0 0 9 16" fill="none">
-                        <path d="M8 15L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
-                              strokeLinecap="round"/>
-                        <path d="M8 0.999999L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
-                              strokeLinecap="round"/>
-                    </svg>
-                </button>
-            )}
-              <div>
-                  <h1 className="text-22-m text-black">{title}</h1>
-              </div>
-          </div>
-        </div>
-      </div>
+        <Header title={title} back={true} onClick={onBack} />
         {/* 진행률 표시 */}
         <div className={`sticky top-0 z-50 bg-white h-[90px] pt-[17px] transition-shadow duration-300 ${
             isScrolled ? 'shadow-[0_2px_5px_0_rgba(0,0,0,0.15)]' : ''
