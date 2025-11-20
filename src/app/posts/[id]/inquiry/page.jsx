@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import ProfileImage from '@/components/common/ProfileImage';
 import Loading from "@/components/ui/loading";
+import Header from "@/components/common/Header";
 
 export default function InquiryPage() {
   const params = useParams();
@@ -113,26 +114,7 @@ export default function InquiryPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* 헤더 */}
-      <div className="bg-white">
-        <div className="w-full h-[72px] flex items-center justify-between px-[30px] py-[28px]">
-          <div className={'flex items-center'}>
-            <button
-                onClick={() => router.back()}
-                className={'p-[12px] pl-0 outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none'}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="9" height="16" viewBox="0 0 9 16" fill="none">
-                <path d="M8 15L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
-                      strokeLinecap="round"/>
-                <path d="M8 0.999999L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
-                      strokeLinecap="round"/>
-              </svg>
-            </button>
-            <h1 className="text-22-m text-black">
-              문의하기
-            </h1>
-          </div>
-        </div>
-      </div>
+      <Header title={'지원하기'} back={true}/>
 
       {/* 메인 콘텐츠 */}
       <div className="max-w-4xl mx-auto px-[18px]">
@@ -150,7 +132,7 @@ export default function InquiryPage() {
           </CardHeader>
           <CardContent>
             <p className="mb-[20px] text-12-r text-[#676767] leading-[1.25]">
-              문의는 한 번 남기면 지울 수 없어요! 문의가 전달되면 내 연락처가 요청자에게만 공개되며, 강아지가 이동을 마치면 임보자는 지원자님의 정보를 다시 확인할 수 없답니다.
+              지원 메시지는 한 번 남기면 지울 수 없어요! 지원 메시지가 전달되면 내 연락처가 작성자에게만 공개되며, 강아지가 이동을 마치면 작성자는 지원자님의 정보를 다시 확인할 수 없답니다.
             </p>
             <div className="flex items-center gap-3">
               <div className="bg-yellow-100 overflow-hidden rounded-full shadow-[0_0_9px_0_rgba(0,0,0,0.2)]">
@@ -170,9 +152,12 @@ export default function InquiryPage() {
         {/* 문의 폼 */}
         <Card>
           <CardHeader>
-            <CardTitle className="mb-[12px] text-16-b">전달할 메시지 <span className="text-red-500">*</span></CardTitle>
+            <CardTitle className="mb-[6px] text-16-b">전달할 메시지 <span className="text-red-500">*</span></CardTitle>
           </CardHeader>
           <CardContent>
+            <p className="mb-[20px] text-12-r text-[#676767] leading-[1.25]">
+              봉사 가능 일정, 이동수단(자차/대중교통) 등 추가로 전달할 사항을 적어주세요.
+            </p>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <Textarea
@@ -196,15 +181,15 @@ export default function InquiryPage() {
                         disabled={submitting || !message.trim()}
                         className="w-full rounded-[15px] text-16-m h-[54px] flex-1 bg-brand-main"
                     >
-                      {submitting ? '전송 중...' : '문의 완료'}
+                      {submitting ? '전송 중...' : '지원 완료'}
                     </Button>
                   </div>
                 </div>
-                  </div>
+              </div>
             </form>
           </CardContent>
         </Card>
       </div>
     </div>
-);
+  );
 }

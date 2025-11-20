@@ -15,7 +15,7 @@ const ClientLayout = memo(({ children }) => {
   return (
     <>
       {/* {!isLoginPage && <Header />} */}
-      <main>{children}</main>
+      <main className={'bg-white'}>{children}</main>
       {!isLoginPage && <BottomNavigation />}
       {!isLoginPage && <Footer />}
       <Toaster

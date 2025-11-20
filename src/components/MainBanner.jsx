@@ -44,7 +44,7 @@ const MainBanner = () => {
           <figure
               key={banner.id}
               className={`absolute inset-0 flex items-center justify-center transition-opacity duration-500 ${
-                  index === currentSlide ? 'opacity-100' : 'opacity-0'
+                  index === currentSlide ? 'opacity-100 z-10' : 'opacity-0'
               }`}
           >
             {banner.link ? (

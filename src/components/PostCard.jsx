@@ -104,7 +104,7 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
       } else {
         if (post.dday >= 0) {
         return {
-            text: '문의하기',
+            text: '지원하기',
             className: 'w-full bg-brand-main text-[#333] py-[10px] rounded-[20px] text-14-m',
             disabled: false
           };
