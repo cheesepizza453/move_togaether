@@ -226,12 +226,10 @@ const KakaoSignupPage = () => {
     return hasValidProtocol && !hasKorean;
   };
 
-  // =========================
-  // 3. 인풋 핸들러들
-  // =========================
-
+  // 닉네임 변경 시 유효성 검사
   const handleNicknameChange = (value) => {
     setFormData(prev => ({ ...prev, nickname: value }));
+
     const trimmed = value.trim();
 
     if (!trimmed) {
@@ -242,12 +240,15 @@ const KakaoSignupPage = () => {
 
     const validation = validateNickname(trimmed);
     setNicknameValidation(validation);
+
     setErrors(prev => ({
       ...prev,
       nickname: validation && !validation.isValid ? validation.message : ''
     }));
   };
 
+
+  // 닉네임 blur 이벤트로 중복 체크
   const handleNicknameBlur = async (value) => {
     const trimmed = value.trim();
     if (!trimmed || !nicknameValidation || !nicknameValidation.isValid) return;
