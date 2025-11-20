@@ -864,7 +864,7 @@ export default function PostDetailPage() {
                           onClick={hasApplied ? handleViewApplication : handleInquiry}
                           className="rounded-[15px] text-16-m h-[54px] w-full flex-1 bg-brand-main"
                       >
-                        {hasApplied ? '지원 내용 확인' : '문의하기'}
+                        {hasApplied ? '지원 내용 확인' : '지원하기'}
                       </Button>
                     </div>
                   </div>
@@ -909,7 +909,7 @@ export default function PostDetailPage() {
               <AlertDialogDescription>
                 {loginDialogContext === 'favorite'
                     ? '찜 기능을 사용하려면 로그인해주세요.'
-                    : '문의하기 기능을 사용하려면 로그인해주세요.'
+                    : '지원하기 기능을 사용하려면 로그인해주세요.'
                 }
               </AlertDialogDescription>
             </AlertDialogHeader>

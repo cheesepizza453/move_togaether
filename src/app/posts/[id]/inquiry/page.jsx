@@ -128,7 +128,7 @@ export default function InquiryPage() {
               </svg>
             </button>
             <h1 className="text-22-m text-black">
-              문의하기
+              지원하기
             </h1>
           </div>
         </div>
@@ -196,7 +196,7 @@ export default function InquiryPage() {
                         disabled={submitting || !message.trim()}
                         className="w-full rounded-[15px] text-16-m h-[54px] flex-1 bg-brand-main"
                     >
-                      {submitting ? '전송 중...' : '문의 완료'}
+                      {submitting ? '전송 중...' : '지원 완료'}
                     </Button>
                   </div>
                 </div>
