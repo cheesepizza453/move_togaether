@@ -3,16 +3,16 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import moment from 'moment';
-import IconLoading from "../../../public/img/icon/IconLoading";
 import Image from "next/image";
 import Header from "@/components/common/Header";
+import Loading from "@/components/ui/loading";
 
 
 const ShelterMapPage = () => {
   const mapRef = useRef(null);
   const clustererRef = useRef(null);
   const mapInstanceRef = useRef(null);
-  const markersRef = useRef([]); // 마커들을 저장할 ref
+  const markersRef = useRef([]);
   const { user, profile, loading } = useAuth();
   const [mapLoaded, setMapLoaded] = useState(false);
   const [error, setError] = useState(null);
@@ -20,25 +20,38 @@ const ShelterMapPage = () => {
   const [loadingData, setLoadingData] = useState(true);
   const [dataFetched, setDataFetched] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
-  const [selectedMarker, setSelectedMarker] = useState(null); // 선택된 마커 상태
-  const [userLocation, setUserLocation] = useState(null); // 사용자 현재 위치
+  const [selectedMarker, setSelectedMarker] = useState(null);
+  const [selectedPostsAtLocation, setSelectedPostsAtLocation] = useState([]);
+  const [userLocation, setUserLocation] = useState(null);
+
+  // 지도 위치 저장 함수
+  const saveMapState = useCallback(() => {
+    if (mapInstanceRef.current && window.kakao?.maps) {
+      const center = mapInstanceRef.current.getCenter();
+      const level = mapInstanceRef.current.getLevel();
+
+      sessionStorage.setItem('mapCenterLat', center.getLat().toString());
+      sessionStorage.setItem('mapCenterLng', center.getLng().toString());
+      sessionStorage.setItem('mapLevel', level.toString());
+      console.log('지도 상태 저장:', { lat: center.getLat(), lng: center.getLng(), level });
+    }
+  }, []);
 
   // 강아지 크기 변환 함수
   const convertDogSize = (size) => {
-    if (!size) return '중형견'; // 기본값 설정
+    if (!size) return '중형견';
     const sizeMap = {
       'small': '소형견',
       'smallMedium': '중소형견',
       'medium': '중형견',
       'large': '대형견'
     };
-    return sizeMap[size] || '중형견'; // 기본값으로 '중형견' 반환
+    return sizeMap[size] || '중형견';
   };
 
   // 마커 이미지 설정 함수
   const getMarkerImage = useCallback((deadline, isSelected = false) => {
     if (!deadline) {
-      // deadline이 없으면 기본 마커 사용
       const size = isSelected ? 60 : 50;
       return new window.kakao.maps.MarkerImage('/img/marker1.png', new window.kakao.maps.Size(size, size), { offset: new window.kakao.maps.Point(size/2, size) });
     }
@@ -47,24 +60,22 @@ const ShelterMapPage = () => {
     const deadlineDate = moment(deadline);
     const diffDays = deadlineDate.diff(today, 'days');
 
-    let imageSrc, imageSize, imageOption;
+    let imageSrc;
     const size = isSelected ? 60 : 50;
 
     if (diffDays <= 7) {
       imageSrc = '/img/marker3.png';
-      imageSize = new window.kakao.maps.Size(size, size);
-      imageOption = { offset: new window.kakao.maps.Point(size/2, size) };
     } else if (diffDays <= 14) {
       imageSrc = '/img/marker2.png';
-      imageSize = new window.kakao.maps.Size(size, size);
-      imageOption = { offset: new window.kakao.maps.Point(size/2, size) };
     } else {
       imageSrc = '/img/marker1.png';
-      imageSize = new window.kakao.maps.Size(size, size);
-      imageOption = { offset: new window.kakao.maps.Point(size/2, size) };
     }
 
-    return new window.kakao.maps.MarkerImage(imageSrc, imageSize, imageOption);
+    return new window.kakao.maps.MarkerImage(
+        imageSrc,
+        new window.kakao.maps.Size(size, size),
+        { offset: new window.kakao.maps.Point(size/2, size) }
+    );
   }, []);
 
   // 데이터 가져오기
@@ -111,22 +122,22 @@ const ShelterMapPage = () => {
       }
 
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const location = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          };
-          setUserLocation(location);
-          resolve(location);
-        },
-        (error) => {
-          resolve(null);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 300000 // 5분
-        }
+          (position) => {
+            const location = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            };
+            setUserLocation(location);
+            resolve(location);
+          },
+          (error) => {
+            resolve(null);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 300000
+          }
       );
     });
   }, []);
@@ -147,33 +158,61 @@ const ShelterMapPage = () => {
 
     clustererRef.current.clear();
 
-    // 새 마커 생성
-    const markers = postsData.map(post => {
-      const markerImage = getMarkerImage(post.deadline, false);
+    // 좌표 기준으로 포스트들 그룹핑
+    const groupedByPosition = postsData.reduce((acc, post) => {
+      if (!post?.departure?.lat || !post?.departure?.lng) return acc;
+
+      const key = `${post.departure.lat.toFixed(6)}_${post.departure.lng.toFixed(6)}`;
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(post);
+      return acc;
+    }, {});
+
+    // 그룹(같은 위치)에 하나의 마커만 생성
+    const markers = Object.values(groupedByPosition).map((postsAtPos) => {
+      const firstPost = postsAtPos[0];
+      const markerImage = getMarkerImage(firstPost.deadline, false);
 
       const marker = new window.kakao.maps.Marker({
-        position: new window.kakao.maps.LatLng(post.departure.lat, post.departure.lng),
-        image: markerImage
+        position: new window.kakao.maps.LatLng(
+            firstPost.departure.lat,
+            firstPost.departure.lng
+        ),
+        image: markerImage,
       });
 
       // 마커 클릭 이벤트
       window.kakao.maps.event.addListener(marker, 'click', () => {
+        // 마커 클릭 시 현재 지도 위치 저장
+        saveMapState();
+
         // 이전에 선택된 마커가 있으면 원래 크기로 복원
-        setSelectedMarker(prevSelected => {
+        setSelectedMarker((prevSelected) => {
           if (prevSelected && prevSelected.marker) {
-            const originalImage = getMarkerImage(prevSelected.post?.deadline, false);
+            const baseDeadline = Array.isArray(prevSelected.posts)
+                ? prevSelected.posts[0]?.deadline
+                : prevSelected.post?.deadline;
+
+            const originalImage = getMarkerImage(baseDeadline, false);
             prevSelected.marker.setImage(originalImage);
           }
 
-          // 새로운 마커를 크게 만들기
-          const selectedImage = getMarkerImage(post.deadline, true);
+          // 현재 마커는 크게
+          const baseDeadlineNow = postsAtPos[0]?.deadline;
+          const selectedImage = getMarkerImage(baseDeadlineNow, true);
           marker.setImage(selectedImage);
 
-          // 새로운 선택 상태 반환
-          return { marker, post };
+          return { marker, posts: postsAtPos };
         });
 
-        setSelectedPost(post);
+        // 클릭 위치에 포스트가 여러 개라면 리스트로, 하나라면 기존처럼 단일 카드
+        if (postsAtPos.length === 1) {
+          setSelectedPostsAtLocation([]);
+          setSelectedPost(postsAtPos[0]);
+        } else {
+          setSelectedPost(null);
+          setSelectedPostsAtLocation(postsAtPos);
+        }
 
         const existingInfoWindow = document.querySelector('.kakao-maps-info-window');
         if (existingInfoWindow) {
@@ -184,12 +223,9 @@ const ShelterMapPage = () => {
       return marker;
     });
 
-    // 마커들을 ref에 저장
     markersRef.current = markers;
-
-    // 클러스터러에 마커들 추가
     clustererRef.current.addMarkers(markers);
-  }, [postsData, getMarkerImage]); // selectedMarker 제거!
+  }, [postsData, getMarkerImage, saveMapState]);
 
   // 지도 초기화 함수
   const initializeMapWithUserLocation = useCallback((location) => {
@@ -197,11 +233,27 @@ const ShelterMapPage = () => {
       return;
     }
 
-    try {
-      const centerLat = location ? location.lat : 37.5665;
-      const centerLng = location ? location.lng : 126.9780;
-      const mapLevel = 6;
+    let centerLat, centerLng, mapLevel;
 
+    // Session Storage에서 저장된 위치 확인 (복원 시도)
+    const savedLat = sessionStorage.getItem('mapCenterLat');
+    const savedLng = sessionStorage.getItem('mapCenterLng');
+    const savedLevel = sessionStorage.getItem('mapLevel');
+
+    if (savedLat && savedLng && savedLevel) {
+      // 저장된 위치가 있다면 해당 값으로 설정
+      centerLat = parseFloat(savedLat);
+      centerLng = parseFloat(savedLng);
+      mapLevel = parseInt(savedLevel, 10);
+      console.log('지도 상태 복원:', { lat: centerLat, lng: centerLng, level: mapLevel });
+    } else {
+      // 저장된 위치가 없다면 사용자 현재 위치 또는 기본 위치 사용
+      centerLat = location ? location.lat : 37.5665;
+      centerLng = location ? location.lng : 126.9780;
+      mapLevel = 6;
+    }
+
+    try {
       const map = new window.kakao.maps.Map(mapRef.current, {
         center: new window.kakao.maps.LatLng(centerLat, centerLng),
         level: mapLevel
@@ -209,11 +261,15 @@ const ShelterMapPage = () => {
 
       mapInstanceRef.current = map;
 
+      // 지도 이동/줌 이벤트에 저장 함수 연결
+      window.kakao.maps.event.addListener(map, 'center_changed', saveMapState);
+      window.kakao.maps.event.addListener(map, 'zoom_changed', saveMapState);
+
       const clusterer = new window.kakao.maps.MarkerClusterer({
-        map: map, // 마커들을 클러스터로 관리하고 표시할 지도 객체
-        averageCenter: true, // 클러스터에 포함된 마커들의 평균 위치를 클러스터 마커 위치로 설정
-        minLevel: 1, // 클러스터 할 최소 지도 레벨 (1로 더 낮춤)
-        disableClickZoom: false, // 클러스터 마커 클릭 시 확대/축소 비활성화
+        map: map,
+        averageCenter: true,
+        minLevel: 1,
+        disableClickZoom: false,
         gridSize: 60,
         styles: [{
           width: '60px',
@@ -231,16 +287,22 @@ const ShelterMapPage = () => {
 
       clustererRef.current = clusterer;
 
-      // 지도 클릭 시 선택 해제 - 함수형 업데이트 사용!
+      // 지도 클릭 시 선택 해제
       window.kakao.maps.event.addListener(map, 'click', () => {
-        setSelectedMarker(prevSelected => {
+        setSelectedMarker((prevSelected) => {
           if (prevSelected && prevSelected.marker) {
-            const originalImage = getMarkerImage(prevSelected.post?.deadline, false);
+            const baseDeadline = Array.isArray(prevSelected.posts)
+                ? prevSelected.posts[0]?.deadline
+                : prevSelected.post?.deadline;
+
+            const originalImage = getMarkerImage(baseDeadline, false);
             prevSelected.marker.setImage(originalImage);
           }
           return null;
         });
+
         setSelectedPost(null);
+        setSelectedPostsAtLocation([]);
       });
 
       updateMarkers();
@@ -249,7 +311,7 @@ const ShelterMapPage = () => {
       console.error('지도 초기화 오류:', err);
       setError('지도를 초기화하는데 실패했습니다.');
     }
-  }, [updateMarkers, getMarkerImage]);
+  }, [updateMarkers, getMarkerImage, saveMapState]);
 
   const initializeMap = useCallback(() => {
     if (mapInstanceRef.current && clustererRef.current) {
@@ -274,10 +336,10 @@ const ShelterMapPage = () => {
       mapInstanceRef.current = map;
 
       const clusterer = new window.kakao.maps.MarkerClusterer({
-        map: map, // 마커들을 클러스터로 관리하고 표시할 지도 객체
-        averageCenter: true, // 클러스터에 포함된 마커들의 평균 위치를 클러스터 마커 위치로 설정
-        minLevel: 1, // 클러스터 할 최소 지도 레벨 (1로 더 낮춤)
-        disableClickZoom: false, // 클러스터 마커 클릭 시 확대/축소 비활성화
+        map: map,
+        averageCenter: true,
+        minLevel: 1,
+        disableClickZoom: false,
         gridSize: 60,
         styles: [{
           width: '60px',
@@ -402,14 +464,8 @@ const ShelterMapPage = () => {
   if (loading || loadingData || !dataFetched) {
     return (
         <>
-          <div className="flex items-center justify-between h-[78px] px-[30px] bg-white">
-            <p className="text-22-m text-black">내 주변</p>
-          </div>
-          <div className="flex pt-[23vh] justify-center h-screen bg-gray-50">
-            <div className="w-[120px]">
-              <IconLoading/>
-            </div>
-          </div>
+          <Header title={'내 주변'}/>
+          <Loading/>
         </>
     );
   }
@@ -434,74 +490,139 @@ const ShelterMapPage = () => {
 
   return (
       <div className="w-full relative">
-        <Header title={'내 주변'} back={false}/>
-        {/* 지도 컨테이너 */}
+        <Header title={'내 주변'}/>
         <div
             ref={mapRef}
             className="w-full"
             style={{height: 'calc(100vh - 80px)'}}
         />
-        {/* 선택된 게시물 카드 */}
-        {selectedPost && (
+
+        {selectedPostsAtLocation.length > 0 ? (
             <div className="fixed bottom-[100px] w-full max-w-[500px] left-1/2 -translate-x-1/2 z-20">
-              <a
-                  className="block w-full h-full"
-                  href={`/posts/${selectedPost.id}`}
-              >
-                <div className="bg-white rounded-[30px] mx-[12px] px-[25px] py-[20px] cursor-pointer relative shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]">
-                  {/* D-day 배지 */}
-                  <div className="flex justify-end items-start">
-                    <div className="absolute top-[8px] left-[16px] z-10">
-                      {(() => {
-                        const today = moment();
-                        const deadlineDate = moment(selectedPost?.deadline);
-                        const diffDays = deadlineDate.diff(today, 'days');
-                        const getDdayColor = (dday) => {
-                          if (dday <= 7) return 'bg-brand-point text-white';
-                          if (dday <= 14) return 'bg-brand-main text-white';
-                          return 'bg-[#FFE889] text-brand-yellow-dark';
-                        };
-                        return (
-                            <span className={`flex items-center justify-center px-[9px] h-[22px] rounded-[7px] text-14-b font-bold ${getDdayColor(diffDays)}`}>
-                        {diffDays > 0 ? 'D-'+diffDays : '오늘마감!'}
-                      </span>
-                        );
-                      })()}
-                    </div>
-                  </div>
-
-                  <div className="flex space-x-[20px]">
-                    <div className="flex-shrink-0 relative">
-                      <figure className="relative w-[80px] h-[80px] overflow-hidden bg-gray-200 rounded-[15px] shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]">
-                        <Image
-                            width={74}
-                            height={74}
-                            className="w-full h-full object-cover"
-                            src={selectedPost.images && selectedPost?.images.length > 0 ? selectedPost?.images[0] : "/img/dummy_thumbnail.jpg"}
-                            alt={selectedPost?.dog?.name || '강아지 사진'}
-                        />
-                      </figure>
-                    </div>
-
-                    <div className="min-w-0 h-[70px] mt-[10px] flex flex-col justify-between w-full">
-                      <h3 className="text-list-1 mb-2 leading-tight line-clamp-2 text-14-m">
-                        {selectedPost?.title || '제목 없음'}
-                      </h3>
-
-                      <div className="flex justify-between items-end text-text-800 mb-[6px]">
-                        <div className="text-name-breed text-12-r">
-                          {selectedPost?.dog?.name || '이름 없음'} / {convertDogSize(selectedPost?.dog?.size || 'medium')}
+              <div className="bg-white rounded-[30px] mx-[12px] p-[20px] shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]">
+                <p className="text-16-b mb-[15px] ml-[5px]">
+                  이 위치에 <span className="text-brand-point">{selectedPostsAtLocation.length}</span>개의 무브가 있어요
+                </p>
+                <div className="max-h-[260px] overflow-y-auto space-y-[10px]">
+                  {selectedPostsAtLocation.map((post) => (
+                      <button
+                          key={post.id}
+                          className="w-full flex items-center space-x-[20px] py-[10px] px-[15px] rounded-[15px] bg-brand-bg"
+                          onClick={() => {
+                            saveMapState();
+                            window.location.href = `/posts/${post.id}`;
+                          }}
+                      >
+                        <div className="relative">
+                          <div className="absolute top-[-10px] left-[-8px] z-10">
+                            {(() => {
+                              const today = moment();
+                              const deadlineDate = moment(post?.deadline);
+                              const diffDays = deadlineDate.diff(today, 'days');
+                              const getDdayColor = (dday) => {
+                                if (dday <= 7) return 'bg-brand-point text-white';
+                                if (dday <= 14) return 'bg-brand-main text-white';
+                                return 'bg-[#FFE889] text-brand-yellow-dark';
+                              };
+                              return (
+                                  <span
+                                      className={`flex items-center justify-center px-[7px] h-[20px] rounded-[7px] text-12-b font-bold ${getDdayColor(diffDays)}`}
+                                  >
+                            {diffDays > 0 ? 'D-' + diffDays : '오늘마감!'}
+                          </span>
+                              );
+                            })()}
+                          </div>
+                          <figure className="relative w-[60px] h-[60px] overflow-hidden bg-gray-200 rounded-[15px] shadow-[0_0_15px_0px_rgba(0,0,0,0.1)] flex-shrink-0">
+                            <Image
+                                width={60}
+                                height={60}
+                                className="w-full h-full object-cover"
+                                src={post.images && post.images.length > 0 ? post.images[0] : '/img/dummy_thumbnail.jpg'}
+                                alt={post?.dog?.name || '강아지 사진'}
+                            />
+                          </figure>
                         </div>
-                        <div className="text-post-date text-text-600 text-9-r font-light">
-                          {selectedPost?.createdAt ? moment(selectedPost.createdAt).format("YY/MM/DD") : '날짜 없음'}
+                        <div className="min-w-0 h-[70px] mt-[10px] flex flex-col justify-between w-full">
+                          <h3 className="text-list-1 mb-2 leading-tight line-clamp-2 text-14-m text-left">
+                            {post.title || '제목 없음'}
+                          </h3>
+                          <div className="flex justify-between items-end text-text-800 mb-[6px]">
+                            <div className="text-name-breed text-12-r">
+                              {post?.dog?.name || '이름 없음'} / {convertDogSize(post?.dog?.size || 'medium')}
+                            </div>
+                            <div className="text-post-date text-text-600 text-9-r font-light">
+                              {post?.createdAt ? moment(post.createdAt).format('YY/MM/DD') : '날짜 없음'}
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+        ) : (
+            selectedPost && (
+                <div className="fixed bottom-[100px] w-full max-w-[500px] left-1/2 -translate-x-1/2 z-20">
+                  <a
+                      className="block w-full h-full"
+                      href={`/posts/${selectedPost.id}`}
+                      onClick={saveMapState}
+                  >
+                    <div className="bg-white rounded-[30px] mx-[12px] px-[25px] py-[20px] cursor-pointer relative shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]">
+                      <div className="flex justify-end items-start">
+                        <div className="absolute top-[8px] left-[16px] z-10">
+                          {(() => {
+                            const today = moment();
+                            const deadlineDate = moment(selectedPost?.deadline);
+                            const diffDays = deadlineDate.diff(today, 'days');
+                            const getDdayColor = (dday) => {
+                              if (dday <= 7) return 'bg-brand-point text-white';
+                              if (dday <= 14) return 'bg-brand-main text-white';
+                              return 'bg-[#FFE889] text-brand-yellow-dark';
+                            };
+                            return (
+                                <span className={`flex items-center justify-center px-[9px] h-[22px] rounded-[7px] text-14-b font-bold ${getDdayColor(diffDays)}`}>
+                          {diffDays > 0 ? 'D-' + diffDays : '오늘마감!'}
+                        </span>
+                            );
+                          })()}
+                        </div>
+                      </div>
+
+                      <div className="flex space-x-[20px]">
+                        <div className="flex-shrink-0 relative">
+                          <figure className="relative w-[80px] h-[80px] overflow-hidden bg-gray-200 rounded-[15px] shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]">
+                            <Image
+                                width={74}
+                                height={74}
+                                className="w-full h-full object-cover"
+                                src={selectedPost.images && selectedPost?.images.length > 0 ? selectedPost?.images[0] : '/img/dummy_thumbnail.jpg'}
+                                alt={selectedPost?.dog?.name || '강아지 사진'}
+                            />
+                          </figure>
+                        </div>
+
+                        <div className="min-w-0 h-[70px] mt-[10px] flex flex-col justify-between w-full">
+                          <h3 className="text-list-1 mb-2 leading-tight line-clamp-2 text-14-m text-left">
+                            {selectedPost?.title || '제목 없음'}
+                          </h3>
+                          <div className="flex justify-between items-end text-text-800 mb-[6px]">
+                            <div className="text-name-breed text-12-r">
+                              {selectedPost?.dog?.name || '이름 없음'} / {convertDogSize(selectedPost?.dog?.size || 'medium')}
+                            </div>
+                            <div className="text-post-date text-text-600 text-9-r font-light">
+                              {selectedPost?.createdAt ? moment(selectedPost.createdAt).format('YY/MM/DD') : '날짜 없음'}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </a>
                 </div>
-              </a>
-            </div>
+            )
         )}
+
         {!mapLoaded && !error && (
             <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-20">
               <div className="text-center">
