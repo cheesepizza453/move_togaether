@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import moment from 'moment';
-import IconLoading from "../../../public/img/icon/IconLoading";
 import Image from "next/image";
 import Header from "@/components/common/Header";
 import Loading from "@/components/ui/loading";
