@@ -127,14 +127,14 @@ const VerifyEmailContent = () => {
         )}
 
         {/* 홈으로 돌아가기 */}
-        <div className="mt-6 pt-6 border-t border-gray-200">
+{/*        <div className="mt-6 pt-6 border-t border-gray-200">
           <Link
             href="/"
             className="text-12-r text-brand-yellow-dark underline"
           >
             홈으로 돌아가기
           </Link>
-        </div>
+        </div>*/}
       </div>
     </div>
   );
