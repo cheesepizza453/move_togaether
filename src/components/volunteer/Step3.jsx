@@ -26,7 +26,7 @@ const Step3 = ({
               type="url"
               value={formData.relatedPostLink}
               onChange={(e) => onFormDataChange('relatedPostLink', e.target.value)}
-              placeholder="임보견과 관련된 게시물 링크를 입력해 주세요. (선택사항)"
+              placeholder="동행견과 관련된 게시물 링크를 입력해 주세요. (선택사항)"
               className={`${inputStyle} w-full ${
                   errors.relatedPostLink ? 'border-red-500' : 'border-gray-300'
               }`}
