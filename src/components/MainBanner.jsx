@@ -72,7 +72,7 @@ const MainBanner = () => {
       </div>
 
       {/* 우측 하단 네비게이션 컨트롤 */}
-      <div className="absolute bottom-[10px] right-[16px] flex items-center space-x-[2px]">
+      <div className="absolute bottom-[10px] right-[16px] flex items-center space-x-[2px] z-20">
 
         {/* 페이지 표시 */}
         {banners.length > 1 &&
