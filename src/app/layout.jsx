@@ -18,6 +18,9 @@ export const metadata = {
     authors: [{ name: 'Move Togaether Team' }],
     creator: 'Move Togaether',
     publisher: 'Move Togaether',
+    verification: {
+        naver: 'd5f9807038372b334ef4d3b2a32dadccdc082d9f',
+    },
     formatDetection: {
         email: false,
         address: false,
