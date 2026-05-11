@@ -95,8 +95,11 @@ export async function GET(request) {
             .gte('deadline', moment().toISOString())
             .order(orderConfig.column, { ascending: orderConfig.ascending })
             .range(from, to)
-          if (postType) {
-            query = query.eq('post_type', postType)
+          if (postType === 'missing') {
+            query = query.eq('post_type', 'missing')
+          } else if (postType === 'volunteer') {
+            // 기존 게시글(post_type NULL)은 이동봉사로 취급
+            query = query.or('post_type.eq.volunteer,post_type.is.null')
           }
         } else {
           // completed나 all의 경우 posts 테이블 직접 조회
@@ -107,8 +110,10 @@ export async function GET(request) {
             .order(orderConfig.column, { ascending: orderConfig.ascending })
             .range(from, to)
 
-          if (postType) {
-            query = query.eq('post_type', postType)
+          if (postType === 'missing') {
+            query = query.eq('post_type', 'missing')
+          } else if (postType === 'volunteer') {
+            query = query.or('post_type.eq.volunteer,post_type.is.null')
           }
           if (status === 'completed') {
             query = query.or('status.neq.active,deadline.lt.' + moment().toISOString())
