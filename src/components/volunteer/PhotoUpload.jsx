@@ -8,6 +8,7 @@ const PhotoUpload = ({
                          onPhotoChange,
                          onPhotoRemove,
                          error,
+                         hideLabel = false,
                      }) => {
     const fileInputRef = useRef(null);
 
@@ -108,12 +109,16 @@ const PhotoUpload = ({
 
     return (
         <div>
-            <label className="block text-16-m mb-[6px]">
-                사진<span className="text-[#E17364] text-16-m">*</span>
-            </label>
-            <p className="mb-[15px] text-[#676767] text-12-r">
-                최대 500kb의 사진을 업로드 할 수 있습니다.
-            </p>
+            {!hideLabel && (
+                <>
+                    <label className="block text-16-m mb-[6px]">
+                        사진<span className="text-[#E17364] text-16-m">*</span>
+                    </label>
+                    <p className="mb-[15px] text-[#676767] text-12-r">
+                        최대 500kb의 사진을 업로드 할 수 있습니다.
+                    </p>
+                </>
+            )}
 
             <div className="relative w-[150px] h-auto aspect-[67/55] cursor-pointer">
                 {photoPreview ? (

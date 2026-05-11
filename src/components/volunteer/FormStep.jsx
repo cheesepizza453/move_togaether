@@ -14,7 +14,9 @@ const FormStep = ({
   isNextDisabled = false,
   nextButtonText = '다음',
   showBackButton = true,
-  showNextButton = true
+  showNextButton = true,
+  tabBar,
+  stepLabels = ['무브 상세 정보', '동행견 정보', '추가 정보'],
 }) => {
     const [isScrolled, setIsScrolled] = useState(false);
 
@@ -28,7 +30,6 @@ const FormStep = ({
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-  const stepLabels = ['무브 상세 정보', '동행견 정보', '추가 정보'];
     const renderStepIcon = (step) => {
         if (step < stepNumber) {
             // 완료된 단계 - 체크 아이콘
@@ -67,6 +68,7 @@ const FormStep = ({
   return (
     <div className="min-h-screen bg-gray-50">
         <Header title={title} back={true} onClick={onBack} />
+        {tabBar}
         {/* 진행률 표시 */}
         <div className={`sticky top-0 z-50 bg-white h-[90px] pt-[17px] transition-shadow duration-300 ${
             isScrolled ? 'shadow-[0_2px_5px_0_rgba(0,0,0,0.15)]' : ''

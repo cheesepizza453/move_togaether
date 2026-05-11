@@ -17,9 +17,15 @@ export async function GET() {
         departure_address,
         departure_lat,
         departure_lng,
+        departure_sido,
+        departure_sigungu,
+        departure_dong,
         arrival_address,
         arrival_lat,
         arrival_lng,
+        arrival_sido,
+        arrival_sigungu,
+        arrival_dong,
         dog_name,
         dog_size,
         dog_breed,
@@ -29,8 +35,7 @@ export async function GET() {
         deadline,
         created_at
       `)
-      .not('departure_lat', 'is', null)
-      .not('departure_lng', 'is', null)
+      .or('departure_lat.not.is.null,departure_sido.not.is.null,departure_address.not.is.null')
       .eq('status', 'active')
       .eq('is_deleted', false)
       .gte('deadline', currentDate)
@@ -47,14 +52,24 @@ export async function GET() {
       title: post.title,
       description: post.description,
       departure: {
-        address: post.departure_address,
-        lat: parseFloat(post.departure_lat),
-        lng: parseFloat(post.departure_lng)
+        address: post.departure_sido
+          ? `${post.departure_sido} ${post.departure_sigungu} ${post.departure_dong}`
+          : post.departure_address,
+        sido: post.departure_sido || null,
+        sigungu: post.departure_sigungu || null,
+        dong: post.departure_dong || null,
+        lat: post.departure_lat ? parseFloat(post.departure_lat) : null,
+        lng: post.departure_lng ? parseFloat(post.departure_lng) : null,
       },
       arrival: {
-        address: post.arrival_address,
+        address: post.arrival_sido
+          ? `${post.arrival_sido} ${post.arrival_sigungu} ${post.arrival_dong}`
+          : post.arrival_address,
+        sido: post.arrival_sido || null,
+        sigungu: post.arrival_sigungu || null,
+        dong: post.arrival_dong || null,
         lat: post.arrival_lat ? parseFloat(post.arrival_lat) : null,
-        lng: post.arrival_lng ? parseFloat(post.arrival_lng) : null
+        lng: post.arrival_lng ? parseFloat(post.arrival_lng) : null,
       },
       dog: {
         name: post.dog_name,

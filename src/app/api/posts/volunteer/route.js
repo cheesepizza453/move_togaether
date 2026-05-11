@@ -22,27 +22,26 @@ export async function POST(request) {
     const {
       title,
       departureAddress,
-      departureLat,
-      departureLng,
+      departureSido,
+      departureSigungu,
+      departureDong,
       arrivalAddress,
-      arrivalLat,
-      arrivalLng,
+      arrivalSido,
+      arrivalSigungu,
+      arrivalDong,
       description,
       name,
       photo,
       size,
       breed,
-      relatedPostLink
+      relatedPostLink,
+      isOriginal
     } = requestBody;
 
     console.log('받은 데이터:', {
       title,
       departureAddress,
-      departureLat,
-      departureLng,
       arrivalAddress,
-      arrivalLat,
-      arrivalLng,
       description,
       name,
       size,
@@ -235,56 +234,65 @@ export async function POST(request) {
     }
 
     // 기존 posts 테이블에 저장
+    // departure_lat / departure_lng 는 의도적으로 생략 — DB 컬럼이 NOT NULL이면
+    // 명시적 null 삽입이 constraint 위반을 일으키므로, DB 기본값(NULL 허용 시 null)에 맡깁니다.
     console.log('=== 6단계: 데이터베이스 저장 시작 ===');
+    const insertPayload = {
+      user_id: userProfile.id,
+      title,
+      description: description || '',
+      departure_address: departureAddress,
+      departure_sido: departureSido || null,
+      departure_sigungu: departureSigungu || null,
+      departure_dong: departureDong || null,
+      arrival_address: arrivalAddress,
+      arrival_sido: arrivalSido || null,
+      arrival_sigungu: arrivalSigungu || null,
+      arrival_dong: arrivalDong || null,
+      dog_name: name,
+      dog_size: size,
+      dog_breed: breed || '',
+      images: images,
+      related_link: relatedPostLink || null,
+      is_original: isOriginal !== false,
+      post_type: 'volunteer',
+      deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      status: 'active'
+    };
+    console.log('=== INSERT 직전 데이터 ===');
+    console.log(insertPayload);
+
     const dbStartTime = Date.now();
     const { data, error } = await supabase
       .from('posts')
-      .insert([
-        {
-          user_id: userProfile.id,
-          title,
-          description: description || '',
-          departure_address: departureAddress,
-          departure_lat: departureLat,
-          departure_lng: departureLng,
-          arrival_address: arrivalAddress,
-          arrival_lat: arrivalLat,
-          arrival_lng: arrivalLng,
-          dog_name: name,
-          dog_size: size,
-          dog_breed: breed || '',
-          images: images,
-          related_link: relatedPostLink || null,
-          deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30일 후
-          status: 'active'
-        }
-      ])
+      .insert([insertPayload])
       .select()
       .single();
 
     const dbEndTime = Date.now();
-    console.log('데이터베이스 저장 완료:', {
+    console.log('데이터베이스 저장 결과:', {
       duration: dbEndTime - dbStartTime + 'ms',
       hasError: !!error,
-      error: error?.message,
-      errorCode: error?.code,
-      errorDetails: error?.details,
       hasData: !!data,
-      dataId: data?.id
+      dataId: data?.id,
     });
 
     if (error) {
-      console.error('데이터베이스 저장 오류 상세:', {
+      console.error('=== DB 오류 상세 ===', {
         message: error.message,
         code: error.code,
         details: error.details,
         hint: error.hint,
-        stack: error.stack
       });
       return NextResponse.json({
         success: false,
         error: '데이터 저장에 실패했습니다.',
-        details: error.message
+        debug: {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+        },
       }, { status: 500 });
     }
 
@@ -301,17 +309,14 @@ export async function POST(request) {
 
   } catch (error) {
     const endTime = Date.now();
-    console.error('=== 봉사자 등록 API 오류 ===');
-    console.error('총 처리 시간:', endTime - startTime, 'ms');
-    console.error('오류 정보:', {
-      name: error.name,
-      message: error.message,
-      stack: error.stack
-    });
+    console.error('=== 봉사자 등록 API 예외 발생 ===');
+    console.error(error);
+    console.error('duration:', endTime - startTime + 'ms');
 
     return NextResponse.json({
       success: false,
-      error: '서버 오류가 발생했습니다.'
+      error: '서버 오류가 발생했습니다.',
+      debug: { message: error.message, name: error.name },
     }, { status: 500 });
   }
 }

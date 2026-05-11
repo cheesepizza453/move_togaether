@@ -12,6 +12,37 @@ const Step3 = ({
         <div className={'flex justify-between items-start'}>
           <h5 className={'text-20-m'}>{title}</h5>
         </div>
+        {/* 원본 글 여부
+        <div>
+          <label className="block text-16-m mb-[6px]">컨텍 여부</label>
+          <div className="flex flex-col gap-[10px] mt-[10px]">
+            <label className="flex items-center gap-[10px] cursor-pointer">
+              <input
+                  type="radio"
+                  name="isOriginal"
+                  value="true"
+                  checked={formData.isOriginal === true}
+                  onChange={() => onFormDataChange('isOriginal', true)}
+                  className="accent-brand-yellow-dark w-4 h-4"
+              />
+              <span className="text-14-r">지원자와 직접 소통할게요.</span>
+            </label>
+            <label className="flex items-center gap-[10px] cursor-pointer">
+              <input
+                  type="radio"
+                  name="isOriginal"
+                  value="false"
+                  checked={formData.isOriginal === false}
+                  onChange={() => onFormDataChange('isOriginal', false)}
+                  className="accent-brand-yellow-dark w-4 h-4"
+              />
+              <span className="text-14-r">기존에 업로드한 플랫폼에서 지원자와 소통할게요.</span>
+            </label>
+          </div>
+        </div>
+
+        */}
+
         {/* 관련 게시글 링크 */}
         <div>
           <label htmlFor={'relatedPostLink'} className="block text-16-m mb-[6px]">

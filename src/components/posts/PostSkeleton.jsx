@@ -31,9 +31,12 @@ const PostSkeleton= () => {
                     </div>
 
                     <div className="py-[24px] px-[22px] space-y-6 bg-brand-bg">
-                        {/* 찾아오는 길 */}
+                        {/* 경로*/}
                         <div>
-                            <h3 className="text-16-b mb-[10px]">찾아오는 길</h3>
+                            <div className={'flex justify-between align-bottom mb-[10px]'}>
+                                <h3 className="text-16-b">경로</h3>
+                                <span className={'text-text-800 text-10-r'}>자세한 위치는 문의 후 알 수 있어요</span>
+                            </div>
                             <div
                                 className="flex flex-col p-[18px] bg-white rounded-[15px] shadow-[0_0_12px_0_rgba(0,0,0,0.1)]">
                                 {/* ... */}
