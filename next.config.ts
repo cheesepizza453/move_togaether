@@ -51,12 +51,6 @@ const nextConfig: NextConfig = {
   images: {
     // Vercel 이미지 최적화 비활성화 (비용 절약)
     unoptimized: true,
-    // Supabase 스토리지 도메인 설정
-    domains: [
-      'localhost',
-      'vnexvfnsgjfrixexlgdp.supabase.co', // Supabase 스토리지 도메인
-      'move-togaether.com'
-    ],
     // 외부 이미지 도메인 허용
     remotePatterns: [
       {
