@@ -8,660 +8,496 @@ import { useAuth } from '@/hooks/useAuth';
 import FormStep from '@/components/volunteer/FormStep';
 import Step1 from '@/components/volunteer/Step1';
 import Step2 from '@/components/volunteer/Step2';
+import Step2FindTogether from '@/components/volunteer/Step2FindTogether';
 import Step3 from '@/components/volunteer/Step3';
 import Preview from '@/components/volunteer/Preview';
+
+const STEP_INPUT_STYLE = 'h-[52px] px-[18px] border rounded-[15px] text-text-800 focus:text-brand-yellow-dark focus:bg-brand-sub focus:outline-none focus:ring-1 focus:ring-[#FFD044] focus:border-transparent transition-colors';
+
+const INITIAL_MOVE_DATA = {
+  title: '',
+  departureAddress: '',
+  departureSido: '',
+  departureSigungu: '',
+  departureDong: '',
+  arrivalAddress: '',
+  arrivalSido: '',
+  arrivalSigungu: '',
+  arrivalDong: '',
+  description: '',
+  name: '',
+  photo: null,
+  size: '',
+  breed: '',
+  isOriginal: true,
+  relatedPostLink: '',
+};
+
+// 실종신고: 실종견을 목격했을 때 위치·사진·정보를 제보하는 기능
+const INITIAL_FIND_TOGETHER_DATA = {
+  title: '',
+  departureAddress: '',
+  departureSido: '',
+  departureSigungu: '',
+  departureDong: '',
+  description: '',
+  name: '',
+  photo: null,
+  size: '',
+  breed: '',
+  dogDescription: '',
+  isOriginal: true,
+  relatedPostLink: '',
+};
+
+// 공통 인증 헤더 생성
+const buildHeaders = (accessToken, userId) => {
+  const headers = {
+    'Content-Type': 'application/json',
+    apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  };
+  if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+  else if (userId) headers['X-User-ID'] = userId;
+  return headers;
+};
+
+const getAccessToken = async () => {
+  try {
+    const { data: { session } } = await Promise.race([
+      supabase.auth.getSession(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000)),
+    ]);
+    return session?.access_token || null;
+  } catch {
+    return null;
+  }
+};
 
 const VolunteerCreate = () => {
   const router = useRouter();
   const { user } = useAuth();
 
-  // 전역 에러 핸들러 추가 (브라우저 확장 프로그램 충돌 방지)
+  // 브라우저 확장 프로그램 충돌 방지
   React.useEffect(() => {
     const handleError = (event) => {
       if (
-          event.error &&
-          event.error.message &&
-          (event.error.message.includes('message port closed') ||
-              event.error.message.includes('content.js'))
+        event.error?.message &&
+        (event.error.message.includes('message port closed') ||
+          event.error.message.includes('content.js'))
       ) {
-        console.warn(
-            '브라우저 확장 프로그램과의 충돌 감지, 무시합니다:',
-            event.error
-        );
         event.preventDefault();
         event.stopPropagation();
         return false;
       }
     };
-
     const handleUnhandledRejection = (event) => {
       if (
-          event.reason &&
-          event.reason.message &&
-          (event.reason.message.includes('message port closed') ||
-              event.reason.message.includes('content.js'))
+        event.reason?.message &&
+        (event.reason.message.includes('message port closed') ||
+          event.reason.message.includes('content.js'))
       ) {
-        console.warn(
-            '브라우저 확장 프로그램과의 충돌 감지, 무시합니다:',
-            event.reason
-        );
         event.preventDefault();
         event.stopPropagation();
         return false;
       }
     };
-
-    const originalConsoleError = console.error;
-    console.error = (...args) => {
-      const message = args.join(' ');
-      if (
-          message.includes('message port closed') ||
-          message.includes('content.js')
-      ) {
-        console.warn('확장 프로그램 오류 무시:', ...args);
-        return;
-      }
-      originalConsoleError.apply(console, args);
-    };
-
     window.addEventListener('error', handleError, true);
-    window.addEventListener(
-        'unhandledrejection',
-        handleUnhandledRejection,
-        true
-    );
-
+    window.addEventListener('unhandledrejection', handleUnhandledRejection, true);
     return () => {
       window.removeEventListener('error', handleError, true);
-      window.removeEventListener(
-          'unhandledrejection',
-          handleUnhandledRejection,
-          true
-      );
-      console.error = originalConsoleError;
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection, true);
     };
   }, []);
 
-  // 현재 단계 상태
-  const [currentStep, setCurrentStep] = useState(1);
+  // ── 탭 ───────────────────────────────────────────────────
+  const [activeTab, setActiveTab] = useState('move');
 
-  // 폼 데이터 상태
-  const [formData, setFormData] = useState({
-    // Step 1: 이동 봉사 정보
-    title: '',
-    departureAddress: '',
-    departureLat: null,
-    departureLng: null,
-    arrivalAddress: '',
-    arrivalLat: null,
-    arrivalLng: null,
-    description: '',
-    // Step 2: 구조견 정보
-    name: '',
-    photo: null,
-    size: '',
-    breed: '',
-    // Step 3: 추가 정보
-    relatedPostLink: ''
-  });
+  // ── 이동봉사 상태 ─────────────────────────────────────────
+  const [moveStep, setMoveStep] = useState(1);
+  const [moveData, setMoveData] = useState(INITIAL_MOVE_DATA);
+  const [moveErrors, setMoveErrors] = useState({});
+  const [movePhotoPreview, setMovePhotoPreview] = useState(null);
+  const [moveLoading, setMoveLoading] = useState(false);
 
-  // 에러 상태
-  const [errors, setErrors] = useState({});
+  // ── 실종신고 상태 (실종견 목격 제보 기능) ────────────────────
+  const [findTogetherStep, setFindTogetherStep] = useState(1);
+  const [findTogetherData, setFindTogetherData] = useState(INITIAL_FIND_TOGETHER_DATA);
+  const [findTogetherErrors, setFindTogetherErrors] = useState({});
+  const [findTogetherPhotoPreview, setFindTogetherPhotoPreview] = useState(null);
+  const [findTogetherLoading, setFindTogetherLoading] = useState(false);
 
-  // 사진 미리보기 상태
-  const [photoPreview, setPhotoPreview] = useState(null);
-
-  // 로딩 상태
-  const [loading, setLoading] = useState(false);
-
-  // 주소 검증 상태
-  const [addressValidation, setAddressValidation] = useState({
-    departure: { isValid: null, message: '' },
-    arrival: { isValid: null, message: '' }
-  });
-
-  // 주소 검색 결과 상태
-  const [departureSearchResults, setDepartureSearchResults] = useState([]);
-  const [arrivalSearchResults, setArrivalSearchResults] = useState([]);
-  const [isSearchingDeparture, setIsSearchingDeparture] = useState(false);
-  const [isSearchingArrival, setIsSearchingArrival] = useState(false);
-
-  // 폼 데이터 변경 (에러 핸들링 추가)
-  const updateFormData = (field, value) => {
-    try {
-      setFormData((prev) => ({ ...prev, [field]: value }));
-    } catch (error) {
-      console.error('폼 데이터 업데이트 오류:', error);
-    }
+  const handleTabChange = (tab) => {
+    if (tab === activeTab) return;
+    setActiveTab(tab);
+    // 이동봉사 초기화
+    setMoveStep(1);
+    setMoveData(INITIAL_MOVE_DATA);
+    setMoveErrors({});
+    setMovePhotoPreview(null);
+    // 실종신고 초기화
+    setFindTogetherStep(1);
+    setFindTogetherData(INITIAL_FIND_TOGETHER_DATA);
+    setFindTogetherErrors({});
+    setFindTogetherPhotoPreview(null);
   };
 
-  const handleGoBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep((prev) => prev - 1);
-    } else {
-      router.back();
-    }
+  const tabBar = (
+    <div className="flex bg-white border-b border-gray-200">
+      <button
+        onClick={() => handleTabChange('move')}
+        className={`flex-1 py-3 text-16-m border-b-2 transition-colors ${
+          activeTab === 'move'
+            ? 'border-brand-yellow-dark text-brand-yellow-dark'
+            : 'border-transparent text-text-800'
+        }`}
+      >
+        이동봉사
+      </button>
+      <button
+        onClick={() => handleTabChange('findTogether')}
+        className={`flex-1 py-3 text-16-m border-b-2 transition-colors ${
+          activeTab === 'findTogether'
+            ? 'border-brand-yellow-dark text-brand-yellow-dark'
+            : 'border-transparent text-text-800'
+        }`}
+      >
+        실종신고
+      </button>
+    </div>
+  );
+
+  // ── 이동봉사 핸들러 ───────────────────────────────────────
+
+  const updateMoveData = (field, value) => {
+    setMoveData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleNext = () => {
+  const handleMoveBack = () => {
+    if (moveStep > 1) setMoveStep((prev) => prev - 1);
+    else router.back();
+  };
+
+  const handleMoveNext = () => {
     const newErrors = {};
-
-    if (currentStep === 1) {
-      if (!formData.title.trim()) {
-        newErrors.title = '제목을 입력해주세요.';
-      } else if (formData.title.length > 100) {
-        newErrors.title = '제목은 100자 이하로 입력해주세요.';
-      }
-
-      if (!formData.description.trim()) {
-        newErrors.description = '설명을 입력해주세요.';
-      } else if (formData.description.length > 1000) {
-        newErrors.description = '설명은 800자 이하로 입력해주세요.';
-      }
-
-      if (!formData.departureAddress.trim()) {
-        newErrors.departureAddress = '출발지 주소를 입력해주세요.';
-      } else if (addressValidation.departure.isValid !== true) {
-        newErrors.departureAddress = '출발지 주소를 검증해주세요.';
-      }
-
-      if (!formData.arrivalAddress.trim()) {
-        newErrors.arrivalAddress = '도착지 주소를 입력해주세요.';
-      } else if (addressValidation.arrival.isValid !== true) {
-        newErrors.arrivalAddress = '도착지 주소를 검증해주세요.';
-      }
-    } else if (currentStep === 2) {
-      if (!formData.name.trim()) {
-        newErrors.name = '이름을 입력해주세요.';
-      } else if (formData.name.length > 20) {
-        newErrors.name = '이름은 20자 이하로 입력해주세요.';
-      }
-
-      if (!formData.size) {
-        newErrors.size = '크기를 선택해주세요.';
-      }
-    } else if (currentStep === 3) {
-      if (formData.relatedPostLink.trim()) {
+    if (moveStep === 1) {
+      if (!moveData.title.trim()) newErrors.title = '제목을 입력해주세요.';
+      else if (moveData.title.length > 100) newErrors.title = '제목은 100자 이하로 입력해주세요.';
+      if (!moveData.description.trim()) newErrors.description = '설명을 입력해주세요.';
+      else if (moveData.description.length > 800) newErrors.description = '설명은 800자 이하로 입력해주세요.';
+      if (!moveData.departureDong) newErrors.departureAddress = '출발지를 시/도 → 시/군/구 → 읍/면/동 순으로 선택해주세요.';
+      if (!moveData.arrivalDong) newErrors.arrivalAddress = '도착지를 시/도 → 시/군/구 → 읍/면/동 순으로 선택해주세요.';
+    } else if (moveStep === 2) {
+      if (!moveData.name.trim()) newErrors.name = '이름을 입력해주세요.';
+      else if (moveData.name.length > 20) newErrors.name = '이름은 20자 이하로 입력해주세요.';
+      if (!moveData.size) newErrors.size = '크기를 선택해주세요.';
+    } else if (moveStep === 3) {
+      if (moveData.relatedPostLink.trim()) {
         const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w .\-?=&%#]*)*\/?$/;
-        if (!urlPattern.test(formData.relatedPostLink)) {
-          newErrors.relatedPostLink = '올바른 URL 형식이 아닙니다.';
-        }
+        if (!urlPattern.test(moveData.relatedPostLink)) newErrors.relatedPostLink = '올바른 URL 형식이 아닙니다.';
       }
     }
-
-    setErrors(newErrors);
-
+    setMoveErrors(newErrors);
     if (Object.keys(newErrors).length === 0) {
-      if (currentStep < 3) {
-        setCurrentStep((prev) => prev + 1);
-      } else {
-        setCurrentStep(4); // 미리보기
-      }
+      if (moveStep < 3) setMoveStep((prev) => prev + 1);
+      else setMoveStep(4);
     }
   };
 
-  const handleSearchAddress = async (type, baseAddress) => {
-    if (!baseAddress.trim()) return;
-
-    if (type === 'departure') {
-      setIsSearchingDeparture(true);
-      setDepartureSearchResults([]);
-    } else {
-      setIsSearchingArrival(true);
-      setArrivalSearchResults([]);
-    }
-
+  const handleMoveSubmit = async () => {
+    if (moveLoading) return;
+    setMoveLoading(true);
     try {
-      const response = await fetch('/api/validate-address', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address: baseAddress }),
-      });
-
-      const data = await response.json();
-
-      if (data.success && data.results) {
-        if (type === 'departure') {
-          setDepartureSearchResults(data.results);
-        } else {
-          setArrivalSearchResults(data.results);
-        }
-
-        setAddressValidation((prev) => ({
-          ...prev,
-          [type]: {
-            isValid: data.isValid,
-            message: data.message,
-          },
-        }));
-      } else {
-        if (type === 'departure') {
-          setDepartureSearchResults([]);
-        } else {
-          setArrivalSearchResults([]);
-        }
-
-        setAddressValidation((prev) => ({
-          ...prev,
-          [type]: {
-            isValid: false,
-            message: '주소 검색 중 오류가 발생했습니다.',
-          },
-        }));
-      }
-    } catch (error) {
-      console.error('주소 검색 오류:', error);
-      if (type === 'departure') {
-        setDepartureSearchResults([]);
-      } else {
-        setArrivalSearchResults([]);
-      }
-
-      setAddressValidation((prev) => ({
-        ...prev,
-        [type]: {
-          isValid: false,
-          message: '주소 검색 중 오류가 발생했습니다.'
-        }
-      }));
-    } finally {
-      if (type === 'departure') {
-        setIsSearchingDeparture(false);
-      } else {
-        setIsSearchingArrival(false);
-      }
-    }
-  };
-
-  const handleAddressChange = (type, value) => {
-    updateFormData(
-        type === 'departure' ? 'departureAddress' : 'arrivalAddress',
-        value
-    );
-
-    if (type === 'departure') {
-      updateFormData('departureLat', null);
-      updateFormData('departureLng', null);
-      setDepartureSearchResults([]);
-    } else {
-      updateFormData('arrivalLat', null);
-      updateFormData('arrivalLng', null);
-      setArrivalSearchResults([]);
-    }
-
-    setAddressValidation((prev) => ({
-      ...prev,
-      [type]: { isValid: null, message: '' },
-    }));
-  };
-
-  const handleSelectDepartureAddress = (selectedAddress, detailAddress = '') => {
-    const baseAddress =
-        selectedAddress.road_address_name ||
-        selectedAddress.address_name ||
-        selectedAddress.place_name;
-
-    const fullAddress = detailAddress
-        ? `${baseAddress} ${detailAddress}`
-        : baseAddress;
-
-    const lat = selectedAddress.y ? parseFloat(selectedAddress.y) : null;
-    const lng = selectedAddress.x ? parseFloat(selectedAddress.x) : null;
-
-    updateFormData('departureAddress', fullAddress);
-    updateFormData('departureLat', lat);
-    updateFormData('departureLng', lng);
-
-    setDepartureSearchResults([]);
-    setAddressValidation((prev) => ({
-      ...prev,
-      departure: { isValid: true, message: '유효한 주소입니다.' },
-    }));
-  };
-
-  const handleSelectArrivalAddress = (selectedAddress, detailAddress = '') => {
-    const baseAddress =
-        selectedAddress.road_address_name ||
-        selectedAddress.address_name ||
-        selectedAddress.place_name;
-
-    const fullAddress = detailAddress
-        ? `${baseAddress} ${detailAddress}`
-        : baseAddress;
-
-    const lat = selectedAddress.y ? parseFloat(selectedAddress.y) : null;
-    const lng = selectedAddress.x ? parseFloat(selectedAddress.x) : null;
-
-    updateFormData('arrivalAddress', fullAddress);
-    updateFormData('arrivalLat', lat);
-    updateFormData('arrivalLng', lng);
-
-    setArrivalSearchResults([]);
-    setAddressValidation((prev) => ({
-      ...prev,
-      arrival: { isValid: true, message: '유효한 주소입니다.' },
-    }));
-  };
-
-  const handleEdit = (step) => {
-    setCurrentStep(step);
-  };
-
-  const handleSubmit = async () => {
-    const startTime = Date.now();
-    console.log('=== 제출 시작 ===', new Date().toISOString());
-    console.log('폼 데이터:', formData);
-    console.log('현재 로딩 상태:', loading);
-    console.log('현재 사용자:', user);
-
-    if (loading) {
-      console.log('이미 로딩 중이므로 제출 무시');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      console.log('=== 1단계: 세션 확인 시작 ===');
-      console.log('AuthContext 사용자:', {
-        hasUser: !!user,
-        userId: user?.id,
-        userEmail: user?.email,
-      });
-
-      if (!user) {
-        toast.error('로그인이 필요합니다.');
-        router.push('/login');
-        return;
-      }
-
-      console.log('=== 2단계: 사용자 인증 완료, 토큰 확인 시작 ===');
-
-      let accessToken = null;
-
-      try {
-        console.log('토큰 확인 시작...');
-        const tokenStartTime = Date.now();
-
-        const sessionPromise = supabase.auth.getSession();
-        const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('토큰 확인 타임아웃')), 2000)
-        );
-
-        const {
-          data: { session },
-          error: sessionError,
-        } = await Promise.race([sessionPromise, timeoutPromise]);
-
-        const tokenEndTime = Date.now();
-
-        if (sessionError) {
-          console.log('토큰 확인 에러 (무시하고 진행):', sessionError.message);
-        } else if (session?.access_token) {
-          accessToken = session.access_token;
-          console.log('토큰 확인 성공:', {
-            duration: tokenEndTime - tokenStartTime + 'ms',
-            tokenLength: accessToken.length,
-          });
-        } else {
-          console.log('토큰 없음, 사용자 ID로 진행');
-        }
-      } catch (error) {
-        console.log('토큰 확인 실패 (무시하고 진행):', error.message);
-      }
-
-      console.log('=== 3단계: API 호출 준비 ===');
-
-      const headers = {
-        'Content-Type': 'application/json',
-        apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      };
-
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-      } else if (user?.id) {
-        headers['X-User-ID'] = user.id;
-      }
-
-      const requestData = {
-        ...formData,
-        photo: formData.photo
-            ? `[Base64 데이터 ${formData.photo.length}자]`
-            : null,
-      };
-      console.log('전송할 데이터 요약:', requestData);
-
-      console.log('=== 4단계: API 호출 시작 ===');
-
+      if (!user) { toast.error('로그인이 필요합니다.'); router.push('/login'); return; }
+      const accessToken = await getAccessToken();
+      const headers = buildHeaders(accessToken, user?.id);
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        console.log('타임아웃 발생! 요청 중단');
-        controller.abort();
-      }, 30000);
-
-      console.log('fetch 요청 시작...');
-      const fetchStartTime = Date.now();
-
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
       const response = await fetch('/api/posts/volunteer', {
         method: 'POST',
         headers,
-        body: JSON.stringify(formData),
+        body: JSON.stringify(moveData),
         signal: controller.signal,
       });
-
-      const fetchEndTime = Date.now();
       clearTimeout(timeoutId);
-
-      console.log('=== 5단계: API 응답 받음 ===');
-      console.log('fetch 완료:', {
-        duration: fetchEndTime - fetchStartTime + 'ms',
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok,
-        headers: Object.fromEntries(response.headers.entries()),
-      });
-
       if (!response.ok) {
-        console.error('API 응답 오류:', response.status, response.statusText);
         const errorText = await response.text();
-        console.error('오류 응답 내용:', errorText);
-
-        try {
-          const errorResult = JSON.parse(errorText);
-          toast.error(errorResult.error || `서버 오류 (${response.status})`);
-        } catch {
-          toast.error(`서버 오류가 발생했습니다 (${response.status})`);
-        }
+        try { toast.error(JSON.parse(errorText).error || `서버 오류 (${response.status})`); }
+        catch { toast.error(`서버 오류가 발생했습니다 (${response.status})`); }
         return;
       }
-
-      console.log('=== 6단계: 응답 파싱 시작 ===');
-      const parseStartTime = Date.now();
       const result = await response.json();
-      const parseEndTime = Date.now();
-
-      console.log('응답 파싱 완료:', {
-        duration: parseEndTime - parseStartTime + 'ms',
-        result,
-      });
-
-      console.log('=== 7단계: 결과 처리 ===');
-      if (result.success) {
-        toast.success('이동 봉사 요청이 등록되었습니다!');
-        router.push('/');
-      } else {
-        toast.error(result.error || '등록에 실패했습니다.');
-      }
+      if (result.success) { toast.success('이동 봉사 요청이 등록되었습니다!'); router.push('/'); }
+      else toast.error(result.error || '등록에 실패했습니다.');
     } catch (error) {
-      const endTime = Date.now();
-      console.error('=== 등록 오류 발생 ===');
-      console.error('오류 정보:', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-        duration: endTime - startTime + 'ms',
-      });
-
-      if (error.name === 'AbortError') {
-        toast.error('서버 응답이 지연되고 있습니다. 잠시 후 다시 시도해주세요.');
-      } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        toast.error('네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.');
-      } else {
-        toast.error(`등록 중 오류가 발생했습니다: ${error.message}`);
-      }
+      if (error.name === 'AbortError') toast.error('서버 응답이 지연되고 있습니다. 잠시 후 다시 시도해주세요.');
+      else if (error.name === 'TypeError' && error.message.includes('fetch')) toast.error('네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.');
+      else toast.error(`등록 중 오류가 발생했습니다: ${error.message}`);
     } finally {
-      const totalTime = Date.now() - startTime;
-      console.log('=== 제출 완료 ===');
-      console.log('총 소요 시간:', totalTime + 'ms');
-      setLoading(false);
+      setMoveLoading(false);
     }
   };
 
-  const isNextDisabled = () => {
-    if (currentStep === 1) {
-      return (
-          !formData.title.trim() ||
-          !formData.departureAddress.trim() ||
-          !formData.description.trim() ||
-          addressValidation.departure.isValid !== true ||
-          addressValidation.arrival.isValid !== true
-      );
-    } else if (currentStep === 2) {
-      return !formData.name.trim() || !formData.size;
-    }
+  const isMoveNextDisabled = () => {
+    if (moveStep === 1) return !moveData.title.trim() || !moveData.departureDong || !moveData.arrivalDong || !moveData.description.trim();
+    if (moveStep === 2) return !moveData.name.trim() || !moveData.size;
     return false;
   };
 
-  const getStepInfo = () => {
-    switch (currentStep) {
-      case 1:
-        return { title: '무브 상세 정보' };
-      case 2:
-        return { title: '동행견 정보' };
-      case 3:
-        return { title: '추가 정보' };
-      default:
-        return { title: '무브 요청' };
+  const getMoveStepTitle = () => {
+    switch (moveStep) {
+      case 1: return '무브 상세 정보';
+      case 2: return '동행견 정보';
+      case 3: return '추가 정보';
+      default: return '무브 요청';
     }
   };
 
-  const stepInfo = getStepInfo();
-  const inputStyle =
-      'h-[52px] px-[18px] border rounded-[15px] text-text-800 focus:text-brand-yellow-dark focus:bg-brand-sub focus:outline-none focus:ring-1 focus:ring-[#FFD044] focus:border-transparent transition-colors';
+  // ── 실종신고 핸들러 (실종견 목격 제보) ─────────────────────
 
-  // 미리보기 단계
-  if (currentStep === 4) {
+  const updateFindTogetherData = (field, value) => {
+    setFindTogetherData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleFindTogetherBack = () => {
+    if (findTogetherStep > 1) setFindTogetherStep((prev) => prev - 1);
+    else router.back();
+  };
+
+  const handleFindTogetherNext = () => {
+    const newErrors = {};
+    if (findTogetherStep === 1) {
+      if (!findTogetherData.title.trim()) newErrors.title = '제목을 입력해주세요.';
+      else if (findTogetherData.title.length > 100) newErrors.title = '제목은 100자 이하로 입력해주세요.';
+      if (!findTogetherData.description.trim()) newErrors.description = '설명을 입력해주세요.';
+      else if (findTogetherData.description.length > 800) newErrors.description = '설명은 800자 이하로 입력해주세요.';
+      if (!findTogetherData.departureDong) newErrors.departureAddress = '위치를 시/도 → 시/군/구 → 읍/면/동 순으로 선택해주세요.';
+    } else if (findTogetherStep === 2) {
+      if (!findTogetherData.size) newErrors.size = '크기를 선택해주세요.';
+      if (!findTogetherData.dogDescription.trim()) newErrors.dogDescription = '실종견 설명을 입력해주세요.';
+    } else if (findTogetherStep === 3) {
+      if (findTogetherData.relatedPostLink.trim()) {
+        const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w .\-?=&%#]*)*\/?$/;
+        if (!urlPattern.test(findTogetherData.relatedPostLink)) newErrors.relatedPostLink = '올바른 URL 형식이 아닙니다.';
+      }
+    }
+    setFindTogetherErrors(newErrors);
+    if (Object.keys(newErrors).length === 0) {
+      if (findTogetherStep < 3) setFindTogetherStep((prev) => prev + 1);
+      else setFindTogetherStep(4);
+    }
+  };
+
+  const handleFindTogetherSubmit = async () => {
+    if (findTogetherLoading) return;
+    setFindTogetherLoading(true);
+    try {
+      if (!user) { toast.error('로그인이 필요합니다.'); router.push('/login'); return; }
+      const accessToken = await getAccessToken();
+      const headers = buildHeaders(accessToken, user?.id);
+      const response = await fetch('/api/posts/find-together', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(findTogetherData),
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        try { toast.error(JSON.parse(errorText).error || `서버 오류 (${response.status})`); }
+        catch { toast.error(`서버 오류가 발생했습니다 (${response.status})`); }
+        return;
+      }
+      const result = await response.json();
+      if (result.success) { toast.success('실종신고 글이 등록되었습니다!'); router.push('/'); }
+      else toast.error(result.error || '등록에 실패했습니다.');
+    } catch (error) {
+      toast.error(`등록 중 오류가 발생했습니다: ${error.message}`);
+    } finally {
+      setFindTogetherLoading(false);
+    }
+  };
+
+  const isFindTogetherNextDisabled = () => {
+    if (findTogetherStep === 1) return !findTogetherData.title.trim() || !findTogetherData.departureDong || !findTogetherData.description.trim();
+    if (findTogetherStep === 2) return !findTogetherData.size || !findTogetherData.dogDescription.trim();
+    return false;
+  };
+
+  const getFindTogetherStepTitle = () => {
+    switch (findTogetherStep) {
+      case 1: return '실종신고 상세 정보';
+      case 2: return '동행견 정보';
+      case 3: return '추가 정보';
+      default: return '실종신고';
+    }
+  };
+
+  // ── 렌더 ─────────────────────────────────────────────────
+
+  // 이동봉사 미리보기
+  if (activeTab === 'move' && moveStep === 4) {
     return (
-        <div className="min-h-screen bg-gray-50">
-          {/* 헤더 */}
-          <div className="bg-white">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center py-[28px] px-[30px]">
-                <button onClick={handleGoBack} className="mr-[12px]">
-                  <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="9"
-                      height="16"
-                      viewBox="0 0 9 16"
-                      fill="none"
-                  >
-                    <path
-                        d="M8 15L1 8"
-                        stroke="black"
-                        strokeWidth="2"
-                        strokeMiterlimit="10"
-                        strokeLinecap="round"
-                    />
-                    <path
-                        d="M8 0.999999L1 8"
-                        stroke="black"
-                        strokeWidth="2"
-                        strokeMiterlimit="10"
-                        strokeLinecap="round"
-                    />
-                  </svg>
-                </button>
-                <div>
-                  <h1 className="text-22-m text-black">게시물 미리보기</h1>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 컨텐츠 */}
-          <div className="px-4 py-6">
-            <Preview
-                formData={formData}
-                photoPreview={photoPreview}
-                onEdit={handleEdit}
-                onSubmit={handleSubmit}
-                loading={loading}
-            />
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-white">
+          <div className="flex items-center py-[28px] px-[30px]">
+            <button onClick={() => setMoveStep(3)} className="mr-[12px]">
+              <svg xmlns="http://www.w3.org/2000/svg" width="9" height="16" viewBox="0 0 9 16" fill="none">
+                <path d="M8 15L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10" strokeLinecap="round"/>
+                <path d="M8 0.999999L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10" strokeLinecap="round"/>
+              </svg>
+            </button>
+            <h1 className="text-22-m text-black">게시물 미리보기</h1>
           </div>
         </div>
+        <div className="px-4 py-6">
+          <Preview
+            formData={moveData}
+            photoPreview={movePhotoPreview}
+            onEdit={(step) => setMoveStep(step)}
+            onSubmit={handleMoveSubmit}
+            loading={moveLoading}
+          />
+        </div>
+      </div>
     );
   }
 
-  return (
+  // 실종신고 미리보기
+  if (activeTab === 'findTogether' && findTogetherStep === 4) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-white">
+          <div className="flex items-center py-[28px] px-[30px]">
+            <button onClick={() => setFindTogetherStep(3)} className="mr-[12px]">
+              <svg xmlns="http://www.w3.org/2000/svg" width="9" height="16" viewBox="0 0 9 16" fill="none">
+                <path d="M8 15L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10" strokeLinecap="round"/>
+                <path d="M8 0.999999L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10" strokeLinecap="round"/>
+              </svg>
+            </button>
+            <h1 className="text-22-m text-black">게시물 미리보기</h1>
+          </div>
+        </div>
+        <div className="px-4 py-6">
+          <Preview
+            formData={findTogetherData}
+            photoPreview={findTogetherPhotoPreview}
+            onEdit={(step) => setFindTogetherStep(step)}
+            onSubmit={handleFindTogetherSubmit}
+            loading={findTogetherLoading}
+            submitLabel="실종신고 등록하기"
+            dogSectionLabel="실종견 정보"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // 실종신고 탭 — 3단계 폼 (실종견 목격 제보)
+  if (activeTab === 'findTogether') {
+    return (
       <FormStep
-          title="신규 무브 요청"
-          stepNumber={currentStep}
-          totalSteps={3}
-          onBack={handleGoBack}
-          onNext={handleNext}
-          isNextDisabled={isNextDisabled()}
-          nextButtonText={currentStep < 3 ? '다음으로' : '미리보기'}
-          showNextButton={true}
+        title="신규 무브 요청"
+        stepNumber={findTogetherStep}
+        totalSteps={3}
+        onBack={handleFindTogetherBack}
+        onNext={handleFindTogetherNext}
+        isNextDisabled={isFindTogetherNextDisabled()}
+        nextButtonText={findTogetherStep < 3 ? '다음으로' : '미리보기'}
+        showNextButton={true}
+        tabBar={tabBar}
+        stepLabels={['실종 상세 정보', '실종견 정보', '추가 정보']}
       >
-        {currentStep === 1 && (
-            <Step1
-                title={stepInfo.title}
-                formData={formData}
-                errors={errors}
-                addressValidation={addressValidation}
-                onFormDataChange={updateFormData}
-                onAddressChange={handleAddressChange}
-                onSearchAddress={handleSearchAddress}
-                departureSearchResults={departureSearchResults}
-                arrivalSearchResults={arrivalSearchResults}
-                isSearchingDeparture={isSearchingDeparture}
-                isSearchingArrival={isSearchingArrival}
-                onSelectDepartureAddress={handleSelectDepartureAddress}
-                onSelectArrivalAddress={handleSelectArrivalAddress}
-                inputStyle={inputStyle}
-            />
+        {findTogetherStep === 1 && (
+          <Step1
+            title={getFindTogetherStepTitle()}
+            formData={findTogetherData}
+            errors={findTogetherErrors}
+            onFormDataChange={updateFindTogetherData}
+            showArrival={false}
+            departureLabel="실종 위치"
+            descriptionHint="목격 일시, 장소, 외형 특징, 이동 방향, 보호 중 여부, 남기고 싶은 말 등"
+            descriptionPlaceholder={`실종신고에 대한 상세한 설명을 입력해 주세요.\n(목격 일시, 장소, 외형 특징, 이동 방향, 보호 중 여부, 남기고 싶은 말 등)`}
+          />
         )}
-
-        {currentStep === 2 && (
-            <Step2
-                title={stepInfo.title}
-                formData={formData}
-                errors={errors}
-                photoPreview={photoPreview}
-                inputStyle={inputStyle}
-                onFormDataChange={updateFormData}
-                // PhotoUpload 에서 압축된 base64 를 여기로 넘겨줌
-                onPhotoChange={(base64) => {
-                  setPhotoPreview(base64);
-                  updateFormData('photo', base64);
-                }}
-                onPhotoRemove={() => {
-                  setPhotoPreview(null);
-                  updateFormData('photo', null);
-                }}
-            />
+        {findTogetherStep === 2 && (
+          <Step2FindTogether
+            title={getFindTogetherStepTitle()}
+            formData={findTogetherData}
+            errors={findTogetherErrors}
+            photoPreview={findTogetherPhotoPreview}
+            inputStyle={STEP_INPUT_STYLE}
+            onFormDataChange={updateFindTogetherData}
+            onPhotoChange={(base64) => {
+              setFindTogetherPhotoPreview(base64);
+              updateFindTogetherData('photo', base64);
+            }}
+            onPhotoRemove={() => {
+              setFindTogetherPhotoPreview(null);
+              updateFindTogetherData('photo', null);
+            }}
+          />
         )}
-
-        {currentStep === 3 && (
-            <Step3
-                title={stepInfo.title}
-                formData={formData}
-                errors={errors}
-                onFormDataChange={updateFormData}
-                inputStyle={inputStyle}
-            />
+        {findTogetherStep === 3 && (
+          <Step3
+            title={getFindTogetherStepTitle()}
+            formData={findTogetherData}
+            errors={findTogetherErrors}
+            onFormDataChange={updateFindTogetherData}
+            inputStyle={STEP_INPUT_STYLE}
+          />
         )}
       </FormStep>
+    );
+  }
+
+  // 이동봉사 탭 (기본)
+  return (
+    <FormStep
+      title="신규 무브 요청"
+      stepNumber={moveStep}
+      totalSteps={3}
+      onBack={handleMoveBack}
+      onNext={handleMoveNext}
+      isNextDisabled={isMoveNextDisabled()}
+      nextButtonText={moveStep < 3 ? '다음으로' : '미리보기'}
+      showNextButton={true}
+      tabBar={tabBar}
+      stepLabels={['이동봉사 상세 정보', '동행견 정보', '추가 정보']}
+    >
+      {moveStep === 1 && (
+        <Step1
+          title={getMoveStepTitle()}
+          formData={moveData}
+          errors={moveErrors}
+          onFormDataChange={updateMoveData}
+        />
+      )}
+      {moveStep === 2 && (
+        <Step2
+          title={getMoveStepTitle()}
+          formData={moveData}
+          errors={moveErrors}
+          photoPreview={movePhotoPreview}
+          inputStyle={STEP_INPUT_STYLE}
+          onFormDataChange={updateMoveData}
+          onPhotoChange={(base64) => {
+            setMovePhotoPreview(base64);
+            updateMoveData('photo', base64);
+          }}
+          onPhotoRemove={() => {
+            setMovePhotoPreview(null);
+            updateMoveData('photo', null);
+          }}
+        />
+      )}
+      {moveStep === 3 && (
+        <Step3
+          title={getMoveStepTitle()}
+          formData={moveData}
+          errors={moveErrors}
+          onFormDataChange={updateMoveData}
+          inputStyle={STEP_INPUT_STYLE}
+        />
+      )}
+    </FormStep>
   );
 };
 

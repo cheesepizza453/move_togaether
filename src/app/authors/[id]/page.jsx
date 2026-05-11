@@ -17,25 +17,18 @@ export default function AuthorDetailPage() {
   const authorId = params.id;
 
   const [author, setAuthor] = useState(null);
-  const [activePosts, setActivePosts] = useState([]);
-  const [completedPosts, setCompletedPosts] = useState([]);
+  const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('active');
+  const [postType, setPostType] = useState('volunteer'); // 이동봉사 | 실종신고
+  const [sortBy, setSortBy] = useState('latest'); // latest | deadline
 
-  // 무한 스크롤 관련 상태 - active
-  const [activePage, setActivePage] = useState(1);
-  const [activeHasMore, setActiveHasMore] = useState(true);
-  const [activeIsLoadingMore, setActiveIsLoadingMore] = useState(false);
-  const [activeIsFetching, setActiveIsFetching] = useState(false);
-  const activeIsFetchingRef = useRef(false);
-
-  // 무한 스크롤 관련 상태 - completed
-  const [completedPage, setCompletedPage] = useState(1);
-  const [completedHasMore, setCompletedHasMore] = useState(true);
-  const [completedIsLoadingMore, setCompletedIsLoadingMore] = useState(false);
-  const [completedIsFetching, setCompletedIsFetching] = useState(false);
-  const completedIsFetchingRef = useRef(false);
+  // 무한 스크롤 관련 상태
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
+  const isFetchingRef = useRef(false);
 
   // 작성자 정보만 가져오기 (게시물은 별도로 관리)
   useEffect(() => {
@@ -44,18 +37,13 @@ export default function AuthorDetailPage() {
     }
   }, [authorId]);
 
-  // 초기 작성자 정보 로드 후 첫 번째 탭 데이터만 로드 (한 번만 실행)
+  // 작성자 정보 로드 후 게시물 초기 로드
   useEffect(() => {
-    // 작성자 정보가 로드되고, 초기 탭 데이터가 없을 때만 한 번 로드
     if (author && !loading) {
-      if (activeTab === 'active' && activePosts.length === 0 && !activeIsFetching) {
-        fetchActivePosts(1, false);
-      } else if (activeTab === 'completed' && completedPosts.length === 0 && !completedIsFetching) {
-        fetchCompletedPosts(1, false);
-      }
+      fetchPosts(1, false, postType, sortBy);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [author]); // author가 로드될 때만 실행 (탭 변경 시에는 실행 안 됨)
+  }, [author]);
 
   const fetchAuthorData = async () => {
     try {
@@ -96,52 +84,44 @@ export default function AuthorDetailPage() {
     return sizeMap[size] || size;
   }, []);
 
-  // Active 게시물 가져오기
-  const fetchActivePosts = useCallback(async (pageNum = 1, isLoadMore = false) => {
-    // 중복 호출 방지
-    if (activeIsFetchingRef.current) {
-      console.log('이미 데이터를 가져오는 중입니다. 중복 호출 방지');
-      return;
-    }
+  // 게시물 가져오기
+  const fetchPosts = useCallback(async (pageNum = 1, isLoadMore = false, type = postType, sort = sortBy) => {
+    if (isFetchingRef.current) return;
 
     try {
-      activeIsFetchingRef.current = true;
-      setActiveIsFetching(true);
+      isFetchingRef.current = true;
+      setIsFetching(true);
 
       if (isLoadMore) {
-        setActiveIsLoadingMore(true);
+        setIsLoadingMore(true);
       } else {
-        setActivePosts([]);
-        setActivePage(1);
-        setActiveHasMore(true);
+        setPosts([]);
+        setPage(1);
+        setHasMore(true);
       }
 
-      const response = await fetch(`/api/authors/${authorId}?status=active&page=${pageNum}&limit=10&_t=${Date.now()}`);
+      const response = await fetch(
+        `/api/authors/${authorId}?status=active&postType=${type}&sortBy=${sort}&page=${pageNum}&limit=10&_t=${Date.now()}`
+      );
 
-      if (!response.ok) {
-        throw new Error('게시물을 불러올 수 없습니다.');
-      }
+      if (!response.ok) throw new Error('게시물을 불러올 수 없습니다.');
 
       const data = await response.json();
-      const { posts, pagination } = data;
+      const fetchedPosts = data.posts;
 
-      if (!Array.isArray(posts)) {
-        console.warn('API에서 받은 posts가 배열이 아닙니다:', posts);
-        if (isLoadMore) {
-          setActiveHasMore(false);
-        } else {
-          setActivePosts([]);
-        }
+      if (!Array.isArray(fetchedPosts)) {
+        if (!isLoadMore) setPosts([]);
+        setHasMore(false);
         return;
       }
 
-      // 데이터 포맷팅 (Supabase 컬럼명 dog_name, dog_size를 PostCard가 기대하는 필드명으로 매핑)
-      const formattedPosts = posts.map(post => ({
+      const formattedPosts = fetchedPosts.map(post => ({
         id: post.id,
         title: post.title,
-        dogName: post.dog_name || '', // dog_name → dogName
-        dogSize: convertDogSize(post.dog_size || ''), // dog_size → dogSize (변환 적용)
-        dogBreed: post.dog_breed || '', // dog_breed → dogBreed
+        postType: post.post_type || 'volunteer',
+        dogName: post.dog_name || '',
+        dogSize: convertDogSize(post.dog_size || ''),
+        dogBreed: post.dog_breed || '',
         departureAddress: post.departure_address || '',
         arrivalAddress: post.arrival_address || '',
         deadline: post.deadline ? moment(post.deadline).format('YY/MM/DD') : '',
@@ -152,111 +132,26 @@ export default function AuthorDetailPage() {
         created_at: post.created_at
       }));
 
-      // hasMore는 가져온 게시글 수가 limit보다 적으면 false
       const hasMoreData = formattedPosts.length === 10;
-      setActiveHasMore(hasMoreData);
+      setHasMore(hasMoreData);
 
       if (isLoadMore) {
-        setActivePosts(prevPosts => [...prevPosts, ...formattedPosts]);
-        setActivePage(prevPage => prevPage + 1);
+        setPosts(prev => [...prev, ...formattedPosts]);
+        setPage(prev => prev + 1);
       } else {
-        setActivePosts(formattedPosts);
-        setActivePage(2);
+        setPosts(formattedPosts);
+        setPage(2);
       }
     } catch (err) {
-      console.error('Active 게시물 조회 중 오류:', err);
-      setError('게시물을 불러오는 중 오류가 발생했습니다.');
-      if (!isLoadMore) {
-        setActivePosts([]);
-      }
-      setActiveHasMore(false);
+      console.error('게시물 조회 중 오류:', err);
+      if (!isLoadMore) setPosts([]);
+      setHasMore(false);
     } finally {
-      setActiveIsFetching(false);
-      setActiveIsLoadingMore(false);
-      activeIsFetchingRef.current = false;
+      setIsFetching(false);
+      setIsLoadingMore(false);
+      isFetchingRef.current = false;
     }
-  }, [authorId, convertDogSize]);
-
-  // Completed 게시물 가져오기
-  const fetchCompletedPosts = useCallback(async (pageNum = 1, isLoadMore = false) => {
-    // 중복 호출 방지
-    if (completedIsFetchingRef.current) {
-      console.log('이미 데이터를 가져오는 중입니다. 중복 호출 방지');
-      return;
-    }
-
-    try {
-      completedIsFetchingRef.current = true;
-      setCompletedIsFetching(true);
-
-      if (isLoadMore) {
-        setCompletedIsLoadingMore(true);
-      } else {
-        setCompletedPosts([]);
-        setCompletedPage(1);
-        setCompletedHasMore(true);
-      }
-
-      const response = await fetch(`/api/authors/${authorId}?status=completed&page=${pageNum}&limit=10&_t=${Date.now()}`);
-
-      if (!response.ok) {
-        throw new Error('게시물을 불러올 수 없습니다.');
-      }
-
-      const data = await response.json();
-      const { posts, pagination } = data;
-
-      if (!Array.isArray(posts)) {
-        console.warn('API에서 받은 posts가 배열이 아닙니다:', posts);
-        if (isLoadMore) {
-          setCompletedHasMore(false);
-        } else {
-          setCompletedPosts([]);
-        }
-        return;
-      }
-
-      // 데이터 포맷팅 (Supabase 컬럼명 dog_name, dog_size를 PostCard가 기대하는 필드명으로 매핑)
-      const formattedPosts = posts.map(post => ({
-        id: post.id,
-        title: post.title,
-        dogName: post.dog_name || '', // dog_name → dogName
-        dogSize: convertDogSize(post.dog_size || ''), // dog_size → dogSize (변환 적용)
-        dogBreed: post.dog_breed || '', // dog_breed → dogBreed
-        departureAddress: post.departure_address || '',
-        arrivalAddress: post.arrival_address || '',
-        deadline: post.deadline ? moment(post.deadline).format('YY/MM/DD') : '',
-        images: post.images || [],
-        status: post.status,
-        dday: post.dday || (post.deadline ? moment(post.deadline).diff(moment(), 'days') : 0),
-        is_favorite: post.is_favorite || false,
-        created_at: post.created_at
-      }));
-
-      // hasMore는 가져온 게시글 수가 limit보다 적으면 false
-      const hasMoreData = formattedPosts.length === 10;
-      setCompletedHasMore(hasMoreData);
-
-      if (isLoadMore) {
-        setCompletedPosts(prevPosts => [...prevPosts, ...formattedPosts]);
-        setCompletedPage(prevPage => prevPage + 1);
-      } else {
-        setCompletedPosts(formattedPosts);
-        setCompletedPage(2);
-      }
-    } catch (err) {
-      console.error('Completed 게시물 조회 중 오류:', err);
-      setError('게시물을 불러오는 중 오류가 발생했습니다.');
-      if (!isLoadMore) {
-        setCompletedPosts([]);
-      }
-      setCompletedHasMore(false);
-    } finally {
-      setCompletedIsFetching(false);
-      setCompletedIsLoadingMore(false);
-      completedIsFetchingRef.current = false;
-    }
-  }, [authorId, convertDogSize]);
+  }, [authorId, convertDogSize, postType, sortBy]);
 
   const handleCall = (phone) => {
     window.location.href = `tel:${phone}`;
@@ -270,105 +165,35 @@ export default function AuthorDetailPage() {
     router.push(`/posts/${postId}`);
   };
 
-  // 탭 변경 핸들러 - 기존 데이터는 유지하고, 없을 때만 로드
-  const handleTabChange = (tab) => {
-    // 탭만 변경하고 데이터는 유지 (기존 리스트 상태 보존)
-    setActiveTab(tab);
-
-    // 해당 탭에 데이터가 없을 때만 새로 로드
-    if (tab === 'active') {
-      if (activePosts.length === 0 && !activeIsFetching) {
-        fetchActivePosts(1, false);
-      }
-    } else if (tab === 'completed') {
-      if (completedPosts.length === 0 && !completedIsFetching) {
-        fetchCompletedPosts(1, false);
-      }
-    }
-    // 이미 데이터가 있으면 그대로 유지 (아무것도 하지 않음)
+  // 탭(포스트 타입) 변경 핸들러
+  const handleTypeChange = (type) => {
+    setPostType(type);
+    fetchPosts(1, false, type, sortBy);
   };
 
-  // 무한 스크롤을 위한 Intersection Observer 설정 - active
-  useEffect(() => {
-    if (activeTab !== 'active') return;
+  // 정렬 변경 핸들러
+  const handleSortChange = () => {
+    const next = sortBy === 'latest' ? 'deadline' : 'latest';
+    setSortBy(next);
+    fetchPosts(1, false, postType, next);
+  };
 
+  // 무한 스크롤 Intersection Observer
+  useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         const target = entries[0];
-        if (
-          target.isIntersecting &&
-          activeHasMore &&
-          !activeIsLoadingMore &&
-          !activeIsFetching &&
-          activePage > 1
-        ) {
-          console.log('스크롤 하단 도달, 다음 페이지 로드 (active)', {
-            activeHasMore,
-            activeIsLoadingMore,
-            activeIsFetching,
-            activePage
-          });
-          fetchActivePosts(activePage, true);
+        if (target.isIntersecting && hasMore && !isLoadingMore && !isFetching && page > 1) {
+          fetchPosts(page, true);
         }
       },
-      {
-        threshold: 0.1,
-        rootMargin: '100px'
-      }
+      { threshold: 0.1, rootMargin: '100px' }
     );
 
-    const loadMoreTrigger = document.getElementById('active-load-more-trigger');
-    if (loadMoreTrigger) {
-      observer.observe(loadMoreTrigger);
-    }
-
-    return () => {
-      if (loadMoreTrigger) {
-        observer.unobserve(loadMoreTrigger);
-      }
-    };
-  }, [activeHasMore, activeIsLoadingMore, activeIsFetching, activeTab, activePage, fetchActivePosts]);
-
-  // 무한 스크롤을 위한 Intersection Observer 설정 - completed
-  useEffect(() => {
-    if (activeTab !== 'completed') return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const target = entries[0];
-        if (
-          target.isIntersecting &&
-          completedHasMore &&
-          !completedIsLoadingMore &&
-          !completedIsFetching &&
-          completedPage > 1
-        ) {
-          console.log('스크롤 하단 도달, 다음 페이지 로드 (completed)', {
-            completedHasMore,
-            completedIsLoadingMore,
-            completedIsFetching,
-            completedPage
-          });
-          fetchCompletedPosts(completedPage, true);
-        }
-      },
-      {
-        threshold: 0.1,
-        rootMargin: '100px'
-      }
-    );
-
-    const loadMoreTrigger = document.getElementById('completed-load-more-trigger');
-    if (loadMoreTrigger) {
-      observer.observe(loadMoreTrigger);
-    }
-
-    return () => {
-      if (loadMoreTrigger) {
-        observer.unobserve(loadMoreTrigger);
-      }
-    };
-  }, [completedHasMore, completedIsLoadingMore, completedIsFetching, activeTab, completedPage, fetchCompletedPosts]);
+    const trigger = document.getElementById('load-more-trigger');
+    if (trigger) observer.observe(trigger);
+    return () => { if (trigger) observer.unobserve(trigger); };
+  }, [hasMore, isLoadingMore, isFetching, page, fetchPosts]);
 
   if (loading) {
     return (
@@ -482,112 +307,66 @@ export default function AuthorDetailPage() {
 
       {/* 메인 콘텐츠 - 흰색 카드 */}
       <main className="w-full bg-white rounded-t-[30px] px-[30px] pt-6 pb-6 min-h-[calc(100vh-120px)]">
-        {/* 섹션 제목 */}
-        <h2 className="text-18-b text-black mb-4">
-          도움을 기다리는 친구들 <span className="text-[#F36C5E]">
-            {activeTab === 'active' ? activePosts.length : completedPosts.length}
-          </span>
-        </h2>
+        {/* 탭 + 정렬 */}
+        <div className="flex items-center justify-between ml-[7px] mb-[30px]">
+          {/* 타입 탭 */}
+          <div className="flex space-x-[18px]">
+            {[{ id: 'volunteer', label: '이동봉사' }, { id: 'missing', label: '실종신고' }].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => handleTypeChange(tab.id)}
+                className={`text-16-m transition-colors relative pb-[4px] ${
+                  postType === tab.id ? 'text-black' : 'text-text-800'
+                }`}
+              >
+                {tab.label}
+                {postType === tab.id && (
+                  <span className="absolute block bottom-[-3px] left-0 w-full h-[3px] bg-brand-point rounded-full" />
+                )}
+              </button>
+            ))}
+          </div>
 
-        {/* 탭 메뉴 */}
-        <div className="flex border-gray-200 mb-4">
+          {/* 정렬 버튼 */}
           <button
-            onClick={() => handleTabChange('active')}
-            className={`py-3 text-center text-base relative mr-[10px] ${
-              activeTab === 'active'
-                ? 'font-black text-brand-icon'
-                : 'font-medium text-[#8b8b8b]'
-            }`}
+            onClick={handleSortChange}
+            className="flex items-center gap-[4px] text-14-r text-text-800 mr-[7px]"
           >
-            모집중
-          </button>
-          <button
-            onClick={() => handleTabChange('completed')}
-            className={`py-3 text-center text-base relative ${
-              activeTab === 'completed'
-                ? 'font-black text-brand-icon'
-                : 'font-medium text-[#8b8b8b]'
-            }`}
-          >
-            모집종료
+            {sortBy === 'latest' ? '최신순' : '마감순'}
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M8 9l4-4 4 4"/>
+              <path d="M16 15l-4 4-4-4"/>
+            </svg>
           </button>
         </div>
 
         {/* 콘텐츠 */}
-        {activeTab === 'active' ? (
-          <>
-            {activeIsFetching && activePosts.length === 0 ? (
-              <div className="flex justify-center items-center py-8">
-                <div className="w-full flex justify-center pt-[60px]">
-                  <IconLoading/>
-                </div>
-              </div>
-            ) : (
-              <>
-                <PostTimeline
-                  posts={activePosts}
-                  onPostClick={handlePostClick}
-                  emptyMessage={{
-                    title: '현재 모집 중인 게시물이 없습니다',
-                    description: '작성자가 새로운 게시물을 올리면 여기에 표시됩니다'
-                  }}
-                />
-                {/* 무한 스크롤 트리거 및 로딩 인디케이터 */}
-                <div id="active-load-more-trigger" className="py-4">
-                  {activeIsLoadingMore ? (
-                      <div className="flex justify-center items-center py-4">
-                        <div className="mt-8 flex justify-center space-x-2">
-                          <div className="w-2 h-2 bg-brand-main rounded-full animate-bounce"></div>
-                          <div className="w-2 h-2 bg-brand-main rounded-full animate-bounce"
-                               style={{animationDelay: '0.1s'}}></div>
-                          <div className="w-2 h-2 bg-brand-main rounded-full animate-bounce"
-                               style={{animationDelay: '0.2s'}}></div>
-                        </div>
-                      </div>
-                  ) : (
-                      <div className="h-4"></div>
-                  )}
-                </div>
-              </>
-            )}
-          </>
+        {isFetching && posts.length === 0 ? (
+          <div className="w-full flex justify-center pt-[60px]">
+            <IconLoading/>
+          </div>
         ) : (
-            <>
-              {completedIsFetching && completedPosts.length === 0 ? (
-                  <div className="flex justify-center items-center py-8">
-                    <div className="w-full flex justify-center pt-[60px]">
-                      <IconLoading/>
-                    </div>
-                  </div>
-              ) : (
-                  <>
-                    <PostTimeline
-                        posts={completedPosts}
-                        onPostClick={handlePostClick}
-                        emptyMessage={{
-                    title: '모집이 종료된 게시물이 없습니다',
-                    description: '완료된 봉사활동이 여기에 표시됩니다'
-                  }}
-                />
-                {/* 무한 스크롤 트리거 및 로딩 인디케이터 */}
-                <div id="completed-load-more-trigger" className="py-4">
-                  {completedIsLoadingMore ? (
-                      <div className="flex justify-center items-center py-4">
-                        <div className="mt-8 flex justify-center space-x-2">
-                          <div className="w-2 h-2 bg-brand-main rounded-full animate-bounce"></div>
-                          <div className="w-2 h-2 bg-brand-main rounded-full animate-bounce"
-                               style={{animationDelay: '0.1s'}}></div>
-                          <div className="w-2 h-2 bg-brand-main rounded-full animate-bounce"
-                               style={{animationDelay: '0.2s'}}></div>
-                        </div>
-                      </div>
-                  ) : (
-                      <div className="h-4"></div>
-                  )}
+          <>
+            <PostTimeline
+              posts={posts}
+              onPostClick={handlePostClick}
+              emptyMessage={{
+                title: postType === 'volunteer' ? '이동봉사 게시물이 없습니다' : '실종신고 게시물이 없습니다',
+                description: '작성자가 새로운 게시물을 올리면 여기에 표시됩니다'
+              }}
+            />
+            <div id="load-more-trigger" className="py-4">
+              {isLoadingMore ? (
+                <div className="mt-8 flex justify-center space-x-2">
+                  <div className="w-2 h-2 bg-brand-main rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-brand-main rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                  <div className="w-2 h-2 bg-brand-main rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                 </div>
-                  </>
+              ) : (
+                <div className="h-4"></div>
               )}
-            </>
+            </div>
+          </>
         )}
       </main>
     </div>

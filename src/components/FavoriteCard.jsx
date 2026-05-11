@@ -33,7 +33,7 @@ const FavoriteCard = ({ post, isCompleted = false,   isApplied = false, isMyPost
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const router = useRouter();
 
-  const { id, title, dogName, dogSize, dogBreed, departureAddress, arrivalAddress, deadline, images = [], status = 'active', dday } = post;
+  const { id, title, dogName, dogSize, dogBreed, departureAddress, arrivalAddress, deadline, images = [], status = 'active', dday, postType = 'volunteer' } = post;
 
   const handleCardClick = () => {
     router.push(`/posts/${id}`);
@@ -120,7 +120,7 @@ const FavoriteCard = ({ post, isCompleted = false,   isApplied = false, isMyPost
               {title}
             </h3>
             <p className="text-xs text-gray-500 mb-3">
-              {dogName} / {dogSize}
+              {postType === 'missing' ? departureAddress : `${dogName} / ${dogSize}`}
             </p>
           </div>
 

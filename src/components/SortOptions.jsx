@@ -1,47 +1,46 @@
 'use client';
 
-import { useState } from 'react';
-
-const SortOptions = ({ onSortChange, activeSort: externalActiveSort }) => {
-  const [internalActiveSort, setInternalActiveSort] = useState('latest');
-
-  // 외부에서 전달받은 activeSort가 있으면 사용, 없으면 내부 상태 사용
-  const activeSort = externalActiveSort || internalActiveSort;
-
-  const sortOptions = [
-    { id: 'latest', label: '최신순' },
-    { id: 'deadline', label: '마감순' },
-    //   가까운순 숨김
-    /*{ id: 'distance', label: '가까운순' }*/
+const SortOptions = ({ activeType, onTypeChange, activeSort, onSortChange }) => {
+  const types = [
+    { id: 'volunteer', label: '이동봉사' },
+    { id: 'missing', label: '실종신고' },
   ];
 
-  const handleSortClick = (sortId) => {
-    // 외부에서 activeSort를 관리하는 경우 내부 상태는 업데이트하지 않음
-    if (!externalActiveSort) {
-      setInternalActiveSort(sortId);
-    }
-    if (onSortChange) {
-      onSortChange(sortId);
-    }
+  const toggleSort = () => {
+    onSortChange(activeSort === 'latest' ? 'deadline' : 'latest');
   };
 
   return (
-    <div className="flex space-x-[10px] ml-[7px]">
-      {sortOptions.map((option) => (
-        <button
-          key={option.id}
-          onClick={() => handleSortClick(option.id)}
-          className={`text-button-guide-chart-location transition-colors relative text-16-m ${
-            activeSort === option.id
-              ? 'text-black'
-              : 'text-text-800 hover:text-gray-700'
-          }`}
-        >
-          {option.label}
-          {activeSort === option.id &&
-              <span className={'absolute block bottom-[-3px] left-0 w-full h-[3px] bg-brand-point rounded-full'}></span>}
-        </button>
-      ))}
+    <div className="flex items-center justify-between ml-[7px]">
+      {/* 타입 탭 */}
+      <div className="flex space-x-[18px]">
+        {types.map((type) => (
+          <button
+            key={type.id}
+            onClick={() => onTypeChange(type.id)}
+            className={`text-16-m transition-colors relative pb-[4px] ${
+              activeType === type.id ? 'text-black' : 'text-text-800'
+            }`}
+          >
+            {type.label}
+            {activeType === type.id && (
+              <span className="absolute block bottom-[-3px] left-0 w-full h-[3px] bg-brand-point rounded-full" />
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* 정렬 버튼 */}
+      <button
+        onClick={toggleSort}
+        className="flex items-center gap-[4px] text-14-r text-text-800 mr-[7px]"
+      >
+        {activeSort === 'latest' ? '최신순' : '마감순'}
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M8 9l4-4 4 4"/>
+          <path d="M16 15l-4 4-4-4"/>
+        </svg>
+      </button>
     </div>
   );
 };

@@ -8,7 +8,9 @@ const Preview = ({
   photoPreview,
   onEdit,
   onSubmit,
-  loading
+  loading,
+  submitLabel = '이동 봉사 등록하기',
+  dogSectionLabel = '동행견 정보',
 }) => {
   const getSizeLabel = (size) => {
     const sizeMap = {
@@ -22,10 +24,10 @@ const Preview = ({
 
   return (
     <div className="space-y-6">
-      {/* 봉사자 정보 */}
+      {/* 상세 정보 */}
       <div className="bg-white border border-gray-200 rounded-lg p-4">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-18-m text-gray-900">봉사자 정보</h3>
+          <h3 className="text-18-m text-gray-900">상세 정보</h3>
           <button
             type="button"
             onClick={() => onEdit(1)}
@@ -62,7 +64,7 @@ const Preview = ({
       {/* 강아지 정보 */}
       <div className="bg-white border border-gray-200 rounded-lg p-4">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-18-m text-gray-900">강아지 정보</h3>
+          <h3 className="text-18-m text-gray-900">{dogSectionLabel}</h3>
           <button
             type="button"
             onClick={() => onEdit(2)}
@@ -171,7 +173,7 @@ const Preview = ({
               등록 중...
             </div>
           ) : (
-            '이동 봉사 등록하기'
+            submitLabel
           )}
         </button>
       </div>

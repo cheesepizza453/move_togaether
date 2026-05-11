@@ -89,7 +89,9 @@ const MyPageCard = ({ post, activeSubTab, tab, appliedAt }) => {
             </h3>
             <div className={'flex items-center justify-between'}>
             <p className="text-12-r text-text-800">
-              {post.dog_name} / {convertDogSize(post.dog_size)}
+              {post.post_type === 'missing'
+                ? post.departure_address
+                : `${post.dog_name} / ${convertDogSize(post.dog_size)}`}
             </p>
             <p className="text-10-r text-text-600">{formatDate(post.created_at)}</p>
             </div>

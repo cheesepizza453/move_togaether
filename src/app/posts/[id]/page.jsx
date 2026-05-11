@@ -515,38 +515,42 @@ export default function PostDetailPage() {
   };
 
   const handleNaverMap = () => {
-    if (post?.departure_address && post?.arrival_address) {
+    if (!post?.departure_address) return;
+    if (post.post_type === 'missing') {
+      const url = `https://map.naver.com/v5/search/${encodeURIComponent(post.departure_address)}`;
+      window.open(url, '_blank');
+      return;
+    }
+    if (post.arrival_address) {
       try {
-        // posts 데이터에서 위경도 정보 가져오기
         const startLat = post.departure_latitude || post.departure_lat;
         const startLng = post.departure_longitude || post.departure_lng;
         const endLat = post.arrival_latitude || post.arrival_lat;
         const endLng = post.arrival_longitude || post.arrival_lng;
 
-        console.log('출발지 좌표:', { lat: startLat, lng: startLng });
-        console.log('도착지 좌표:', { lat: endLat, lng: endLng });
-
-        // 위경도가 있는 경우에만 좌표 기반 URL 생성
         if (startLat && startLng && endLat && endLng) {
           const url = `https://map.naver.com/p/directions/${startLng},${startLat},${encodeURIComponent(post.departure_address)}/${endLng},${endLat},${encodeURIComponent(post.arrival_address)}/-/car`;
           window.open(url, '_blank');
         } else {
-          // 위경도가 없는 경우 검색 기반으로 대체
           const query = encodeURIComponent(`${post.departure_address}에서 ${post.arrival_address}까지`);
           const url = `https://map.naver.com/v5/search/${query}`;
           window.open(url, '_blank');
         }
       } catch (error) {
         console.error('네이버지도 링크 생성 오류:', error);
-        // 오류 시 기본 길찾기 페이지로 이동
         window.open('https://map.naver.com/v5/directions', '_blank');
       }
     }
   };
 
   const handleKakaoMap = () => {
-    if (post?.departure_address && post?.arrival_address) {
-      // 카카오맵: 출발지와 도착지를 직접 지정하는 링크
+    if (!post?.departure_address) return;
+    if (post.post_type === 'missing') {
+      const url = `https://map.kakao.com/?q=${encodeURIComponent(post.departure_address)}`;
+      window.open(url, '_blank');
+      return;
+    }
+    if (post.arrival_address) {
       const startAddress = encodeURIComponent(post.departure_address);
       const endAddress = encodeURIComponent(post.arrival_address);
       const url = `https://map.kakao.com/?sName=${startAddress}&eName=${endAddress}`;
@@ -702,35 +706,45 @@ export default function PostDetailPage() {
                   </div>
                   <h1 className="flex text-18-b mb-[10px]">{post.title}</h1>
                   <div className={'flex gap-x-[4px] text-14-r'}>
-                    <p>{post.dog_name || '미입력'}</p>
-                    <p className={' text-text-800'}>{post.dogSize}</p>
+                    {post.dog_name && <p>{post.dog_name}</p>}
+                    {post.dog_size && <p className={' text-text-800'}>{convertDogSize(post.dog_size)}</p>}
+                    {post.dog_breed && <p className={' text-text-800'}>{post.dog_breed}</p>}
                     <p className={'text-text-800'}>{post.dog_breed || ''}</p>
                   </div>
                 </div>
 
                 <div className={'py-[24px] px-[22px] space-y-6 bg-brand-bg'}>
-                  {/* 찾아오는 길 섹션 */}
+                  {/* 경로/실종위치 섹션 */}
                   <div className="">
-                    <h3 className="text-16-b mb-[10px]">찾아오는 길</h3>
+                    <div className={'flex justify-between align-bottom mb-[10px]'}>
+                      <h3 className="text-16-b">{post.post_type === 'missing' ? '실종위치' : '경로'}</h3>
+                      {post.post_type !== 'missing' && (
+                        <span className={'text-text-800 text-10-r'}>자세한 위치는 문의 후 알 수 있어요</span>
+                      )}
+                    </div>
+
                     <div
                         className="flex flex-col p-[18px] bg-white rounded-[15px] shadow-[0_0_12px_0px_rgba(0,0,0,0.1)]">
                       <div className="flex items-center gap-x-[10px] mb-[4px]">
-                    <span
-                        className="shrink-0 px-[6px] py-[4px] rounded-full text-12-m inline-flex bg-brand-point text-white">출발지</span>
+                        <span className="shrink-0 px-[6px] py-[4px] rounded-full text-12-m inline-flex bg-brand-point text-white">
+                          {post.post_type === 'missing' ? '위치' : '출발지'}
+                        </span>
                         <p className="text-16-m">{post.departure_address}</p>
                       </div>
-                      <div className="mb-[12px] flex items-center gap-x-[10px]">
-                    <span
-                        className="shrink-0 px-[6px] py-[5px] rounded-full text-12-m inline-flex bg-brand-point text-white">도착지</span>
-                        <p className="text-16-m">{post.arrival_address}</p>
-                      </div>
-                      <div className={'flex gap-x-[4px]'}>
-                        {/* 길찾기 버튼 */}
+                      {post.post_type !== 'missing' && (
+                        <div className="mb-[12px] flex items-center gap-x-[10px]">
+                          <span className="shrink-0 px-[6px] py-[5px] rounded-full text-12-m inline-flex bg-brand-point text-white">도착지</span>
+                          <p className="text-16-m">{post.arrival_address}</p>
+                        </div>
+                      )}
+                      <div className={`flex gap-x-[4px] ${post.post_type !== 'missing' ? '' : 'mt-[12px]'}`}>
                         <button onClick={handleNaverMap}
-                                className={'p-[7px] bg-[#fdbba2] text-white text-12-r rounded-[4px]'}>네이버 길찾기
+                                className={'p-[7px] bg-[#fdbba2] text-white text-12-r rounded-[4px]'}>
+                          {post.post_type === 'missing' ? '네이버 지도' : '네이버 길찾기'}
                         </button>
                         <button onClick={handleKakaoMap}
-                                className={'p-[7px] bg-[#fdbba2] text-white text-12-r rounded-[4px]'}>카카오맵 길찾기
+                                className={'p-[7px] bg-[#fdbba2] text-white text-12-r rounded-[4px]'}>
+                          {post.post_type === 'missing' ? '카카오맵 지도' : '카카오맵 길찾기'}
                         </button>
                       </div>
                     </div>
@@ -845,12 +859,21 @@ export default function PostDetailPage() {
                 <div className="sticky bottom-4 z-50">
                   <div className="w-full max-w-[550px] mx-auto px-[23px]">
                     <div className="flex gap-3">
-                      <Button
-                          onClick={hasApplied ? handleViewApplication : handleInquiry}
-                          className="rounded-[15px] text-16-m h-[54px] w-full flex-1 bg-brand-main"
-                      >
-                        {hasApplied ? '지원 내용 확인' : '지원하기'}
-                      </Button>
+                      {post.is_original === false && post.related_link ? (
+                          <Button
+                              onClick={() => window.open(post.related_link, '_blank', 'noopener,noreferrer')}
+                              className="rounded-[15px] text-16-m h-[54px] w-full flex-1 bg-brand-main"
+                          >
+                            원본 글로 이동
+                          </Button>
+                      ) : (
+                          <Button
+                              onClick={hasApplied ? handleViewApplication : handleInquiry}
+                              className="rounded-[15px] text-16-m h-[54px] w-full flex-1 bg-brand-main"
+                          >
+                            {hasApplied ? '지원 내용 확인' : '지원하기'}
+                          </Button>
+                      )}
                       <div className={'w-full flex-1'}>
                         <ShareButton
                             url={`https://movetogether.co.kr/post/${postId}`}
