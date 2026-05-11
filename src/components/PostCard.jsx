@@ -19,6 +19,7 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
   const {
     id,
     title,
+    postType = 'volunteer',
     dogName,
     dogSize,
     dogBreed,
@@ -158,7 +159,9 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
                 {post.title}
               </h3>
               <p className="ml-[5px] text-10-r text-text-800">
-                {post.dogName} / {convertDogSize(post.dogSize)}
+                {postType === 'missing'
+                  ? post.departureAddress
+                  : `${post.dogName} / ${convertDogSize(post.dogSize)}`}
               </p>
             </div>
 
@@ -265,7 +268,9 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
           {/* 강아지 정보와 날짜 */}
           <div className="flex justify-between items-end text-text-800 mb-[6px]">
             <div className="text-name-breed text-12-r">
-              {dogName} / {dogSize}
+              {postType === 'missing'
+                ? (departureAddress || '위치 미지정')
+                : `${dogName} / ${dogSize}`}
             </div>
             <div className="text-post-date text-text-600 text-9-r font-light">
               {formattedCreatedDateForCard || deadline}

@@ -23,6 +23,7 @@ export default function Home() {
   const { showLoginRequired, showError } = useDialogContext();
 
   const [sortOption, setSortOption] = useState('latest');
+  const [postType, setPostType] = useState('volunteer');
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -113,7 +114,7 @@ export default function Home() {
   };
 
   // Supabase에서 게시물 데이터 가져오기 (페이징 적용)
-  const fetchPosts = async (sortBy = 'latest', pageNum = 1, isLoadMore = false) => {
+  const fetchPosts = async (sortBy = 'latest', pageNum = 1, isLoadMore = false, type = postType) => {
     console.log('fetchPosts 호출됨:', { sortBy, pageNum, isLoadMore, isFetching, isFetchingRef: isFetchingRef.current });
 
     // 중복 호출 방지 (이중 체크)
@@ -145,6 +146,7 @@ export default function Home() {
         page: pageNum,
         limit: 10,
         status: 'active',
+        postType: type,
         _t: Date.now() // 캐시 방지를 위한 타임스탬프
       });
       console.log('API 호출 완료:', { posts, pagination });
@@ -166,6 +168,7 @@ export default function Home() {
       const formattedPosts = posts.map(post => ({
         id: post.id,
         title: post.title,
+        postType: post.post_type || 'volunteer',
         dogName: post.name || post.dog_name, // 강아지 이름
         dogSize: convertDogSize(post.size || post.dog_size), // 강아지 크기 변환
         dogBreed: post.breed || post.dog_breed, // 강아지 견종
@@ -539,6 +542,15 @@ export default function Home() {
     }
   };
 
+  const handleTypeChange = (type) => {
+    setPostType(type);
+    setPage(1);
+    setHasMore(true);
+    setPosts([]);
+    setError(null);
+    fetchPosts(sortOption, 1, false, type);
+  };
+
   const handleSortChange = (sortId) => {
     console.log('정렬 옵션 변경:', sortId);
 
@@ -611,7 +623,12 @@ export default function Home() {
 
         {/* 정렬 옵션 */}
         <section className="mb-6">
-          <SortOptions onSortChange={handleSortChange} activeSort={sortOption}/>
+          <SortOptions
+            activeType={postType}
+            onTypeChange={handleTypeChange}
+            activeSort={sortOption}
+            onSortChange={handleSortChange}
+          />
         </section>
 
         {/* 게시물 목록 */}

@@ -31,6 +31,7 @@ export async function GET() {
         dog_breed,
         dog_age,
         dog_characteristics,
+        post_type,
         images,
         deadline,
         created_at
@@ -78,6 +79,7 @@ export async function GET() {
         age: post.dog_age,
         characteristics: post.dog_characteristics
       },
+      postType: post.post_type || 'volunteer',
       images: post.images || [],
       deadline: post.deadline,
       createdAt: post.created_at

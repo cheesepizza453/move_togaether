@@ -12,6 +12,7 @@ export async function GET(request) {
     const limit = parseInt(searchParams.get('limit')) || 10
     const status = searchParams.get('status') || 'active' // active, completed, all
     const filter = searchParams.get('filter') // in_progress, expired (마이페이지 하위 필터용)
+    const postType = searchParams.get('postType') // volunteer, missing
 
     // 인증이 필요한 타입들
     const authRequiredTypes = ['my', 'applied', 'favorites']
@@ -85,11 +86,18 @@ export async function GET(request) {
       case 'all':
         // 전체 게시물 (메인 페이지) - 찜 상태 포함
         if (status === 'active') {
+          // posts 테이블 직접 조회 (active_posts_view에 post_type 컬럼이 없을 수 있어 직접 조회)
           query = supabase
-            .from('active_posts_view')
+            .from('posts')
             .select('*', { count: 'exact' })
+            .eq('is_deleted', false)
+            .eq('status', 'active')
+            .gte('deadline', moment().toISOString())
             .order(orderConfig.column, { ascending: orderConfig.ascending })
             .range(from, to)
+          if (postType) {
+            query = query.eq('post_type', postType)
+          }
         } else {
           // completed나 all의 경우 posts 테이블 직접 조회
           query = supabase
@@ -99,6 +107,9 @@ export async function GET(request) {
             .order(orderConfig.column, { ascending: orderConfig.ascending })
             .range(from, to)
 
+          if (postType) {
+            query = query.eq('post_type', postType)
+          }
           if (status === 'completed') {
             query = query.or('status.neq.active,deadline.lt.' + moment().toISOString())
           }

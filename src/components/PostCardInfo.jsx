@@ -19,6 +19,7 @@ const PostCardInfo = ({ post }) => {
     status = 'active',
     dday,
     created,
+    postType = 'volunteer',
   } = post;
 
   const toggleFavorite = (e) => {
@@ -72,7 +73,9 @@ const PostCardInfo = ({ post }) => {
             {/* 강아지 정보와 날짜 */}
             <div className="flex justify-between items-end mt-[4px] text-text-800">
               <div className="text-name-breed text-10-r">
-                {dogName} / {dogSize}
+                {postType === 'missing'
+                  ? departureAddress
+                  : `${dogName} / ${dogSize}`}
               </div>
             </div>
           </div>

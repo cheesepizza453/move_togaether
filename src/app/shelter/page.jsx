@@ -23,6 +23,8 @@ const ShelterMapPage = () => {
   const [selectedMarker, setSelectedMarker] = useState(null);
   const [selectedPostsAtLocation, setSelectedPostsAtLocation] = useState([]);
   const [userLocation, setUserLocation] = useState(null);
+  const [activeTab, setActiveTab] = useState('volunteer');
+  const activeTabRef = useRef('volunteer');
 
   // 지도 위치 저장 함수
   const saveMapState = useCallback(() => {
@@ -166,6 +168,9 @@ const ShelterMapPage = () => {
 
     clustererRef.current.clear();
 
+    // 현재 탭에 맞는 게시물만 필터링 (ref로 읽어 updateMarkers 재생성 방지)
+    const filteredPosts = postsData.filter(p => p.postType === activeTabRef.current);
+
     // 특정 위치의 포스트들에 대한 마커를 생성하고 클러스터러에 추가
     const createAndAddMarkers = (postsAtPos) => {
       const firstPost = postsAtPos[0];
@@ -218,7 +223,7 @@ const ShelterMapPage = () => {
     };
 
     // 좌표가 있는 포스트들: 즉시 그룹핑해서 마커 추가
-    const groupedByPosition = postsData.reduce((acc, post) => {
+    const groupedByPosition = filteredPosts.reduce((acc, post) => {
       if (!post?.departure?.lat || !post?.departure?.lng) return acc;
 
       const key = `${post.departure.lat.toFixed(6)}_${post.departure.lng.toFixed(6)}`;
@@ -230,7 +235,7 @@ const ShelterMapPage = () => {
     Object.values(groupedByPosition).forEach(createAndAddMarkers);
 
     // 좌표가 없지만 주소 문자열이 있는 포스트들: Geocoder로 좌표 변환 후 마커 추가
-    const addressOnlyPosts = postsData.filter(
+    const addressOnlyPosts = filteredPosts.filter(
       post => (!post?.departure?.lat || !post?.departure?.lng) &&
               post?.departure?.address
     );
@@ -459,6 +464,18 @@ const ShelterMapPage = () => {
     }
   }, [postsData, updateMarkers]);
 
+  // 탭 전환 핸들러 — 지도 위치 변경 없이 마커만 교체
+  const handleTabChange = useCallback((tab) => {
+    activeTabRef.current = tab;
+    setActiveTab(tab);
+    setSelectedPost(null);
+    setSelectedPostsAtLocation([]);
+    setSelectedMarker(null);
+    if (mapInstanceRef.current && clustererRef.current) {
+      updateMarkers();
+    }
+  }, [updateMarkers]);
+
   useEffect(() => {
     return () => {
       if (markersRef.current.length > 0) {
@@ -547,6 +564,32 @@ const ShelterMapPage = () => {
             className="w-full"
             style={{height: 'calc(100vh - 80px)'}}
         />
+
+        {/* 지도 위 탭 버튼 — pointer-events-none으로 지도 마우스 이벤트 보호 */}
+        <div className="absolute top-[96px] left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+          <div className="flex bg-white/90 backdrop-blur-sm rounded-[12px] shadow-[0_2px_12px_rgba(0,0,0,0.15)] p-[4px] gap-[2px] pointer-events-auto">
+            <button
+              onClick={() => handleTabChange('volunteer')}
+              className={`px-[18px] py-[8px] rounded-[9px] text-14-m transition-all ${
+                activeTab === 'volunteer'
+                  ? 'bg-brand-point text-white shadow-sm'
+                  : 'text-text-800'
+              }`}
+            >
+              이동봉사
+            </button>
+            <button
+              onClick={() => handleTabChange('missing')}
+              className={`px-[18px] py-[8px] rounded-[9px] text-14-m transition-all ${
+                activeTab === 'missing'
+                  ? 'bg-brand-point text-white shadow-sm'
+                  : 'text-text-800'
+              }`}
+            >
+              실종신고
+            </button>
+          </div>
+        </div>
 
         {selectedPostsAtLocation.length > 0 ? (
             <div className="fixed bottom-[100px] w-full max-w-[500px] left-1/2 -translate-x-1/2 z-20">

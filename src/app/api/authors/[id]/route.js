@@ -11,6 +11,8 @@ export async function GET(request, { params }) {
     const status = searchParams.get('status'); // 'active' 또는 'completed'
     const page = parseInt(searchParams.get('page')) || 1;
     const limit = parseInt(searchParams.get('limit')) || 10;
+    const postType = searchParams.get('postType'); // 'volunteer' 또는 'missing'
+    const sortBy = searchParams.get('sortBy') || 'latest'; // 'latest' 또는 'deadline'
 
     if (!authorId) {
       return NextResponse.json({ error: '작성자 ID가 필요합니다.' }, { status: 400 });
@@ -82,11 +84,18 @@ export async function GET(request, { params }) {
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
+    const orderColumn = sortBy === 'deadline' ? 'deadline' : 'created_at';
+    const orderAscending = sortBy === 'deadline';
+
     let query = supabase
       .from('posts')
       .select('*', { count: 'exact' })
       .eq('user_id', authorId)
       .eq('is_deleted', false);
+
+    if (postType) {
+      query = query.eq('post_type', postType);
+    }
 
     // 필터링 로직
     if (status === 'active') {
@@ -99,23 +108,27 @@ export async function GET(request, { params }) {
       // Supabase에서는 OR 조건을 직접 지원하지 않으므로 두 가지 쿼리를 합쳐서 처리
 
       // 1. deadline이 지난 게시물 (status 상관없이 모두 포함)
-      const { data: expiredPosts, error: expiredError } = await supabase
+      let expiredQuery = supabase
         .from('posts')
         .select('*')
         .eq('user_id', authorId)
         .eq('is_deleted', false)
         .lt('deadline', now)
-        .order('created_at', { ascending: false });
+        .order(orderColumn, { ascending: orderAscending });
+      if (postType) expiredQuery = expiredQuery.eq('post_type', postType);
+      const { data: expiredPosts, error: expiredError } = await expiredQuery;
 
       // 2. status가 active가 아닌 게시물 (deadline이 지나지 않았지만 status가 다른 경우)
-      const { data: inactivePosts, error: inactiveError } = await supabase
+      let inactiveQuery = supabase
         .from('posts')
         .select('*')
         .eq('user_id', authorId)
         .eq('is_deleted', false)
         .neq('status', 'active')
         .gte('deadline', now)
-        .order('created_at', { ascending: false });
+        .order(orderColumn, { ascending: orderAscending });
+      if (postType) inactiveQuery = inactiveQuery.eq('post_type', postType);
+      const { data: inactivePosts, error: inactiveError } = await inactiveQuery;
 
       if (expiredError || inactiveError) {
         console.error('게시물 조회 오류:', expiredError || inactiveError);
@@ -163,7 +176,7 @@ export async function GET(request, { params }) {
 
     // active 케이스 처리
     const { data: posts, error: postsError, count } = await query
-      .order('created_at', { ascending: false })
+      .order(orderColumn, { ascending: orderAscending })
       .range(from, to);
 
     if (postsError) {
