@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 // 커스텀 AlertDialogContent (오버레이 없이)
 const CustomAlertDialogContent = React.forwardRef(({ className, ...props }, ref) => (
@@ -28,41 +29,11 @@ const CustomAlertDialogContent = React.forwardRef(({ className, ...props }, ref)
 ));
 CustomAlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName;
 
-const FavoriteCard = ({ post, onFavoriteToggle, isCompleted = false }) => {
-  const [loading, setLoading] = useState(false);
+const FavoriteCard = ({ post, isCompleted = false,   isApplied = false, isMyPost = false,}) => {
   const [showLoginDialog, setShowLoginDialog] = useState(false);
-  const { user } = useAuth();
   const router = useRouter();
 
   const { id, title, dogName, dogSize, dogBreed, departureAddress, arrivalAddress, deadline, images = [], status = 'active', dday } = post;
-
-  const toggleFavorite = async (e) => {
-    e.stopPropagation();
-    if (loading) return;
-
-    if (!user) {
-      setShowLoginDialog(true);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const session = await supabase.auth.getSession();
-      const token = session.data.session?.access_token;
-      const headers = {
-        'Authorization': `Bearer ${token}`,
-        'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-        'Content-Type': 'application/json'
-      };
-
-      await favoritesAPI.remove(id);
-      onFavoriteToggle?.(id, false);
-    } catch (error) {
-      console.error('즐겨찾기 처리 오류:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleCardClick = () => {
     router.push(`/posts/${id}`);
@@ -82,35 +53,64 @@ const FavoriteCard = ({ post, onFavoriteToggle, isCompleted = false }) => {
 
   // 상태에 따른 버튼 텍스트와 스타일 결정
   const getButtonInfo = () => {
-    if (isCompleted) {
-      if (status !== 'active') {
-        return {
-          text: '입양 완료',
-          className: 'w-full bg-gray-400 text-white py-3 px-4 rounded-[20px] font-medium text-sm cursor-not-allowed',
-          disabled: true
-        };
-      } else {
-        return {
-          text: '아직 못 갔어요 🥺',
-          className: 'w-full bg-[#FFE066] text-gray-900 py-3 px-4 rounded-[20px] font-medium text-sm hover:bg-[#FFD700] transition-colors',
-          disabled: false
-        };
-      }
-    } else {
+    // 1) 내가 올린 무브인 경우 (모집중/종료 상관 없이)
+    if (isMyPost) {
       return {
-        text: '문의하기',
-        className: 'w-full bg-[#FFE066] text-gray-900 py-3 px-4 rounded-[20px] font-medium text-sm hover:bg-[#FFD700] transition-colors',
-        disabled: false
+        text: '지원자 보기',
+        className:
+            'w-full bg-brand-main text-[#333] py-[10px] rounded-[20px] text-14-m',
+        disabled: true,
       };
     }
+
+    // 2) 모집 종료 탭일 때
+    if (isCompleted) {
+      if (status !== 'active') {
+        // 이미 완료 처리된 게시글 (입양 완료 등)
+        return {
+          text: '입양 완료',
+          className:
+              'w-full bg-text-300 text-text-800 py-[10px] rounded-[20px] text-14-m cursor-not-allowed',
+          disabled: true,
+        };
+      } else {
+        // status는 active인데 마감일 지난 경우
+        return {
+          text: '아직 못 갔어요 🥺',
+          className:
+              'w-full bg-brand-main text-[#333] py-[10px] rounded-[20px] text-14-m',
+          disabled: false,
+        };
+      }
+    }
+
+    // 3) 모집중 탭인데 이미 내가 지원함
+    if (isApplied) {
+      return {
+        text: '지원 완료',
+        className:
+            'w-full bg-text-300 text-text-800 py-[10px] rounded-[20px] text-14-m',
+        disabled: false,
+      };
+    }
+
+    // 4) 모집중 + 내가 아직 지원 안 한 무브
+    return {
+      text: '지원하기',
+      className:
+          'w-full bg-brand-main text-[#333] py-[10px] rounded-[20px] text-14-m',
+      disabled: false,
+    };
   };
 
   const buttonInfo = getButtonInfo();
 
+  console.log(post)
+  console.log(isMyPost)
   return (
     <>
       <div
-        className="bg-white rounded-[30px] px-8 py-6 mb-6 shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-shadow"
+        className="bg-white rounded-[30px] px-8 py-6 shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-shadow"
         onClick={handleCardClick}
       >
         <div className="flex items-start gap-4">
@@ -128,7 +128,9 @@ const FavoriteCard = ({ post, onFavoriteToggle, isCompleted = false }) => {
           <div className="relative flex-shrink-0">
             <div className="w-20 h-20 rounded-[20px] overflow-hidden bg-gray-100">
               {images && images.length > 0 ? (
-                <img
+                <Image
+                  width={76}
+                  height={80}
                   src={images[0]}
                   alt={dogName}
                   className="w-full h-full object-cover"
@@ -151,18 +153,15 @@ const FavoriteCard = ({ post, onFavoriteToggle, isCompleted = false }) => {
 
         {/* 하단 버튼 영역 */}
         <div className="mt-4">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!buttonInfo.disabled) {
-                // 문의하기 기능 (추후 구현)
-              }
-            }}
-            className={buttonInfo.className}
-            disabled={buttonInfo.disabled}
-          >
-            {buttonInfo.text}
-          </button>
+          {!buttonInfo.hide && (
+              <button
+                  onClick={handleCardClick}
+                  className={buttonInfo.className}
+                  disabled={buttonInfo.disabled}
+              >
+                {buttonInfo.text}
+              </button>
+          )}
         </div>
 
         {/* 찜 버튼 */}

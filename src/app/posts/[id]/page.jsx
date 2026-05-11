@@ -1,15 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { useDialogContext } from '@/components/DialogProvider';
-import moment from 'moment';
+import moment from "moment-timezone";
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { MapPin, Calendar, Clock, User, Phone, Heart, MessageCircle, Users, X, Loader2 } from 'lucide-react';
+import {X} from 'lucide-react';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -21,10 +19,16 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
-import { cn, convertDogSize, formatDeadline } from "@/lib/utils";
+import { cn, convertDogSize, formatDeadline, getProfileImageUrl } from "@/lib/utils";
+import ProfileImage from '@/components/common/ProfileImage';
 import IconRightArrow from "../../../../public/img/icon/IconRightArrow";
 import IconHeart from "../../../../public/img/icon/IconHeart";
 import IconLoading from "../../../../public/img/icon/IconLoading";
+import Image from "next/image";
+import PostSkeleton from "@/components/posts/PostSkeleton";
+import Link from "next/link";
+import Header from "@/components/common/Header";
+import ShareButton from "@/components/ui/shareButton";
 
 // 커스텀 AlertDialogContent (오버레이 없이)
 const CustomAlertDialogContent = React.forwardRef(({ className, ...props }, ref) => (
@@ -52,6 +56,7 @@ export default function PostDetailPage() {
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const isFetchingRef = useRef(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -64,9 +69,13 @@ export default function PostDetailPage() {
     return tab === 'applicants' ? 'applicants' : 'post';
   });
   const [applicants, setApplicants] = useState([]);
+  const [applicantsLoading, setApplicantsLoading] = useState(false);
   const [selectedApplicant, setSelectedApplicant] = useState(null);
   const [showApplicantModal, setShowApplicantModal] = useState(false);
   const [isRecruitmentComplete, setIsRecruitmentComplete] = useState(false);
+  const [hasApplied, setHasApplied] = useState(false);
+  const [myApplication, setMyApplication] = useState(null);
+  const [showApplicationModal, setShowApplicationModal] = useState(false);
 
   // URL 쿼리 파라미터 변경 시 탭 업데이트
   useEffect(() => {
@@ -78,9 +87,65 @@ export default function PostDetailPage() {
     }
   }, [searchParams]);
 
+  // 브라우저 뒤로가기/앞으로가기 이벤트 감지
+  useEffect(() => {
+    const handlePopState = () => {
+      console.log('브라우저 뒤로가기/앞으로가기 감지 - 상태 초기화');
+      // 모든 상태 초기화
+      setPost(null);
+      setLoading(true);
+      setError(null);
+      setIsFavorite(false);
+      setFavoriteLoading(false);
+      setShowLoginDialog(false);
+      setShowApplyDialog(false);
+      setApplicants([]);
+      setApplicantsLoading(false);
+      isFetchingRef.current = false;
+
+      // API 재호출
+      setTimeout(() => {
+        if (postId) {
+          fetchPost();
+        }
+      }, 100);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [postId]);
+
   useEffect(() => {
     if (postId) {
-      fetchPost();
+      console.log('useEffect에서 fetchPost 호출, postId:', postId);
+
+      // 브라우저 뒤로가기 대응: 모든 상태 초기화
+      setPost(null);
+      setLoading(true);
+      setError(null);
+      setIsFavorite(false);
+      setFavoriteLoading(false);
+      setShowLoginDialog(false);
+      setShowApplyDialog(false);
+      setApplicants([]);
+      setApplicantsLoading(false);
+      isFetchingRef.current = false;
+
+      // 약간의 지연을 두고 API 호출
+      const timer = setTimeout(() => {
+        console.log('상태 초기화 완료, fetchPost 호출');
+        fetchPost();
+      }, 50);
+
+      return () => {
+        clearTimeout(timer);
+        // 컴포넌트 언마운트 시 상태 정리
+        console.log('상세 페이지 언마운트 - 상태 정리');
+        isFetchingRef.current = false;
+      };
     }
   }, [postId]);
 
@@ -145,26 +210,90 @@ export default function PostDetailPage() {
     }
   }, [isOwner, postId]);
 
-  const fetchPost = async () => {
+  // 지원 여부 확인 함수 (자신이 작성하지 않은 게시물인 경우만)
+  const checkApplicationStatus = useCallback(async () => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        return;
+      }
+
+      // 내가 신청한 목록 조회 (post_id 없이 호출하면 내가 신청한 모든 목록)
+      const response = await fetch(`/api/inquiries`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        const applications = result.applications || [];
+        // 현재 게시물에 대한 지원 내역 찾기
+        const myApplicationData = applications.find(app => {
+          // post_id가 직접 있는 경우 또는 posts 객체 안에 있는 경우
+          const appPostId = app.post_id || app.posts?.id;
+          return appPostId === parseInt(postId);
+        });
+
+        if (myApplicationData) {
+          setHasApplied(true);
+          setMyApplication(myApplicationData);
+        } else {
+          setHasApplied(false);
+          setMyApplication(null);
+        }
+      }
+    } catch (err) {
+      console.error('지원 상태 확인 오류:', err);
+    }
+  }, [postId]);
+
+  // 지원 여부 확인 (자신이 작성하지 않은 게시물인 경우만)
+  useEffect(() => {
+    if (user && post && !isOwner && postId) {
+      checkApplicationStatus();
+    }
+  }, [user, post, isOwner, postId, checkApplicationStatus]);
+
+  const fetchPost = async () => {
+    // 중복 호출 방지
+    if (isFetchingRef.current) {
+      console.log('fetchPost 이미 실행 중 - 중복 호출 방지');
+      return;
+    }
+
+    try {
+      console.log('fetchPost 시작 - 로딩 상태를 true로 설정');
+      isFetchingRef.current = true;
       setLoading(true);
 
-      // API를 통해 게시물 정보 가져오기
-      const response = await fetch(`/api/posts/${postId}`);
+      // API를 통해 게시물 정보 가져오기 - 브라우저 뒤로가기 대응을 위한 캐시 방지
+      const response = await fetch(`/api/posts/${postId}?_t=${Date.now()}`, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
 
       if (!response.ok) {
+        console.log('API 응답 오류:', response.status);
         if (response.status === 404) {
           setError('존재하지 않는 게시물입니다.');
         } else {
           setError('게시물을 불러올 수 없습니다.');
         }
+        setLoading(false);
         return;
       }
 
       const { post: postData } = await response.json();
 
       if (!postData) {
+        console.log('postData가 없음');
         setError('존재하지 않는 게시물입니다.');
+        setLoading(false);
         return;
       }
 
@@ -178,7 +307,9 @@ export default function PostDetailPage() {
         isUrgent: moment(postData.deadline).diff(moment(), 'days') <= 1
       };
 
+      console.log('게시물 데이터 설정 완료:', formattedPost);
       setPost(formattedPost);
+      setLoading(false); // 데이터 로드 성공 시 로딩 상태 해제
 
       console.log('포스트 데이터:', {
         postId: postData.id,
@@ -210,10 +341,14 @@ export default function PostDetailPage() {
         console.error('즐겨찾기 상태 확인 오류:', error);
         // 오류가 발생해도 게시물은 계속 표시
       }
+
+      // 지원 여부 확인은 useEffect에서 처리 (isOwner 결정 후)
     } catch (err) {
       console.error('게시물 조회 중 오류:', err);
       setError('게시물을 불러오는 중 오류가 발생했습니다.');
     } finally {
+      console.log('fetchPost 완료 - 로딩 상태를 false로 설정');
+      isFetchingRef.current = false;
       setLoading(false);
     }
   };
@@ -289,6 +424,10 @@ export default function PostDetailPage() {
     router.push(`/posts/${postId}/inquiry`);
   };
 
+  const handleViewApplication = () => {
+    setShowApplicationModal(true);
+  };
+
   const fetchApplicants = async () => {
     try {
       // 세션 토큰 가져오기
@@ -323,7 +462,7 @@ export default function PostDetailPage() {
 
   const handleRecruitmentComplete = () => {
     dialog.showConfirm(
-      '모집 완료 시 상태를 변경할 수 없습니다.\n완료 하시겠습니까?',
+      '모집 완료 시 상태를 변경할 수 없으며\n 더이상 지원자를 확인할 수 없습니다.\n완료 하시겠습니까?',
       '모집 완료 확인',
       {
         confirmText: '확인',
@@ -415,56 +554,19 @@ export default function PostDetailPage() {
     }
   };
 
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast.success('링크가 복사되었습니다!');
+    } catch {
+      toast.error('복사 실패!');
+    }
+  };
+
+
   if (loading) {
     return (
-        <div className="min-h-screen bg-white">
-          {/* 헤더 */}
-          <div className="w-full h-[72px] flex items-center justify-between px-[30px] py-[28px]">
-            <button
-                className={'p-[12px] pl-0 outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none'}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="9" height="16" viewBox="0 0 9 16" fill="none">
-                <path d="M8 15L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
-                      strokeLinecap="round"/>
-                <path d="M8 0.999999L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
-                      strokeLinecap="round"/>
-              </svg>
-            </button>
-          </div>
-          <div>
-            <div>
-              {/* 강아지 이미지 */}
-              <div className="relative flex justify-center items-center w-full h-auto aspect-[402/343] bg-brand-bg">
-                <IconLoading/>
-              </div>
-
-              {/* 게시물 정보 */}
-              <div className="px-[28px] py-[20px] bg-white h-[106px]">
-                <div className="bg-text-100 w-full h-[30px] rounded-[10px]"></div>
-                <div className="mt-[10px] bg-text-100 w-[80px] h-[20px] rounded-[10px]"></div>
-              </div>
-
-              <div className="py-[24px] px-[22px] space-y-6 bg-brand-bg">
-                {/* 찾아오는 길 */}
-                <div>
-                  <h3 className="text-16-b mb-[10px]">찾아오는 길</h3>
-                  <div className="flex flex-col p-[18px] bg-white rounded-[15px] shadow-[0_0_12px_0_rgba(0,0,0,0.1)]">
-                    {/* ... */}
-                  </div>
-                </div>
-
-                {/* 상세 설명 */}
-                <div>
-                  <h3 className="text-16-b mb-[10px]">상세 설명</h3>
-                  <div
-                      className="flex flex-col p-[18px] min-h-[115px] bg-white rounded-[15px] shadow-[0_0_12px_0_rgba(0,0,0,0.1)]">
-                    {/* ... */}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      <PostSkeleton/>
     );
   }
 
@@ -495,42 +597,12 @@ export default function PostDetailPage() {
   }
 
   return (
-      <div className="min-h-screen">
+      <div className={`min-h-screen ${isOwner && activeTab === 'applicants' && 'bg-brand-bg'}`}>
         {/* 헤더 */}
         <div className="bg-white">
           <div className={'flex flex-col items-center justify-between'}>
             {/* 네비게이션 */}
-            <div className="w-full h-[72px] flex items-center justify-between px-[30px] py-[28px]">
-              <div className={'flex items-center'}>
-                <button
-                    onClick={() => window.history.back()}
-                    className={'p-[12px] pl-0 outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none'}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="9" height="16" viewBox="0 0 9 16" fill="none">
-                    <path d="M8 15L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
-                          strokeLinecap="round"/>
-                    <path d="M8 0.999999L1 8" stroke="black" strokeWidth="2" strokeMiterlimit="10"
-                          strokeLinecap="round"/>
-                  </svg>
-                </button>
-                <h1 className="text-22-m text-black">
-                  {isOwner ? '작성한 게시물' : '정보'}
-                </h1>
-              </div>
-              <button
-                  onClick={handleFavoriteToggle}
-                  disabled={favoriteLoading}
-                  className={'p-0 outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed'}
-              >
-                <figure className="mt-[2px]">
-                  {favoriteLoading ? (
-                      <Loader2 className="size-[30px] animate-spin text-gray-400"/>
-                  ) : (
-                      <IconHeart className={'size-[30px] block'} fill={isFavorite ? '#F36C5E' : '#D2D2D2'}/>
-                  )}
-                </figure>
-              </button>
-            </div>
+            <Header title={isOwner ? '작성한 무브' : '무브 상세보기'} back={true} useFavorite={true} favoriteState={isFavorite} onClickFavorite={handleFavoriteToggle} loadingFavorite={favoriteLoading}/>
 
             {/* 탭 (작성자인 경우만) */}
             {isOwner && (
@@ -566,26 +638,17 @@ export default function PostDetailPage() {
 
         {/* 작성자 정보 */}
         {!isOwner &&
-            <div className={'relative w-full h-[92px] px-[25px] rounded-b-[15px] bg-white z-20 overflow-hidden'}>
-              <div className="w-full pt-[10px] flex items-center justify-between">
+            <div className={'relative flex justify-center items-center w-full h-[80px] px-[25px] bg-white z-20 overflow-hidden shadow-[0_5px_10px_0px_rgba(0,0,0,0.1)]'}>
+              <div className="w-full flex items-center justify-between">
                 {/* 링크 추가 */}
                 <a className={'flex items-center gap-[9px]'} href={`/authors/${post.user_id}`}>
-                  <div
-                      className="relative w-[56px] h-[56px] rounded-full overflow-hidden flex items-center justify-center">
-                    {/* 프로필 이미지 */}
-                    <img
-                        src={post.user_profiles?.profile_image || '/img/default_profile.jpg'}
-                        alt={'프로필 이미지'}
-                        className={'absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover'}
-                        onError={(e) => {
-                          e.target.src = '/img/default_profile.jpg';
-                        }}
-                    />
-                  </div>
+                  <ProfileImage
+                    profileImage={post.user_profiles?.profile_image}
+                    size={56}
+                    alt="프로필 이미지"
+                  />
                   <div>
                     <p className="pr-[30px] mb-[2px] text-18-b">{post.user_profiles?.display_name || '익명'}</p>
-                    {/* 실제 전화번호 표시 */}
-                    <p className="text-14-l text-[#6c6c6c]">{post.user_profiles?.phone || '연락처 없음'}</p>
                   </div>
                 </a>
                 {/* 링크 추가 */}
@@ -597,13 +660,15 @@ export default function PostDetailPage() {
               </div>
             </div>
         }
-        <div className={`${isOwner && 'mt-[-15px]'}`}>
+        <div className={`${isOwner && activeTab === 'applicants' && 'pt-[30px] px-[22px] mb-[10px]'}`}>
           {/* 게시물 탭 */}
           {activeTab === 'post' && (
               <div>
                 {/* 강아지 이미지 */}
-                <div className="mt-[-15px] relative w-full aspect-[402/343]">
-                  <img
+                <div className="relative w-full aspect-[150/133]">
+                  <Image
+                      width={600}
+                      height={600}
                       src={post.images?.[0] || '/img/dummy_thumbnail.jpg'}
                       alt="강아지 이미지"
                       className={'absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover'}
@@ -624,17 +689,22 @@ export default function PostDetailPage() {
                               className={'text-16-b'}>{post.dday}</strong>일
                             남았어요!</p>}
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                    <div className="flex items-center gap-x-[5px] text-sm text-gray-600">
                       <p className="text-12-r text-[#8a8a8a]">
                         {post.created_at} 작성
                       </p>
+                      <button
+                          onClick={copyToClipboard}
+                          className="text-12-r text-[#8a8a8a] underline flex felx-1 justify-center items-center rounded-[15px] h-[28px]"
+                      >링크복사
+                      </button>
                     </div>
                   </div>
-                  <h1 className="text-18-b mb-[10px]">{post.title}</h1>
+                  <h1 className="flex text-18-b mb-[10px]">{post.title}</h1>
                   <div className={'flex gap-x-[4px] text-14-r'}>
                     <p>{post.dog_name || '미입력'}</p>
                     <p className={' text-text-800'}>{post.dogSize}</p>
-                    <p className={'text-text-800'}>{post.dog_breed || '미입력'}</p>
+                    <p className={'text-text-800'}>{post.dog_breed || ''}</p>
                   </div>
                 </div>
 
@@ -646,12 +716,12 @@ export default function PostDetailPage() {
                         className="flex flex-col p-[18px] bg-white rounded-[15px] shadow-[0_0_12px_0px_rgba(0,0,0,0.1)]">
                       <div className="flex items-center gap-x-[10px] mb-[4px]">
                     <span
-                        className="px-[6px] py-[4px] rounded-full text-12-m inline-flex bg-brand-point text-white">출발지</span>
+                        className="shrink-0 px-[6px] py-[4px] rounded-full text-12-m inline-flex bg-brand-point text-white">출발지</span>
                         <p className="text-16-m">{post.departure_address}</p>
                       </div>
                       <div className="mb-[12px] flex items-center gap-x-[10px]">
                     <span
-                        className="px-[6px] py-[5px] rounded-full text-12-m inline-flex bg-brand-point text-white">도착지</span>
+                        className="shrink-0 px-[6px] py-[5px] rounded-full text-12-m inline-flex bg-brand-point text-white">도착지</span>
                         <p className="text-16-m">{post.arrival_address}</p>
                       </div>
                       <div className={'flex gap-x-[4px]'}>
@@ -660,7 +730,7 @@ export default function PostDetailPage() {
                                 className={'p-[7px] bg-[#fdbba2] text-white text-12-r rounded-[4px]'}>네이버 길찾기
                         </button>
                         <button onClick={handleKakaoMap}
-                                className={'p-[7px] bg-[#fdbba2] text-white text-12-r rounded-[4px]'}>카카오톡 길찾기
+                                className={'p-[7px] bg-[#fdbba2] text-white text-12-r rounded-[4px]'}>카카오맵 길찾기
                         </button>
                       </div>
                     </div>
@@ -676,35 +746,42 @@ export default function PostDetailPage() {
                         </div>
                       </div>
                   )}
+
+                  {/* 링크 섹션 */}
+                  {post.related_link && (
+                      <div>
+                        <Link className={'text-14-b text-brand-yellow-dark underline'} href={post.related_link} target="_blank" rel="noopener noreferrer">관련 게시물 보기</Link>
+                        <p className={'text-12-r text-text-800'}>작성자가 외부에 업로드한 공고로 이동해요.</p>
+                      </div>
+                  )}
+
                 </div>
               </div>
           )}
 
           {/* 지원자 탭 */}
           {activeTab === 'applicants' && (
-              <div className="">
+              <div className="bg-brand-bg">
                 {isRecruitmentComplete ? (
-                    <div className="text-center py-12">
-                      <div className="bg-white rounded-[15px] p-6 shadow-[0_0_12px_0px_rgba(0,0,0,0.1)]">
+                    <div className="text-center pt-[100px]">
+                      <div className="">
                         <div className="text-center">
-                          <div
-                              className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Users className="h-8 w-8 text-gray-400"/>
-                          </div>
-                          <p className="text-18-m leading-[1.44] text-gray-700">
-                            <strong className="text-brand-point">모집이 종료</strong>되어<br/>
+                          <p className="text-16-m leading-[1.44] text-gray-700">
+                            <strong className="text-brand-point">모집이 완료</strong>되어<br/>
                             신청자 정보를 확인하실 수 없습니다.
                           </p>
                         </div>
                       </div>
                     </div>
                 ) : applicants.length === 0 ? (
-                    <div className="pt-[200px] bg-white min-h-screen">
-                      <Users className="h-12 w-12 text-gray-400 mx-auto mb-4"/>
+                    <div className="pt-[200px] min-h-screen">
+                      <figure className={'flex justify-center mb-[10px]'}>
+                        <Image src={'/img/empty_icon.png'} alt={''} width={120} height={120}/>
+                      </figure>
                       <p className="text-text-800 text-16-m text-center">아직 지원자가 없습니다.</p>
                     </div>
                 ) : (
-                    <div className="space-y-[10px]">
+                    <div className="space-y-[10px] pb-[80px]">
                       {applicants.map((applicant) => (
                           <div key={applicant.id}
                                className="py-[30px] px-[24px] bg-white rounded-[15px] shadow-[0_0_12px_0px_rgba(0,0,0,0.1)]">
@@ -712,37 +789,29 @@ export default function PostDetailPage() {
                               <div className="flex flex-col">
                                 <div className={'mb-[4px] flex items-center text-[#535353] gap-x-[5px]'}>
                                   <p className="text-18-b">{applicant.user_profiles?.display_name || '익명'}</p>
-                                  |
-                                  <p className="text-16-r text-text-800">{applicant.user_profiles?.phone || '연락처 없음'}</p>
                                 </div>
                                 <p className="text-12-r text-[#8a8a8a]">
-                                  {moment(applicant.created_at).format('YY.MM.DD HH:mm')}
+                                  {moment(applicant.created_at).tz('Asia/Seoul').format('YY.MM.DD HH:mm')}
                                 </p>
                               </div>
                             </div>
                             <div className="mb-4">
                               <div className={'flex items-center gap-x-[18px]'}>
-                                <p className="text-16-r text-brand-icon leading-[1.1] line-clamp-4">
+                                <p className="w-full text-16-r text-brand-icon leading-[1.1] line-clamp-4">
                                   {applicant.message}
                                 </p>
                                 <div className="bg-gray-200 rounded-full flex items-center justify-center">
-                                  <figure
-                                      className={'relative w-[54px] h-[54px] rounded-full overflow-hidden shrink-0'}>
-                                    <img
-                                        src={applicant.user_profiles?.profile_image || '/img/default_profile.jpg'}
-                                        alt={'프로필 이미지'}
-                                        className={'absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover'}
-                                        onError={(e) => {
-                                          e.target.src = '/img/default_profile.jpg';
-                                        }}
-                                    />
-                                  </figure>
+                                  <ProfileImage
+                                    profileImage={applicant.user_profiles?.profile_image}
+                                    size={54}
+                                    alt="프로필 이미지"
+                                  />
                                 </div>
                               </div>
                               <div className={'mt-[10px] pb-[16px] border-b border-[#d9d9d9]'}>
                                 <button
                                     onClick={() => handleApplicantClick(applicant)}
-                                    className="text-blue-500 text-12-r"
+                                    className="text-brand-yellow-dark underline text-12-r"
                                 >
                                   전체보기
                                 </button>
@@ -777,11 +846,17 @@ export default function PostDetailPage() {
                   <div className="w-full max-w-[550px] mx-auto px-[23px]">
                     <div className="flex gap-3">
                       <Button
-                          onClick={handleInquiry}
+                          onClick={hasApplied ? handleViewApplication : handleInquiry}
                           className="rounded-[15px] text-16-m h-[54px] w-full flex-1 bg-brand-main"
                       >
-                        문의하기
+                        {hasApplied ? '지원 내용 확인' : '지원하기'}
                       </Button>
+                      <div className={'w-full flex-1'}>
+                        <ShareButton
+                            url={`https://movetogether.co.kr/post/${postId}`}
+                            title={post.title}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -792,8 +867,8 @@ export default function PostDetailPage() {
           {isOwner && (
               <div
                   className={'fixed bottom-0 left-0 right-0 pt-[15px] pb-[110px] max-w-[550px] mx-auto bg-brand-bg/50 backdrop-blur-md'}>
-                <div className="sticky bottom-4 z-50">
-                  <div className="w-full max-w-[550px] mx-auto px-[44px]">
+                <div className="sticky bottom-4 z-50 px-4">
+                  <div className="w-full mx-auto">
                     <div className="flex gap-3">
                       <Button
                           onClick={handleRecruitmentComplete}
@@ -825,7 +900,7 @@ export default function PostDetailPage() {
               <AlertDialogDescription>
                 {loginDialogContext === 'favorite'
                     ? '찜 기능을 사용하려면 로그인해주세요.'
-                    : '문의하기 기능을 사용하려면 로그인해주세요.'
+                    : '지원하기 기능을 사용하려면 로그인해주세요.'
                 }
               </AlertDialogDescription>
             </AlertDialogHeader>
@@ -865,62 +940,87 @@ export default function PostDetailPage() {
         {/* 지원자 상세 모달 */}
         {showApplicantModal && selectedApplicant && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-lg max-w-md w-full max-h-[80vh] overflow-y-auto">
-                <div className="p-4 border-b flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">전체보기</h3>
-                  <button
-                      onClick={() => setShowApplicantModal(false)}
-                      className="p-1"
-                  >
-                    <X className="h-5 w-5"/>
-                  </button>
-                </div>
+              <div className="relative bg-white rounded-[15px] max-w-md w-full max-h-[80vh] overflow-y-auto">
+                <button
+                    onClick={() => setShowApplicantModal(false)}
+                    className="absolute p-1 top-[7px] right-[7px]"
+                >
+                  <X className="h-5 w-5"/>
+                </button>
 
-                <div className="p-4">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div
-                        className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
-                      <img
-                          src={selectedApplicant.user_profiles?.profile_image || '/img/default_profile.jpg'}
-                          alt={'프로필 이미지'}
-                          className={'w-full h-full object-cover'}
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                            e.target.nextSibling.style.display = 'block';
-                          }}
-                      />
-                      <User className="h-5 w-5 text-gray-600" style={{display: 'none'}}/>
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">{selectedApplicant.user_profiles?.display_name || '익명'}</p>
-                      <p className="text-xs text-gray-600">{selectedApplicant.user_profiles?.phone || '연락처 없음'}</p>
-                    </div>
+                <div className="px-[20px] pt-[30px]">
+                  <div className="flex items-center justify-center gap-x-[4px] mb-[24px] text-text-800">
+                    <p className="text-18-b ">{selectedApplicant.user_profiles?.display_name || '익명'}</p>
                   </div>
 
-                  <div className="mb-6">
-                    <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                  <div className="mb-[24px]">
+                    <p className="text-center text-16-r text-gray-700 whitespace-pre-wrap max-h-[270px] overflow-y-auto">
                       {selectedApplicant.message}
+                    </p>
+                    <p className="mt-[10px] text-center text-12-r text-[#8a8a8a]">
+                      {moment(selectedApplicant.created_at).tz('Asia/Seoul').format('YY.MM.DD HH:mm')}
                     </p>
                   </div>
 
+
                   <div className="mb-4">
-                    <p className="text-sm font-medium text-gray-600 mb-2">연락하기</p>
                     <div className="flex gap-2">
                       <button
                           onClick={() => handleCall(selectedApplicant.user_profiles?.phone)}
-                          className="flex-1 bg-brand-main text-black text-sm py-2 px-4 rounded flex items-center justify-center gap-2"
-                  >
-                    <Phone className="h-4 w-4" />
-                    전화하기
-                  </button>
-                  <button
-                    onClick={() => handleSMS(selectedApplicant.user_profiles?.phone)}
-                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm py-2 px-4 rounded flex items-center justify-center gap-2"
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                    문자하기
-                  </button>
+                          className="flex-1 h-[44px] bg-[#fbf1b4] text-16-m text-[#d4a108] py-2 px-4 rounded-[7px] shadow-[0_0_5px_0px_rgba(0,0,0,0.1)]"
+                      >
+                        전화하기
+                      </button>
+                      <button
+                          onClick={() => handleSMS(selectedApplicant.user_profiles?.phone)}
+                          className="flex-1 h-[44px] bg-[#fbf1b4] text-16-m text-[#d4a108] py-2 px-4 rounded-[7px] shadow-[0_0_5px_0px_rgba(0,0,0,0.1)]"
+                      >
+                        문자하기
+                      </button>
+                    </div>
+                  </div>
                 </div>
+              </div>
+            </div>
+        )}
+
+        {/* 지원내용 확인 모달 */}
+        {showApplicationModal && myApplication && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div
+                  className="bg-white rounded-[15px] max-w-md w-full max-h-[80vh] overflow-y-auto shadow-[0_0_12px_0px_rgba(0,0,0,0.1)]">
+            <div className="p-6 flex items-center justify-between">
+              <h3 className="w-full text-20-m text-center">지원 내용 확인</h3>
+            </div>
+
+            <div className="p-[20px] pt-0">
+{/*              <div className="mb-6">
+                <p className="text-14-m text-gray-600 mb-2">지원 상태</p>
+                <div className="inline-block px-[9px] py-[4px] rounded-[7px] text-14-b bg-brand-point text-white">
+                  {myApplication.status === 'pending' ? '대기중' :
+                   myApplication.status === 'accepted' ? '수락됨' :
+                   myApplication.status === 'rejected' ? '거절됨' : '확인중'}
+                </div>
+              </div>*/}
+
+              <div className="mb-6">
+                <div className="px-[15px] py-[20px] bg-brand-bg rounded-[15px] min-h-[100px]">
+                  <p className="text-14-r text-gray-900 leading-[1.25] whitespace-pre-wrap break-words">
+                    {myApplication.message || '메시지가 없습니다.'}
+                  </p>
+                </div>
+                <p className="text-12-r text-text-800 text-right mt-[10px] mr-[10px]">
+                  {moment(myApplication.created_at).tz("Asia/Seoul").format("YY.MM.DD HH:mm")}
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                    onClick={() => setShowApplicationModal(false)}
+                    className="flex-1 rounded-[15px] h-[54px] bg-brand-main text-black text-16-m"
+                >
+                  닫기
+                </Button>
               </div>
             </div>
           </div>

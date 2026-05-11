@@ -11,6 +11,12 @@ const MainBanner = () => {
       id: 1,
       image: "/img/main_banner_1.jpg",
       alt: "오늘은 특별한 날이에요. 새 가족을 만나러 가요!"
+    },
+    {
+      id: 2,
+      image: "/img/main_banner_2.jpg",
+      alt: "무브투개더 인스타그램 팔로우",
+      link:"https://www.instagram.com/movetogaether/"
     }
   ];
 
@@ -38,20 +44,35 @@ const MainBanner = () => {
           <figure
               key={banner.id}
               className={`absolute inset-0 flex items-center justify-center transition-opacity duration-500 ${
-                  index === currentSlide ? 'opacity-100' : 'opacity-0'
+                  index === currentSlide ? 'opacity-100 z-10' : 'opacity-0'
               }`}
           >
-            <img
-                src={banner.image}
-                alt={banner.alt}
-                className="max-w-full max-h-full object-contain"
-            />
+            {banner.link ? (
+                <a
+                    href={banner.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full h-full"
+                >
+                  <img
+                      src={banner.image}
+                      alt={banner.alt}
+                      className="w-full h-full object-contain"
+                  />
+                </a>
+            ) : (
+                <img
+                    src={banner.image}
+                    alt={banner.alt}
+                    className="w-full h-full object-contain"
+                />
+            )}
           </figure>
         ))}
       </div>
 
       {/* 우측 하단 네비게이션 컨트롤 */}
-      <div className="absolute bottom-[10px] right-[16px] flex items-center space-x-[2px]">
+      <div className="absolute bottom-[10px] right-[16px] flex items-center space-x-[2px] z-20">
 
         {/* 페이지 표시 */}
         {banners.length > 1 &&

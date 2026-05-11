@@ -11,7 +11,7 @@ import { convertDogSize } from '@/lib/utils';
 import moment from 'moment';
 import { toast } from 'sonner';
 
-const PostCard = ({ post, isFavorite = false, onFavoriteToggle, showTimeline = false }) => {
+const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, showTimeline = false }) => {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { showConfirm, showSuccess, showError } = useDialogContext();
@@ -30,6 +30,10 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, showTimeline = f
     dday,
     distance,
   } = post;
+
+  const createdAt = post.created_at ?? post.createdAt ?? null;
+  const formattedCreatedDateForTimeline = createdAt ? moment(createdAt).format('YYYY/MM/DD') : '';
+  const formattedCreatedDateForCard = createdAt ? moment(createdAt).format('YY/MM/DD') : '';
 
 
   const toggleFavorite = async (e) => {
@@ -92,26 +96,32 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, showTimeline = f
   if (showTimeline) {
     const getButtonInfo = (post) => {
       if (post.status !== 'active') {
-        // ToDo 버튼 구분 필요
         return {
           text: '모집 완료',
-          className: 'w-full text-text-800 bg-text-300 py-[8px] rounded-[20px] text-14-m cursor-not-allowed',
+          className: 'w-full text-text-800 bg-text-300 py-[10px] rounded-[20px] text-14-m cursor-not-allowed',
           disabled: true
         };
       } else {
+        if (post.dday >= 0) {
         return {
-          text: '문의하기',
-          className: 'w-full bg-brand-main text-[#333] py-[8px] rounded-[20px] text-14-m',
-          disabled: false
-        };
+            text: '지원하기',
+            className: 'w-full bg-brand-main text-[#333] py-[10px] rounded-[20px] text-14-m',
+            disabled: false
+          };
+        } else {
+          return {
+            text: '아직 못 갔어요 🥺',
+            className: 'w-full bg-brand-main text-[#333] py-[10px] rounded-[20px] text-14-m',
+            disabled: false
+          };
+        }
       }
     };
 
-    const createdDate = moment(post.created_at).format('YYYY/MM/DD');
     const buttonInfo = getButtonInfo(post);
     const getDdayText = (dday) => {
       if (dday < 0) return `D+${Math.abs(dday)}`;
-      if (dday === 0) return 'D-Day';
+      if (dday === 0) return '오늘마감!';
       return `D-${dday}`;
     };
 
@@ -128,24 +138,27 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, showTimeline = f
 
         {/* 날짜 표시 - 노란원과 같은 높이 */}
         <div className="absolute top-0 left-6 text-sm font-medium" style={{ transform: 'translateY(-50%)' }}>
-          {createdDate}
+          {formattedCreatedDateForTimeline}
         </div>
 
         {/* 카드 - 날짜 아래에 위치 */}
-        <div className="bg-text-100 rounded-[30px] p-[26px] pb-[22px] mt-[16px] border border-gray-100 flex-1">
+        <div className="bg-text-100 rounded-[30px] p-[26px] pb-[22px] mt-[16px] border border-gray-100 flex-1"
+             onClick={handleCardClick}>
           <div className="flex items-start gap-4">
             <div className="flex-1 min-w-0">
               {/* D-day 표시 */}
-              <div className="mb-2">
-                <div className={`inline-block px-[9px] py-[2px] rounded-[7px] text-14-b ${getDdayColor(post.dday)}`}>
-                  {getDdayText(post.dday)}
+              {post.status === 'active' && post.dday >= 0 && (
+                <div className="mb-2">
+                  <div className={`inline-block px-[9px] py-[2px] rounded-[7px] text-14-b ${getDdayColor(post.dday)}`}>
+                    {getDdayText(post.dday)}
+                  </div>
                 </div>
-              </div>
-              <h3 className="ml-[5px] text-12-m text-gray-900 mb-[4px] line-clamp-2 leading-[1.35]">
+              )}
+              <h3 className="ml-[5px] text-14-m text-gray-900 mb-[4px] line-clamp-2 leading-[1.35]">
                 {post.title}
               </h3>
               <p className="ml-[5px] text-10-r text-text-800">
-                {post.dog_name} / {convertDogSize(post.dog_size)}
+                {post.dogName} / {convertDogSize(post.dogSize)}
               </p>
             </div>
 
@@ -173,7 +186,12 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, showTimeline = f
 
           <div className="mt-[13px]">
             <button
-              onClick={() => onPostClick(post.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!buttonInfo.disabled) {
+                  onPostClick?.(post.id);
+                }
+              }}
               className={buttonInfo.className}
               disabled={buttonInfo.disabled}
             >
@@ -195,7 +213,7 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, showTimeline = f
         {/* D-day 배지 - border 위에 겹쳐서 표시 */}
         <div className="absolute -top-3 left-[-5px] z-10">
           <span className={`flex items-center justify-center px-[13px] h-[24px] rounded-[7px] text-12-b font-bold ${getDdayColor(dday)}`}>
-            D-{dday}
+            {dday=== 0 ? '오늘마감!' :`D-${dday}`}
           </span>
         </div>
       </div>
@@ -250,7 +268,7 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, showTimeline = f
               {dogName} / {dogSize}
             </div>
             <div className="text-post-date text-text-600 text-9-r font-light">
-              {deadline}
+              {formattedCreatedDateForCard || deadline}
             </div>
           </div>
 

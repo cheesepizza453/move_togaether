@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { MapPin, Loader2 } from 'lucide-react';
+import { MapPin, Loader2, X } from 'lucide-react';
 
 const LocationSearchDialog = ({ isOpen, onClose, onLocationConfirm }) => {
   const [currentLocation, setCurrentLocation] = useState('');
@@ -76,10 +76,8 @@ const LocationSearchDialog = ({ isOpen, onClose, onLocationConfirm }) => {
     } catch (err) {
       console.error('위치 가져오기 오류:', err);
       setError('현재 위치를 가져올 수 없습니다. 위치 권한을 확인해주세요.');
-      // 위치 가져오기 실패 시 다이얼로그를 닫고 기존 정렬로 되돌림
-      setTimeout(() => {
-        onClose();
-      }, 2000); // 2초 후 자동으로 닫기
+      // 위치 가져오기 실패 시에도 다이얼로그를 자동으로 닫지 않음
+      // 사용자가 직접 닫거나 다시 시도할 수 있도록 함
     } finally {
       setIsLoading(false);
     }
@@ -137,11 +135,18 @@ const LocationSearchDialog = ({ isOpen, onClose, onLocationConfirm }) => {
         />
       )}
       <DialogContent
-        className="sm:max-w-md z-[9999] bg-white"
+        className="z-[9999] bg-white"
         showCloseButton={false}
       >
-        <DialogHeader>
+        <DialogHeader className="relative">
           <DialogTitle className="text-center">현재 위치 찾기</DialogTitle>
+          <button
+            onClick={onClose}
+            className="absolute right-0 top-0 p-1 rounded-full transition-colors"
+            aria-label="닫기"
+          >
+            <X className="h-5 w-5 text-gray-500" />
+          </button>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -150,7 +155,7 @@ const LocationSearchDialog = ({ isOpen, onClose, onLocationConfirm }) => {
               value={currentLocation}
               placeholder="현재 위치로 주소 찾기"
               readOnly
-              className="bg-yellow-50 border-yellow-200"
+              className="mt-[20px] bg-brand-bg placeholder-black text-16-r"
             />
             {isLoading && (
               <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -160,15 +165,31 @@ const LocationSearchDialog = ({ isOpen, onClose, onLocationConfirm }) => {
           </div>
 
           {error && (
-            <p className="text-sm text-red-600 text-center">{error}</p>
+            <div className="text-center space-y-2">
+              <p className="text-12-r text-brand-point">{error}</p>
+              <Button
+                onClick={getCurrentLocation}
+                disabled={isLoading}
+                variant="outline"
+                className="w-full text-16-m h-[42px]"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    위치 찾는 중...
+                  </>
+                ) : (
+                  '다시 시도'
+                )}
+              </Button>
+            </div>
           )}
 
           <Button
             onClick={handleSearch}
             disabled={!currentLocation || isLoading}
-            className="w-full bg-brand-main text-black font-medium"
+            className="w-full h-[42px] bg-brand-main text-black font-16-m"
           >
-            <MapPin className="h-4 w-4 mr-2" />
             현재 위치 검색
           </Button>
         </div>

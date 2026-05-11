@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from "next/image";
 // 보호자정보 리스트
 const PostCardInfo = ({ post }) => {
   const [isFavorite, setIsFavorite] = useState(post.isFavorite || false);
@@ -80,7 +81,9 @@ const PostCardInfo = ({ post }) => {
             {/* 강아지 이미지 */}
             <figure
                 className="relative w-[85px] h-[85px] overflow-hidden bg-gray-200 rounded-[15px] shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]">
-              <img
+              <Image
+                  width={200}
+                  height={200}
                   className={'absolute top-1/2 left-1/2 max-w-full max-h-full -translate-x-1/2 -translate-y-1/2 object-contain'}
                   src={"/img/dummy_thumbnail.jpg"} alt={'Dummy'}/>
             </figure>

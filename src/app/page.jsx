@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense, lazy } from 'react';
+import { useState, useEffect, useCallback, Suspense, lazy, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import moment from 'moment';
 import Header from '../components/common/Header';
@@ -20,7 +20,7 @@ const LocationSearchDialog = lazy(() => import('../components/LocationSearchDial
 
 export default function Home() {
   const { user } = useAuth();
-  const { showConfirm, showError } = useDialogContext();
+  const { showLoginRequired, showError } = useDialogContext();
 
   const [sortOption, setSortOption] = useState('latest');
   const [posts, setPosts] = useState([]);
@@ -37,6 +37,7 @@ export default function Home() {
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isFetching, setIsFetching] = useState(false); // 중복 호출 방지용
+  const isFetchingRef = useRef(false); // 추가적인 중복 호출 방지
 
   // 목업 데이터 (실제로는 API에서 가져올 데이터)
   /* const mockPosts = [
@@ -113,13 +114,17 @@ export default function Home() {
 
   // Supabase에서 게시물 데이터 가져오기 (페이징 적용)
   const fetchPosts = async (sortBy = 'latest', pageNum = 1, isLoadMore = false) => {
-    // 중복 호출 방지
-    if (isFetching) {
+    console.log('fetchPosts 호출됨:', { sortBy, pageNum, isLoadMore, isFetching, isFetchingRef: isFetchingRef.current });
+
+    // 중복 호출 방지 (이중 체크)
+    if (isFetching || isFetchingRef.current) {
       console.log('이미 데이터를 가져오는 중입니다. 중복 호출 방지');
       return;
     }
 
     try {
+      console.log('fetchPosts 시작 - isFetching을 true로 설정');
+      isFetchingRef.current = true;
       setIsFetching(true);
 
       if (isLoadMore) {
@@ -132,14 +137,17 @@ export default function Home() {
         setPosts([]); // 새로 로드할 때 기존 데이터 초기화
       }
 
-      // API 호출 (로그인 불필요)
+      // API 호출 (로그인 불필요) - 브라우저 뒤로가기 대응을 위한 캐시 방지
+      console.log('API 호출 시작:', { type: 'all', sortBy, page: pageNum, limit: 10, status: 'active' });
       const { posts, pagination } = await postsAPI.getList({
         type: 'all',
         sortBy,
         page: pageNum,
         limit: 10,
-        status: 'active'
+        status: 'active',
+        _t: Date.now() // 캐시 방지를 위한 타임스탬프
       });
+      console.log('API 호출 완료:', { posts, pagination });
 
       console.log(`페이지 ${pageNum} API에서 가져온 데이터:`, { posts, pagination });
 
@@ -167,7 +175,8 @@ export default function Home() {
         deadline: formatDeadline(post.deadline),
         images: post.images || [],
         status: post.status,
-        dday: post.deadline ? moment(post.deadline).diff(moment(), 'days') : 0
+        dday: post.deadline ? moment(post.deadline).diff(moment(), 'days') : 0,
+        created_at: post.created_at
       }));
 
       console.log(`페이지 ${pageNum} 포맷팅된 데이터:`, formattedPosts);
@@ -211,7 +220,14 @@ export default function Home() {
 
     } catch (err) {
       console.error('게시물 조회 중 예외 발생:', err);
+      console.error('에러 상세 정보:', {
+        name: err.name,
+        message: err.message,
+        stack: err.stack
+      });
+
       const errorInfo = handleAPIError(err);
+      console.log('처리된 에러 정보:', errorInfo);
 
       setError(errorInfo.message);
 
@@ -226,11 +242,14 @@ export default function Home() {
         isLoadMore,
         pageNum
       });
-
       console.log('로딩 상태 해제 중...');
+
+      // 즉시 로딩 상태 해제 (setTimeout 제거)
       setLoading(false);
       setIsLoadingMore(false);
       setIsFetching(false); // 중복 호출 방지 플래그 해제
+      isFetchingRef.current = false; // ref도 리셋
+
       console.log('로딩 상태 해제 완료');
     }
   };
@@ -270,9 +289,61 @@ export default function Home() {
     };
   }, [hasMore, isLoadingMore, loading, isFetching, sortOption, page]);
 
+  // 브라우저 뒤로가기/앞으로가기 이벤트 감지
+  useEffect(() => {
+    const handlePopState = () => {
+      console.log('브라우저 뒤로가기/앞으로가기 감지 - 상태 초기화');
+      // 모든 상태 초기화
+      setLoading(true);
+      setError(null);
+      setPosts([]);
+      setPage(1);
+      setHasMore(true);
+      setIsLoadingMore(false);
+      setIsFetching(false);
+      isFetchingRef.current = false;
+      setFavoritePostIds(new Set());
+
+      // API 재호출
+      setTimeout(() => {
+        fetchPosts(sortOption);
+      }, 100);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [sortOption]);
+
   // 초기 데이터 로드
   useEffect(() => {
-    fetchPosts(sortOption);
+    console.log('메인 페이지 초기 로드 시작');
+
+    // 모든 상태 완전 초기화 (브라우저 뒤로가기 대응)
+    setLoading(true);
+    setError(null);
+    setPosts([]);
+    setPage(1);
+    setHasMore(true);
+    setIsLoadingMore(false);
+    setIsFetching(false);
+    isFetchingRef.current = false;
+    setFavoritePostIds(new Set());
+
+    // 약간의 지연을 두고 API 호출 (상태 초기화 완료 후)
+    const timer = setTimeout(() => {
+      console.log('상태 초기화 완료, API 호출 시작');
+      fetchPosts(sortOption);
+    }, 50);
+
+    return () => {
+      clearTimeout(timer);
+      // 컴포넌트 언마운트 시 상태 정리
+      console.log('메인 페이지 언마운트 - 상태 정리');
+      isFetchingRef.current = false;
+    };
   }, []); // 컴포넌트 마운트 시에만 실행
 
   // 찜 상태 토글 핸들러 (API 호출 + 로컬 상태 업데이트)
@@ -474,13 +545,10 @@ export default function Home() {
     // 가까운순 선택 시 로그인 체크
     if (sortId === 'distance') {
       if (!user) {
-        showConfirm({
-          title: '로그인 후 이용하실 수 있습니다.',
-          description: '가까운순 정렬을 사용하려면 로그인이 필요합니다.',
-          onConfirm: () => {
-            window.location.href = '/login';
-          }
-        });
+        showLoginRequired(
+          '가까운순 정렬을 사용하려면 로그인이 필요합니다.',
+          '로그인 후 이용하실 수 있습니다.'
+        );
         // 로그인 다이얼로그 표시 시 정렬 옵션을 이전 상태로 되돌림
         return;
       }
@@ -538,16 +606,20 @@ export default function Home() {
       <main className="w-full bg-brand-bg px-[23px] pt-[15px]">
         {/* 메인 배너 */}
         <section className="mb-[27px]">
-          <MainBanner />
+          <MainBanner/>
         </section>
 
         {/* 정렬 옵션 */}
         <section className="mb-6">
-          <SortOptions onSortChange={handleSortChange} activeSort={sortOption} />
+          <SortOptions onSortChange={handleSortChange} activeSort={sortOption}/>
         </section>
 
         {/* 게시물 목록 */}
         <section className="pb-6">
+          {(() => {
+            console.log('렌더링 상태 확인:', {loading, error, postsLength: posts.length, isFetching});
+            return null;
+          })()}
           {loading ? (
               <div className="flex justify-center items-center py-8">
                 <div className={'w-full flex justify-center pt-[60px]'}>
@@ -557,51 +629,57 @@ export default function Home() {
           ) : error ? (
               <div className="flex justify-center items-center py-8">
                 <div className="text-red-500">{error}</div>
-            </div>
+              </div>
           ) : posts.length === 0 ? (
-            <div className="flex justify-center items-center py-8">
-              <div className="text-gray-500">등록된 게시물이 없습니다.</div>
-            </div>
+              <div className="flex justify-center items-center py-8">
+                <div className="text-gray-500">등록된 게시물이 없습니다.</div>
+              </div>
           ) : (
-            <>
-              <div className="space-y-[18px]">
-                {allPosts.map((post) => (
-                  <PostCard
-                    key={post.id}
-                    post={post}
-                    isFavorite={favoritePostIds.has(post.id)}
-                    onFavoriteToggle={handleFavoriteToggle}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="space-y-[18px]">
+                  {allPosts.map((post) => (
+                      <PostCard
+                          key={post.id}
+                          post={post}
+                          isFavorite={favoritePostIds.has(post.id)}
+                          onFavoriteToggle={handleFavoriteToggle}
+                      />
+                  ))}
+                </div>
 
-              {/* 무한 스크롤 트리거 및 로딩 인디케이터 */}
-              <div id="load-more-trigger" className="py-4">
-                {isLoadingMore ? (
-                  <div className="flex justify-center items-center py-4">
-                    <div className="text-gray-500">더 많은 게시물을 불러오는 중...</div>
-                  </div>
-                ) : (
-                  <div className="h-4"></div> // 트리거용 빈 공간
-                )}
-              </div>
-            </>
+                {/* 무한 스크롤 트리거 및 로딩 인디케이터 */}
+                <div id="load-more-trigger" className="py-4">
+                  {isLoadingMore ? (
+                      <div className="flex justify-center items-center py-4">
+                        <div className="mt-8 flex justify-center space-x-2">
+                          <div className="w-2 h-2 bg-brand-main rounded-full animate-bounce"></div>
+                          <div className="w-2 h-2 bg-brand-main rounded-full animate-bounce"
+                               style={{animationDelay: '0.1s'}}></div>
+                          <div className="w-2 h-2 bg-brand-main rounded-full animate-bounce"
+                               style={{animationDelay: '0.2s'}}></div>
+                        </div>
+                      </div>
+                  ) : (
+                      <div className="h-4"></div> // 트리거용 빈 공간
+                  )}
+                </div>
+              </>
           )}
         </section>
       </main>
 
       {/* 위치 검색 다이얼로그 */}
-      <Suspense fallback={<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+{/*      <Suspense fallback={<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white p-4 rounded-lg">
-          <IconLoading className="w-8 h-8 animate-spin" />
+          <IconLoading className="w-8 h-8 animate-spin"/>
         </div>
       </div>}>
         <LocationSearchDialog
-          isOpen={showLocationDialog}
-          onClose={() => setShowLocationDialog(false)}
-          onLocationConfirm={handleLocationConfirm}
+            isOpen={showLocationDialog}
+            onClose={() => setShowLocationDialog(false)}
+            onLocationConfirm={handleLocationConfirm}
         />
-      </Suspense>
+      </Suspense>*/}
     </div>
   );
 }

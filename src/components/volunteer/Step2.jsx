@@ -29,14 +29,14 @@ const Step2 = ({
             {/* 강아지 이름 */}
             <div className={'mb-[25px]'}>
                 <label className="block text-16-m mb-[12px]">
-                    임보견 이름<span className={'text-[#E17364] text-16-m'}>*</span>
+                    동행견 이름<span className={'text-[#E17364] text-16-m'}>*</span>
                 </label>
                 <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => onFormDataChange('name', e.target.value)}
                     maxLength={20}
-                    placeholder="임보견 이름을 입력해주세요"
+                    placeholder="동행견 이름을 입력해주세요"
                     className={`w-full ${inputStyle} ${
                         errors.name ? 'border-red-500' : 'border-gray-300'
                     }`}

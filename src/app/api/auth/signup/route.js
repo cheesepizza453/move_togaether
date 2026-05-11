@@ -3,7 +3,17 @@ import { createServerSupabaseClient } from '@/lib/supabase';
 
 export async function POST(request) {
   try {
-    const { email, password, nickname, introduction, phone, contactChannels, channelInputs } = await request.json();
+    const {
+      email,
+      password,
+      nickname,
+      introduction,
+      phone,
+      contactChannels,
+      channelInputs,
+      securityQuestion,
+      securityAnswer,
+    } = await request.json();
 
     // 입력값 검증
     if (!email || !password || !nickname) {
@@ -13,9 +23,8 @@ export async function POST(request) {
       );
     }
 
-    console.log('서버 회원가입 시도:', { email, nickname, phone });
+    console.log('서버 회원가입 시도:', { email, nickname, phone, securityQuestion });
 
-    // Supabase 클라이언트 생성 (익명 사용자용)
     const supabase = createServerSupabaseClient();
 
     // Supabase Auth로 회원가입
@@ -29,6 +38,8 @@ export async function POST(request) {
           phone,
           contactChannels,
           channelInputs,
+          securityQuestion,
+          securityAnswer,
           provider: 'email',
           profile_created: false
         },
@@ -64,29 +75,31 @@ export async function POST(request) {
 
     // 회원가입 성공
     console.log('서버 회원가입 성공:', data.user.id);
+    console.log('user_metadata:', data.user.user_metadata); // test
 
-    // user_metadata에 프로필 정보가 이미 저장됨 (signUp 시 options.data로 전달)
-    console.log('프로필 정보가 user_metadata에 저장됨');
-
-    // 회원가입 성공 후 자동 로그인을 위해 세션 생성
+    // 자동 로그인 시도 (이메일 인증 전이면 실패할 수 있음 – 정상)
     try {
-      // 이메일 인증 없이도 임시로 로그인 상태로 만들기
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
+      const { data: signInData, error: signInError } =
+          await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
 
       if (signInError) {
-        console.log('자동 로그인 실패 (이메일 인증 필요):', signInError.message);
-        // 이메일 인증이 필요한 경우는 정상적인 플로우
+        console.log(
+            '자동 로그인 실패 (이메일 인증 필요/기타):',
+            signInError.message
+        );
       } else {
         console.log('자동 로그인 성공:', signInData.user.id);
       }
     } catch (autoLoginError) {
-      console.log('자동 로그인 시도 중 오류 (정상적인 플로우):', autoLoginError.message);
+      console.log(
+          '자동 로그인 시도 중 오류 (정상적인 플로우일 수 있음):',
+          autoLoginError.message
+      );
     }
 
-    // 응답 데이터 구성 (민감한 정보 제거)
     const userData = {
       id: data.user.id,
       email: data.user.email,
@@ -99,7 +112,6 @@ export async function POST(request) {
       message: '회원가입이 완료되었습니다. 이메일을 확인하여 계정을 활성화해주세요.',
       user: userData
     });
-
   } catch (error) {
     console.error('서버 회원가입 처리 중 오류:', error);
 

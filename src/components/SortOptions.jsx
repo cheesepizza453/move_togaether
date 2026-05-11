@@ -10,8 +10,9 @@ const SortOptions = ({ onSortChange, activeSort: externalActiveSort }) => {
 
   const sortOptions = [
     { id: 'latest', label: '최신순' },
-    { id: 'deadline', label: '종료순' },
-    { id: 'distance', label: '가까운순' }
+    { id: 'deadline', label: '마감순' },
+    //   가까운순 숨김
+    /*{ id: 'distance', label: '가까운순' }*/
   ];
 
   const handleSortClick = (sortId) => {

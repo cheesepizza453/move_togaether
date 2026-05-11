@@ -7,10 +7,12 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import UserProfileForm from '@/components/UserProfileForm';
-
+import ProfileImage from '@/components/common/ProfileImage';
+import Loading from "@/components/ui/loading";
 
 const KakaoSignupPage = () => {
   const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState(true);
   const [userInfo, setUserInfo] = useState(null);
   const [isNewUser, setIsNewUser] = useState(false);
   const [formData, setFormData] = useState({
@@ -35,7 +37,7 @@ const KakaoSignupPage = () => {
   const [nicknameValidation, setNicknameValidation] = useState(null);
   const [nicknameChecking, setNicknameChecking] = useState(false);
   const router = useRouter();
-  const { loading: authLoading, signUpWithKakao, signInWithKakao, checkNicknameDuplicate } = useAuth();
+  const { loading: authLoading, signUpWithKakao, signInWithKakao, checkNicknameDuplicate, updateProfile } = useAuth();
 
   // 신규 사용자 가입 과정 중에는 리다이렉트 하지 않음
   // (useAuth 훅의 사용자 상태를 무시하고 자체적으로 관리)
@@ -44,6 +46,7 @@ const KakaoSignupPage = () => {
     const handleOAuthCallback = async () => {
       try {
         console.log('OAuth 콜백 처리 시작');
+        setOauthLoading(true);
 
         // URL에서 세션 정보 가져오기
         const { data, error } = await supabase.auth.getSession();
@@ -60,10 +63,10 @@ const KakaoSignupPage = () => {
 
           // 사용자 프로필 확인
           const { data: profile, error: profileError } = await supabase
-            .from('user_profiles')
-            .select('*')
-            .eq('auth_user_id', data.session.user.id)
-            .single();
+              .from('user_profiles')
+              .select('*')
+              .eq('auth_user_id', data.session.user.id)
+              .single();
 
           if (profileError && profileError.code !== 'PGRST116') {
             console.error('프로필 조회 오류:', profileError);
@@ -154,6 +157,8 @@ const KakaoSignupPage = () => {
         console.error('OAuth 콜백 처리 오류:', error);
         toast.error('인증 처리 중 오류가 발생했습니다.');
         router.push('/login');
+      } finally {
+        setOauthLoading(false);
       }
     };
 
@@ -275,86 +280,146 @@ const KakaoSignupPage = () => {
 
     return {
       isValid: true,
-      message: '사용 가능한 닉네임입니다',
+      message: '멋진 닉네임을 지어주세요🐾',
       type: 'success'
     };
   };
 
-  // 닉네임 변경 시 유효성 검사
-  const handleNicknameChange = (value) => {
-    setFormData(prev => ({ ...prev, nickname: value }));
-
-    if (value.trim()) {
-      const validation = validateNickname(value);
-      setNicknameValidation(validation);
-    } else {
-      setNicknameValidation(null);
-    }
-
-    // 에러 메시지 제거
-    if (errors.nickname) {
-      setErrors(prev => ({ ...prev, nickname: '' }));
-    }
+  const validatePhone = (phone) => {
+    const value = (phone || '').trim();
+    if (!value) return '연락처를 입력해주세요.';
+    if (value.length < 10) return '연락처를 정확히 입력해주세요.';
+    return '';
   };
 
-  // 닉네임 blur 이벤트로 중복 체크
-  const handleNicknameBlur = async (value) => {
-    console.log('닉네임 blur 이벤트 발생:', value);
-    console.log('현재 nicknameValidation:', nicknameValidation);
+  const validateInstagramField = (enabled, value) => {
+    if (!enabled) return '';
+    const ig = (value || '').trim();
+    if (!ig) return '인스타그램 ID(영문 유저네임)를 입력해주세요.';
+    if (/http(s)?:\/\//i.test(ig)) return 'URL이 아닌 인스타그램 ID(영문 유저네임)을 입력해주세요.';
+    if (!isValidInstagramUsername(ig)) return '영문 소문자, 숫자, 온점(.), 언더바(_)만 사용해 1~30자로 입력해주세요.';
+    return '';
+  };
 
-    if (!value.trim() || nicknameValidation?.type !== 'success') {
-      console.log('닉네임 중복 체크 건너뜀 - 조건 불만족');
+  const validateKakaoField = (enabled, value) => {
+    if (!enabled) return '';
+    const kakao = (value || '').trim();
+    if (!kakao) return '카카오톡 오픈채팅 링크를 입력해주세요.';
+    if (!isValidKakaoUrl(kakao)) return '한글 없이 https:// 로 시작하는 오픈채팅 링크를 입력해주세요.';
+    return '';
+  };
+
+  const isValidInstagramUsername = (value) => {
+    if (!value) return false;
+    const hasKorean = /[가-힣]/.test(value);
+    if (hasKorean) return false;
+    const regex = /^[a-z0-9._]{1,30}$/;
+    return regex.test(value);
+  };
+
+  const isValidKakaoUrl = (value) => {
+    if (!value) return false;
+    const lower = value.toLowerCase();
+    const hasValidProtocol = lower.startsWith('https://');
+    const hasKorean = /[가-힣]/.test(value);
+    return hasValidProtocol && !hasKorean;
+  };
+
+  // =========================
+  // 3. 인풋 핸들러들
+  // =========================
+
+  const handleNicknameChange = (value) => {
+    setFormData(prev => ({ ...prev, nickname: value }));
+    const trimmed = value.trim();
+
+    if (!trimmed) {
+      setNicknameValidation(null);
+      setErrors(prev => ({ ...prev, nickname: '' }));
       return;
     }
 
-    console.log('닉네임 중복 체크 시작');
+    const validation = validateNickname(trimmed);
+    setNicknameValidation(validation);
+    setErrors(prev => ({
+      ...prev,
+      nickname: validation && !validation.isValid ? validation.message : ''
+    }));
+  };
+
+  const handleNicknameBlur = async (value) => {
+    const trimmed = value.trim();
+    if (!trimmed || !nicknameValidation || !nicknameValidation.isValid) return;
+
     setNicknameChecking(true);
     try {
-      const result = await checkNicknameDuplicate(value);
-      console.log('닉네임 중복 체크 결과:', result);
+      const result = await checkNicknameDuplicate(trimmed);
 
       if (result.isDuplicate) {
+        const message = result.message || '이미 사용 중인 닉네임입니다';
         setNicknameValidation({
           isValid: false,
-          message: result.message,
-          type: 'duplicate'
+          message,
+          type: 'duplicate',
+          available: false
         });
+        setErrors(prev => ({ ...prev, nickname: message }));
       } else {
+        const message = result.message || '사용 가능한 닉네임입니다';
         setNicknameValidation({
           isValid: true,
-          message: result.message,
-          type: 'success'
+          message,
+          type: 'success',
+          available: true
         });
+        setErrors(prev => ({ ...prev, nickname: '' }));
       }
     } catch (error) {
       console.error('닉네임 중복 체크 오류:', error);
+      const message = '중복 체크 중 오류가 발생했습니다';
+      setNicknameValidation({
+        isValid: false,
+        message,
+        type: 'error',
+        available: false
+      });
+      setErrors(prev => ({ ...prev, nickname: message }));
     } finally {
       setNicknameChecking(false);
     }
   };
 
-  // 연락채널 선택 변경
-  const handleChannelChange = (channel) => {
-    setContactChannels(prev => ({
-      ...prev,
-      [channel]: !prev[channel]
-    }));
-
-    // 채널 해제 시 입력값 초기화
-    if (contactChannels[channel]) {
-      setChannelInputs(prev => ({
-        ...prev,
-        [channel]: ''
-      }));
-    }
+  const handlePhoneChange = (value) => {
+    const onlyNumbers = value.replace(/[^0-9]/g, '');
+    setFormData(prev => ({ ...prev, phone: onlyNumbers }));
+    const msg = validatePhone(onlyNumbers);
+    setErrors(prev => ({ ...prev, phone: msg }));
   };
 
-  // 채널 입력값 변경
+  const handleChannelChange = (channel) => {
+    setContactChannels(prev => {
+      const next = { ...prev, [channel]: !prev[channel] };
+      if (!next[channel]) {
+        setChannelInputs(prevInputs => ({ ...prevInputs, [channel]: '' }));
+        setErrors(prevErrors => ({ ...prevErrors, [channel]: '' }));
+      }
+      return next;
+    });
+  };
+
   const handleChannelInputChange = (channel, value) => {
-    setChannelInputs(prev => ({
-      ...prev,
-      [channel]: value
-    }));
+    setChannelInputs(prev => ({ ...prev, [channel]: value }));
+
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      if (channel === 'instagram') {
+        newErrors.instagram = validateInstagramField(contactChannels.instagram, value);
+      }
+      if (channel === 'kakaoOpenChat') {
+        newErrors.kakaoOpenChat = validateKakaoField(contactChannels.kakaoOpenChat, value);
+      }
+      return newErrors;
+    });
   };
 
   const validateForm = () => {
@@ -366,19 +431,20 @@ const KakaoSignupPage = () => {
       newErrors.nickname = nicknameValidation.message;
     }
 
-    if (!formData.phone.trim()) {
-      newErrors.phone = '연락처를 입력해주세요.';
-    }
+    const phoneError = validatePhone(formData.phone);
+    if (phoneError) newErrors.phone = phoneError;
 
-    // 선택된 채널에 대한 입력값 검증
-    if (contactChannels.instagram && !channelInputs.instagram.trim()) {
-      newErrors.instagram = '인스타그램 ID를 입력해주세요.';
+    const igError = validateInstagramField(contactChannels.instagram, channelInputs.instagram);
+    if (igError) newErrors.instagram = igError;
+
+    const kakaoError = validateKakaoField(contactChannels.kakaoOpenChat, channelInputs.kakaoOpenChat);
+    if (kakaoError) newErrors.kakaoOpenChat = kakaoError;
+
+    if (!formData.agreeTerms) {
+      newErrors.agreeTerms = '이용약관에 동의해주세요.';
     }
-    if (contactChannels.naverCafe && !channelInputs.naverCafe.trim()) {
-      newErrors.naverCafe = '네이버 카페 링크를 입력해주세요.';
-    }
-    if (contactChannels.kakaoOpenChat && !channelInputs.kakaoOpenChat.trim()) {
-      newErrors.kakaoOpenChat = '카카오톡 오픈채팅 링크를 입력해주세요.';
+    if (!formData.agreePrivacy) {
+      newErrors.agreePrivacy = '개인정보처리방침에 동의해주세요.';
     }
 
     setErrors(newErrors);
@@ -387,6 +453,8 @@ const KakaoSignupPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (loading) return;
 
     if (!validateForm()) {
       return;
@@ -409,7 +477,7 @@ const KakaoSignupPage = () => {
         return Promise.race([
           supabase.auth.getUser(),
           new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('사용자 정보 조회 타임아웃')), 5000)
+              setTimeout(() => reject(new Error('사용자 정보 조회 타임아웃')), 5000)
           )
         ]);
       };
@@ -464,12 +532,11 @@ const KakaoSignupPage = () => {
       const profileData = {
         auth_user_id: user.id,
         email: user.email,
-        display_name: formData.nickname,
-        bio: formData.introduction || null,
-        phone: formData.phone || null,
-        instagram: contactChannels.instagram ? channelInputs.instagram : null,
-        naver_cafe: contactChannels.naverCafe ? channelInputs.naverCafe : null,
-        kakao_openchat: contactChannels.kakaoOpenChat ? channelInputs.kakaoOpenChat : null,
+        display_name: formData.nickname.trim(),
+        bio: formData.introduction?.trim() || null,
+        phone: formData.phone?.trim() || null,
+        instagram: contactChannels.instagram ? channelInputs.instagram.trim() : null,
+        kakao_openchat: contactChannels.kakaoOpenChat ? channelInputs.kakaoOpenChat.trim() : null,
         provider: 'kakao',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -478,12 +545,14 @@ const KakaoSignupPage = () => {
       console.log('3. 프로필 데이터 준비 완료:', profileData);
 
       // user_profiles 테이블에 프로필 정보 저장
-      console.log('4. user_profiles 테이블에 INSERT 시도...');
+      // 4. user_profiles 테이블에 프로필 정보 저장
       const { data: insertedProfile, error: profileError } = await supabase
-        .from('user_profiles')
-        .insert([profileData])
-        .select()
-        .single();
+          .from('user_profiles')
+          .upsert(profileData, {
+            onConflict: 'auth_user_id',
+          })
+          .select()
+          .single();
 
       if (profileError) {
         console.error('5. 프로필 생성 오류:', {
@@ -498,25 +567,22 @@ const KakaoSignupPage = () => {
 
       console.log('6. 프로필 생성 성공:', insertedProfile);
 
-      // 프로필 생성 완료 후 로그아웃
-      await supabase.auth.signOut();
-
-      // sessionStorage 정리
-      sessionStorage.removeItem('kakaoUserInfo');
-      // 신규 사용자 플래그 리셋
-      setIsNewUser(false);
-      toast.success('회원가입이 완료되었습니다!');
-
-      // 가입 성공 후 리다이렉트 경로 확인
-      const redirectPath = sessionStorage.getItem('redirectAfterLogin');
-      if (redirectPath) {
-        console.log('저장된 리다이렉트 경로로 이동:', redirectPath);
-        sessionStorage.removeItem('redirectAfterLogin');
-        router.push(redirectPath);
-      } else {
-        console.log('기본 경로로 이동: 마이페이지');
-        router.push('/mypage');
+// ✅ 1) 방금 만든 프로필을 전역 상태(useAuth)에 저장
+      try {
+        await updateProfile(insertedProfile);
+      } catch (e) {
+        console.error('프로필 컨텍스트 업데이트 오류:', e);
       }
+
+// ✅ 2) 필요 없는 임시 값 정리
+      sessionStorage.removeItem('kakaoUserInfo');
+      sessionStorage.removeItem('redirectAfterLogin');
+      setIsNewUser(false);
+
+// ✅ 3) 안내 띄우고 마이페이지로 이동 (로그아웃 안 함!)
+      toast.success('회원가입이 완료되었습니다!');
+      router.push('/mypage');
+
 
     } catch (error) {
       console.error('카카오톡 회원가입 오류:', error);
@@ -527,114 +593,107 @@ const KakaoSignupPage = () => {
   };
 
   // OAuth 콜백 처리 중일 때 로딩 화면 표시
-  if (loading && !userInfo) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-yellow-500 mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">카카오톡 인증 중...</h2>
-          <p className="text-gray-500">잠시만 기다려주세요.</p>
-        </div>
-      </div>
-    );
+  if (oauthLoading) {
+    return <Loading text={'카카오톡 인증 중~'} className={'!text-black'}/>;
   }
 
   if (!userInfo) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">인증 정보를 불러올 수 없습니다</h2>
-          <p className="text-gray-500 mb-4">다시 시도해주세요.</p>
-          <button
-            onClick={() => router.push('/login')}
-            className="bg-yellow-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-yellow-600 transition-colors"
-          >
-            로그인 페이지로 돌아가기
-          </button>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-gray-700 mb-2">인증 정보를 불러올 수 없습니다</h2>
+            <p className="text-gray-500 mb-4">다시 시도해주세요.</p>
+            <button
+                onClick={() => router.push('/login')}
+                className="bg-yellow-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-yellow-600 transition-colors"
+            >
+              로그인 페이지로 돌아가기
+            </button>
+          </div>
         </div>
-      </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* 헤더 */}
-      <div className="px-4 py-3 border-b border-gray-200">
-        <div className="flex items-center">
-          <Link href="/login" className="mr-4">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M15 18L9 12L15 6" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </Link>
-          <h1 className="text-lg font-semibold">카카오톡 간편 가입</h1>
-        </div>
+      <div className="min-h-screen bg-white">
+        {/* 헤더 */}
+        <div className="px-4 py-3 border-b border-gray-200">
+          <div className="flex items-center">
+            <Link href="/login" className="mr-4">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M15 18L9 12L15 6" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </Link>
+            <h1 className="text-lg font-semibold">카카오톡 간편 가입</h1>
+          </div>
 
-        {/* 진행 단계 표시 */}
-        <div className="flex justify-center mt-4 space-x-2">
-          <div className="w-2 h-2 rounded-full bg-gray-300"></div>
-          <div className="w-2 h-2 rounded-full bg-red-500"></div>
-        </div>
-      </div>
-
-      {/* 카카오톡 사용자 정보 */}
-      <div className="px-6 py-4 bg-yellow-50 border-b border-yellow-200">
-        <div className="flex items-center space-x-3">
-          <img
-            src={userInfo.profile_image || '/img/default_profile.jpg'}
-            alt="프로필"
-            className="w-12 h-12 rounded-full"
-          />
-          <div>
-            <p className="font-semibold text-gray-800">{userInfo.nickname || userInfo.name}</p>
-            <p className="text-sm text-gray-600">{userInfo.email}</p>
+          {/* 진행 단계 표시 */}
+          <div className="flex justify-center mt-4 space-x-2">
+            <div className="w-2 h-2 rounded-full bg-gray-300"></div>
+            <div className="w-2 h-2 rounded-full bg-red-500"></div>
           </div>
         </div>
-      </div>
 
-      {/* 메인 컨텐츠 */}
-      <div className="px-6 py-8">
-        <form onSubmit={handleSubmit}>
-          <UserProfileForm
-            mode="signup"
-            formData={formData}
-            setFormData={setFormData}
-            contactChannels={contactChannels}
-            setContactChannels={setContactChannels}
-            channelInputs={channelInputs}
-            setChannelInputs={setChannelInputs}
-            errors={errors}
-            setErrors={setErrors}
-            nicknameValidation={nicknameValidation}
-            setNicknameValidation={setNicknameValidation}
-            nicknameChecking={nicknameChecking}
-            setNicknameChecking={setNicknameChecking}
-            onNicknameChange={handleNicknameChange}
-            onNicknameBlur={handleNicknameBlur}
-            onChannelChange={handleChannelChange}
-            onChannelInputChange={handleChannelInputChange}
-            showProfileImage={false}
-            showIntroduction={true}
-            showPhone={true}
-            showSocialChannels={true}
-            showPassword={false}
-            showTerms={false}
-          />
+        {/* 카카오톡 사용자 정보 */}
+        <div className="px-6 py-4 bg-yellow-50 border-b border-yellow-200">
+          <div className="flex items-center space-x-3">
+            <ProfileImage
+                profileImage={userInfo.profile_image}
+                size={48}
+                alt="프로필"
+            />
+            <div>
+              <p className="font-semibold text-gray-800">{userInfo.nickname || userInfo.name}</p>
+              <p className="text-sm text-gray-600">{userInfo.email}</p>
+            </div>
+          </div>
+        </div>
 
-          {/* 회원가입 완료 버튼 */}
-          <button
-            type="submit"
-            disabled={loading}
-            className={`w-full mt-8 py-3 rounded-lg font-semibold transition-colors ${
-              loading
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-[#FFDD44] text-black hover:bg-yellow-500'
-            }`}
-          >
-            {loading ? '가입 중...' : '가입하기'}
-          </button>
-        </form>
+        {/* 메인 컨텐츠 */}
+        <div className="px-6 py-8">
+          <form onSubmit={handleSubmit}>
+            <UserProfileForm
+                mode="signup"
+                formData={formData}
+                setFormData={setFormData}
+                contactChannels={contactChannels}
+                setContactChannels={setContactChannels}
+                channelInputs={channelInputs}
+                setChannelInputs={setChannelInputs}
+                errors={errors}
+                setErrors={setErrors}
+                nicknameValidation={nicknameValidation}
+                setNicknameValidation={setNicknameValidation}
+                nicknameChecking={nicknameChecking}
+                setNicknameChecking={setNicknameChecking}
+                onNicknameChange={handleNicknameChange}
+                onNicknameBlur={handleNicknameBlur}
+                onChannelChange={handleChannelChange}
+                onChannelInputChange={handleChannelInputChange}
+                onPhoneChange={handlePhoneChange}
+                showProfileImage={false}
+                showIntroduction={true}
+                showPhone={true}
+                showSocialChannels={true}
+                showPassword={false}
+                showTerms={true}
+            />
+
+            {/* 회원가입 완료 버튼 */}
+            <button
+                type="submit"
+                disabled={loading}
+                className={`w-full mt-8 py-3 rounded-lg font-semibold transition-colors ${
+                    loading
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-[#FFDD44] text-black hover:bg-yellow-500'
+                }`}
+            >
+              {loading ? '가입 중...' : '가입하기'}
+            </button>
+          </form>
+        </div>
       </div>
-    </div>
   );
 };
 

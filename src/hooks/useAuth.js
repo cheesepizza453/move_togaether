@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }) => {
               return;
             }
           } catch (parseError) {
-            console.log('캐시된 데이터 파싱 오류, 서버에서 새로 가져옴');
+            console.log('캐시된 데이터 파싱 오류, 서버에서 새로 가져옴:', parseError.message);
           }
         }
 
@@ -86,68 +86,68 @@ export const AuthProvider = ({ children }) => {
 
     // 인증 상태 변경 리스너
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('onAuthStateChange 이벤트:', { event, session: !!session, user: !!session?.user });
+        async (event, session) => {
+          console.log('onAuthStateChange 이벤트:', { event, session: !!session, user: !!session?.user });
 
-        // 로그아웃 이벤트 처리
-        if (event === 'SIGNED_OUT') {
-          console.log('로그아웃 이벤트 감지 - 상태 초기화');
-          setUser(null);
-          setProfile(null);
-          setLoading(false);
+          // 로그아웃 이벤트 처리
+          if (event === 'SIGNED_OUT') {
+            console.log('로그아웃 이벤트 감지 - 상태 초기화');
+            setUser(null);
+            setProfile(null);
+            setLoading(false);
 
-          // 캐시 정리
-          localStorage.removeItem('supabase.auth.user');
-          localStorage.removeItem('supabase.auth.profile');
-          localStorage.removeItem('supabase.auth.cacheTime');
-          localStorage.removeItem('supabase.auth.profileCacheTime');
-          return;
-        }
-
-        // INITIAL_SESSION 이벤트에서도 사용자 정보 처리
-        if (event === 'INITIAL_SESSION' && session?.user) {
-          console.log('초기 세션에서 사용자 발견:', session.user.id);
-          setUser(session.user);
-          await fetchProfile(session.user.id);
-          setLoading(false);
-          return;
-        }
-
-        setUser(session?.user ?? null);
-
-        if (session?.user) {
-          console.log('사용자 세션 확인:', {
-            userId: session.user.id,
-            emailConfirmed: !!session.user.email_confirmed_at,
-            hasMetadata: !!session.user.user_metadata,
-            metadata: session.user.user_metadata
-          });
-
-          // 프로필 정보 가져오기
-          await fetchProfile(session.user.id);
-
-          // 이메일 인증 완료 후 프로필 생성 (SIGNED_IN 이벤트에서만)
-          if (event === 'SIGNED_IN' && session.user.email_confirmed_at) {
-            console.log('이메일 인증 완료된 사용자 - 프로필 생성 시도');
-            try {
-              await createProfileFromMetadata(session.user);
-            } catch (error) {
-              console.error('onAuthStateChange에서 프로필 생성 오류:', error);
-            }
+            // 캐시 정리
+            localStorage.removeItem('supabase.auth.user');
+            localStorage.removeItem('supabase.auth.profile');
+            localStorage.removeItem('supabase.auth.cacheTime');
+            localStorage.removeItem('supabase.auth.profileCacheTime');
+            return;
           }
 
-          // 프로필 정보 조회
-          try {
+          // INITIAL_SESSION 이벤트에서도 사용자 정보 처리
+          if (event === 'INITIAL_SESSION' && session?.user) {
+            console.log('초기 세션에서 사용자 발견:', session.user.id);
+            setUser(session.user);
             await fetchProfile(session.user.id);
-          } catch (error) {
-            console.error('onAuthStateChange에서 프로필 조회 오류:', error);
+            setLoading(false);
+            return;
           }
-        } else {
-          setProfile(null);
-        }
 
-        setLoading(false);
-      }
+          setUser(session?.user ?? null);
+
+          if (session?.user) {
+            console.log('사용자 세션 확인:', {
+              userId: session.user.id,
+              emailConfirmed: !!session.user.email_confirmed_at,
+              hasMetadata: !!session.user.user_metadata,
+              metadata: session.user.user_metadata
+            });
+
+            // 프로필 정보 가져오기
+            await fetchProfile(session.user.id);
+
+            // 이메일 인증 완료 후 프로필 생성 (SIGNED_IN 이벤트에서만)
+            if (event === 'SIGNED_IN' && session.user.email_confirmed_at) {
+              console.log('이메일 인증 완료된 사용자 - 프로필 생성 시도');
+              try {
+                await createProfileFromMetadata(session.user);
+              } catch (error) {
+                console.error('onAuthStateChange에서 프로필 생성 오류:', error);
+              }
+            }
+
+            // 프로필 정보 조회
+            try {
+              await fetchProfile(session.user.id);
+            } catch (error) {
+              console.error('onAuthStateChange에서 프로필 조회 오류:', error);
+            }
+          } else {
+            setProfile(null);
+          }
+
+          setLoading(false);
+        }
     );
 
     return () => subscription.unsubscribe();
@@ -168,11 +168,11 @@ export const AuthProvider = ({ children }) => {
 
       // 기존 프로필이 있는지 확인
       const { data: existingProfile, error: checkError } = await supabase
-        .from('user_profiles')
-        .select('id')
-        .eq('auth_user_id', user.id)
-        .eq('is_deleted', false)
-        .single();
+          .from('user_profiles')
+          .select('id')
+          .eq('auth_user_id', user.id)
+          .eq('is_deleted', false)
+          .maybeSingle();
 
       if (checkError && checkError.code !== 'PGRST116') {
         console.error('기존 프로필 확인 오류:', checkError);
@@ -193,24 +193,24 @@ export const AuthProvider = ({ children }) => {
 
       // user_profiles 테이블에 프로필 정보 저장
       const { error: profileError } = await supabase
-        .from('user_profiles')
-        .insert([
-          {
-            auth_user_id: user.id,
-            email: user.email, // 이메일 동기화
-            display_name: metadata.nickname,
-            bio: metadata.introduction || null,
-            phone: metadata.phone || null,
-            instagram: metadata.contactChannels?.instagram ? metadata.channelInputs?.instagram : null,
-            naver_cafe: metadata.contactChannels?.naverCafe ? metadata.channelInputs?.naverCafe : null,
-            kakao_openchat: metadata.contactChannels?.kakaoOpenChat ? metadata.channelInputs?.kakaoOpenChat : null,
-            security_question: metadata.securityQuestion || null,
-            security_answer: metadata.securityAnswer || null,
-            provider: metadata.provider || 'email', // 가입 방식 저장
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }
-        ]);
+          .from('user_profiles')
+          .insert([
+            {
+              auth_user_id: user.id,
+              email: user.email, // 이메일 동기화
+              display_name: metadata.nickname,
+              bio: metadata.introduction || null,
+              phone: metadata.phone || null,
+              instagram: metadata.contactChannels?.instagram ? metadata.channelInputs?.instagram : null,
+              naver_cafe: metadata.contactChannels?.naverCafe ? metadata.channelInputs?.naverCafe : null,
+              kakao_openchat: metadata.contactChannels?.kakaoOpenChat ? metadata.channelInputs?.kakaoOpenChat : null,
+              security_question: metadata.securityQuestion || null,
+              security_answer: metadata.securityAnswer || null,
+              provider: metadata.provider || 'email', // 가입 방식 저장
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }
+          ]);
 
       if (profileError) {
         console.error('프로필 생성 오류:', profileError);
@@ -253,18 +253,18 @@ export const AuthProvider = ({ children }) => {
           setProfile(profileData);
           return;
         } catch (parseError) {
-          console.log('캐시된 프로필 파싱 오류, 서버에서 새로 가져옴');
+          console.log('캐시된 프로필 파싱 오류, 서버에서 새로 가져옴:', parseError.message);
         }
       }
 
       // 서버에서 프로필 조회
       console.log('서버에서 프로필 조회');
       const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('auth_user_id', userId)
-        .eq('is_deleted', false)
-        .single();
+          .from('user_profiles')
+          .select('*')
+          .eq('auth_user_id', userId)
+          .eq('is_deleted', false)
+          .maybeSingle();
 
       if (error) {
         if (error.code === 'PGRST116') {
@@ -290,7 +290,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   // 회원가입
-  const signUp = async ({ email, password, nickname, introduction, phone, contactChannels, channelInputs }) => {
+  const signUp = async ({ email, password, nickname, introduction, phone, contactChannels, channelInputs, securityQuestion, securityAnswer}) => {
     try {
       setLoading(true);
 
@@ -302,7 +302,9 @@ export const AuthProvider = ({ children }) => {
         introduction,
         phone,
         contactChannels,
-        channelInputs
+        channelInputs,
+        securityQuestion,
+        securityAnswer,
       });
 
       console.log('서버 회원가입 응답:', result);
@@ -418,26 +420,14 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('supabase.auth.profileCacheTime');
       console.log('로컬 상태 및 캐시 초기화 완료');
 
-      // 2. 클라이언트 사이드에서 Supabase 세션 정리
-      console.log('클라이언트 사이드 로그아웃...');
-      const { error: clientError } = await supabase.auth.signOut();
-      if (clientError) {
-        console.error('클라이언트 로그아웃 오류:', clientError);
-      } else {
-        console.log('클라이언트 로그아웃 성공');
-      }
+      // 2. 클라이언트 사이드에서 Supabase 세션 정리 (백그라운드에서 실행)
+      console.log('클라이언트 사이드 로그아웃 (백그라운드)...');
+      // Promise를 기다리지 않고 백그라운드에서 실행
+      supabase.auth.signOut().catch(error => {
+        console.error('클라이언트 로그아웃 오류 (무시됨):', error);
+      });
 
-      // 3. 서버 사이드 로그아웃 (백업)
-      console.log('서버 로그아웃 요청...');
-      try {
-        await authAPI.logout();
-        console.log('서버 로그아웃 성공');
-      } catch (serverError) {
-        console.error('서버 로그아웃 오류:', serverError);
-        // 서버 오류는 무시하고 클라이언트 로그아웃만으로 처리
-      }
-
-      console.log('=== 로그아웃 완료 ===');
+      console.log('=== 로그아웃 완료 (로컬 정리 완료) ===');
       return { success: true };
     } catch (error) {
       console.error('=== 로그아웃 중 전체 오류 ===');
@@ -695,8 +685,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
+      <AuthContext.Provider value={value}>
+        {children}
+      </AuthContext.Provider>
   );
 };

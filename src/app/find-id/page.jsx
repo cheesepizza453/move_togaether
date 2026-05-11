@@ -70,7 +70,10 @@ const FindIdPage = () => {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ nickname: formData.nickname })
+        body: JSON.stringify({
+          nickname: formData.nickname,
+          checkSecurityQuestion: true
+        })
       });
 
       const result = await response.json();

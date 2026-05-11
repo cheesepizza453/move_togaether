@@ -1,10 +1,10 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import moment from 'moment';
+import Image from "next/image";
 
-const MyPageCard = ({ post, activeSubTab, tab }) => {
+const MyPageCard = ({ post, activeSubTab, tab, appliedAt }) => {
   const router = useRouter();
 
   const convertDogSize = (size) => {
@@ -51,7 +51,7 @@ const MyPageCard = ({ post, activeSubTab, tab }) => {
   return (
 
       //
-      <div className={`${activeSubTab === '완료' ? 'bg-text-300' : 'bg-white shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]' } rounded-[15px] px-[22px] py-[18px] cursor-pointer relative`}>
+      <div className={`${activeSubTab === '완료' ? 'bg-text-100' : 'bg-white shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]' } rounded-[15px] px-[22px] py-[18px] cursor-pointer relative`}>
         {/* 진행중 탭에서만 D-day 표시 */}
         {activeSubTab === '진행중' && (
             <div className="absolute -top-3 left-[-5px] z-10">
@@ -69,7 +69,9 @@ const MyPageCard = ({ post, activeSubTab, tab }) => {
         <div className="flex items-center">
           <div className="w-[76px] h-[80px] bg-gray-100 rounded-[15px] mr-3 flex-shrink-0 overflow-hidden relative shadow-[0_0_7px_0px_rgba(0,0,0,0.25)]">
             {post.images && post.images.length > 0 ? (
-                <img
+                <Image
+                    width={200}
+                    height={200}
                     src={post.images[0]}
                     alt={post.dog_name}
                     className="w-full h-full object-cover"
@@ -89,7 +91,7 @@ const MyPageCard = ({ post, activeSubTab, tab }) => {
             <p className="text-12-r text-text-800">
               {post.dog_name} / {convertDogSize(post.dog_size)}
             </p>
-            <p className="text-9-r text-text-600">{formatDate(post.created_at)}</p>
+            <p className="text-10-r text-text-600">{formatDate(post.created_at)}</p>
             </div>
           </div>
 
@@ -108,7 +110,7 @@ const MyPageCard = ({ post, activeSubTab, tab }) => {
                   onClick={() => router.push(`/posts/${post.id}`)}
                   className="w-full bg-brand-main text-[#333] py-[8px] text-14-m rounded-[15px]"
               >
-                {formatDate(post.application_date)} 지원
+                {formatDate(appliedAt)} 지원
               </button>
             </div>
         ) : (

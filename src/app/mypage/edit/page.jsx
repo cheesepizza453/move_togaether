@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import { cn } from "@/lib/utils";
+import IconLoading from "../../../../public/img/icon/IconLoading";
 
 // 커스텀 AlertDialogContent (오버레이 없이)
 const CustomAlertDialogContent = React.forwardRef(({ className, ...props }, ref) => (
@@ -35,6 +36,87 @@ const CustomAlertDialogContent = React.forwardRef(({ className, ...props }, ref)
   </AlertDialogPrimitive.Portal>
 ));
 CustomAlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName;
+
+// === 유효성 검사 헬퍼들 (추가정보 페이지와 동일) ===
+
+// 인스타그램 username 검증
+// 규칙: 영문 소문자 + 숫자 + 언더바(_)만 허용, 1~30자, 한글 X, URL X
+const isValidInstagramUsername = (value) => {
+  if (!value) return false;
+
+  // 한글 포함 여부
+  const hasKorean = /[가-힣]/.test(value);
+  if (hasKorean) return false;
+
+  // 인스타그램 유저네임 패턴
+  const regex = /^[a-z0-9._]{1,30}$/;
+  return regex.test(value);
+};
+
+// 카카오 옵챗 / URL 검증: http(s) + 한글 없음
+const isValidUrl = (value) => {
+  if (!value) return false;
+  const lower = value.toLowerCase();
+  const hasValidProtocol =
+      lower.startsWith('http://') || lower.startsWith('https://');
+  const hasKorean = /[가-힣]/.test(value);
+
+  return hasValidProtocol && !hasKorean;
+};
+
+// 전화번호 검증
+const validatePhone = (phone) => {
+  const value = (phone || '').trim();
+  if (!value) return '연락처를 입력해주세요.';
+  if (value.length < 10) return '연락처를 정확히 입력해주세요.';
+  return '';
+};
+
+// 보안 질문 검증
+const validateSecurityQuestionField = (q) => {
+  if (!q) return '보안 질문을 선택해주세요.';
+  return '';
+};
+
+// 보안 답변 검증
+const validateSecurityAnswerField = (answer) => {
+  const value = (answer || '').trim();
+  if (!value) return '보안 질문 답변을 입력해주세요.';
+  if (value.length < 2) return '답변은 2자 이상 입력해주세요.';
+  return '';
+};
+
+// 인스타그램 입력 필드 검증
+const validateInstagramField = (enabled, value) => {
+  if (!enabled) return '';
+
+  const ig = (value || '').trim();
+
+  if (!ig) {
+    return '인스타그램 ID(영문 유저네임)를 입력해주세요.';
+  } else if (/http(s)?:\/\//i.test(ig)) {
+    return 'URL이 아닌 인스타그램 ID(영문 유저네임)을 입력해주세요.';
+  } else if (!isValidInstagramUsername(ig)) {
+    return '영문 소문자, 숫자, 온점(.), 언더바(_)만 사용해 1~30자로 입력해주세요.';
+  }
+
+  return '';
+};
+
+// 카카오 오픈채팅 입력 필드 검증
+const validateKakaoField = (enabled, value) => {
+  if (!enabled) return '';
+
+  const kakao = (value || '').trim();
+
+  if (!kakao) {
+    return '카카오톡 오픈채팅 링크를 입력해주세요.';
+  } else if (!isValidUrl(kakao)) {
+    return '한글 없이 https:// 로 시작하는 오픈채팅 링크를 입력해주세요.';
+  }
+
+  return '';
+};
 
 const EditProfilePage = () => {
   const { user, profile, loading, checkNicknameDuplicate, updateProfile } = useAuth();
@@ -160,51 +242,115 @@ const EditProfilePage = () => {
 
   // 연락채널 입력값 변경 핸들러
   const handleChannelInputChange = (channel, value) => {
-    setChannelInputs(prev => ({
+    setChannelInputs((prev) => ({
       ...prev,
-      [channel]: value
+      [channel]: value,
     }));
-    setErrors(prev => ({
-      ...prev,
-      [channel]: ''
-    }));
+
+    setErrors((prev) => {
+      const newErrors = { ...prev };
+
+      if (channel === 'instagram') {
+        newErrors.instagram = validateInstagramField(
+            contactChannels.instagram,
+            value
+        );
+      }
+
+      if (channel === 'kakaoOpenChat') {
+        newErrors.kakaoOpenChat = validateKakaoField(
+            contactChannels.kakaoOpenChat,
+            value
+        );
+      }
+
+      return newErrors;
+    });
+  };
+
+
+  // 인스타그램 username 검증
+  // 규칙: 영문 소문자 + 숫자 + 언더바(_)만 허용, 1~30자, 한글 X, URL X
+  const isValidInstagramUsername = (value) => {
+    if (!value) return false;
+
+    // 한글 포함 여부
+    const hasKorean = /[가-힣]/.test(value);
+    if (hasKorean) return false;
+
+    // 인스타그램 유저네임 패턴
+    const regex = /^[a-z0-9._]{1,30}$/;
+
+    return regex.test(value);
+  };
+
+  // 카카오 옵챗 URL 검증: http(s) + 한글 없음
+  const isValidUrl = (value) => {
+    if (!value) return false;
+    const lower = value.toLowerCase();
+    const hasValidProtocol =
+        lower.startsWith('http://') || lower.startsWith('https://');
+    const hasKorean = /[가-힣]/.test(value);
+
+    return hasValidProtocol && !hasKorean;
   };
 
   // 폼 유효성 검사
   const validateForm = () => {
     const newErrors = {};
 
-    // 닉네임은 수정 모드에서 검증하지 않음 (변경 불가)
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = '연락처를 입력해주세요.';
-    }
+    // 전화번호
+    const phoneError = validatePhone(formData.phone);
+    if (phoneError) newErrors.phone = phoneError;
 
     // 이메일 가입 사용자만 보안 질문/답변 검증
     if (isEmailUser) {
-      if (!formData.securityQuestion) {
-        newErrors.securityQuestion = '보안 질문을 선택해주세요.';
-      }
-      if (!formData.securityAnswer.trim()) {
-        newErrors.securityAnswer = '보안 질문 답변을 입력해주세요.';
-      } else if (formData.securityAnswer.length < 2) {
-        newErrors.securityAnswer = '답변은 2자 이상 입력해주세요.';
-      }
+      const sqError = validateSecurityQuestionField(formData.securityQuestion);
+      if (sqError) newErrors.securityQuestion = sqError;
+
+      const saError = validateSecurityAnswerField(formData.securityAnswer);
+      if (saError) newErrors.securityAnswer = saError;
     }
 
-    // 선택된 채널에 대한 입력값 검증
-    if (contactChannels.instagram && !channelInputs.instagram.trim()) {
-      newErrors.instagram = '인스타그램 ID를 입력해주세요.';
-    }
-    if (contactChannels.naverCafe && !channelInputs.naverCafe.trim()) {
-      newErrors.naverCafe = '네이버 카페 링크를 입력해주세요.';
-    }
-    if (contactChannels.kakaoOpenChat && !channelInputs.kakaoOpenChat.trim()) {
-      newErrors.kakaoOpenChat = '카카오톡 오픈채팅 링크를 입력해주세요.';
-    }
+    // 인스타그램
+    const igError = validateInstagramField(
+        contactChannels.instagram,
+        channelInputs.instagram
+    );
+    if (igError) newErrors.instagram = igError;
+
+    // 카카오톡 오픈채팅
+    const kakaoError = validateKakaoField(
+        contactChannels.kakaoOpenChat,
+        channelInputs.kakaoOpenChat
+    );
+    if (kakaoError) newErrors.kakaoOpenChat = kakaoError;
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  // 전화번호 변경 (실시간 검증)
+  const handlePhoneChange = (value) => {
+    const onlyNumbers = value.replace(/[^0-9]/g, '');
+    setFormData((prev) => ({ ...prev, phone: onlyNumbers }));
+
+    const msg = validatePhone(onlyNumbers);
+    setErrors((prev) => ({ ...prev, phone: msg }));
+  };
+
+  // 보안 질문 변경 (실시간 검증)
+  const handleSecurityQuestionChange = (value) => {
+    setFormData((prev) => ({ ...prev, securityQuestion: value }));
+    const msg = validateSecurityQuestionField(value);
+    setErrors((prev) => ({ ...prev, securityQuestion: msg }));
+  };
+
+  // 보안 답변 변경 (실시간 검증)
+  const handleSecurityAnswerChange = (value) => {
+    setFormData((prev) => ({ ...prev, securityAnswer: value }));
+    const msg = validateSecurityAnswerField(value);
+    setErrors((prev) => ({ ...prev, securityAnswer: msg }));
   };
 
   // 취소 핸들러
@@ -352,7 +498,7 @@ const EditProfilePage = () => {
           phone: formData.phone,
           profile_image: profileImageUrl,
           instagram: contactChannels.instagram ? channelInputs.instagram : null,
-          naver_cafe: contactChannels.naverCafe ? channelInputs.naverCafe : null,
+          // naver_cafe: contactChannels.naverCafe ? channelInputs.naverCafe : null,
           kakao_openchat: contactChannels.kakaoOpenChat ? channelInputs.kakaoOpenChat : null,
           // 이메일 가입 사용자만 보안 질문/답변 업데이트
           ...(isEmailUser && {
@@ -391,12 +537,13 @@ const EditProfilePage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">로딩 중...</p>
+        <div className="min-h-screen bg-white flex items-center justify-center">
+          <div className="flex justify-center items-center">
+            <div className={'w-full flex justify-center'}>
+              <IconLoading/>
+            </div>
+          </div>
         </div>
-      </div>
     );
   }
 
@@ -447,6 +594,9 @@ const EditProfilePage = () => {
             onChannelChange={handleChannelChange}
             onChannelInputChange={handleChannelInputChange}
             onProfileImageChange={handleProfileImageChange}
+            onPhoneChange={handlePhoneChange}
+            onSecurityQuestionChange={handleSecurityQuestionChange}
+            onSecurityAnswerChange={handleSecurityAnswerChange}
             mode="edit"
             showProfileImage={true}
             showIntroduction={true}
@@ -493,7 +643,7 @@ const EditProfilePage = () => {
                 onClick={() => setShowLogoutDialog(false)}
             />
         )}
-        <CustomAlertDialogContent className="z-[9999] bg-white">
+        <CustomAlertDialogContent className="z-[9999] fixed left-[50%] top-[50%] grid w-[85vw] rounded-[15px] max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border p-6 pt-[36px] shadow-[0_0_6px_0px_rgba(0,0,0,0.25)] bg-white">
           <AlertDialogHeader>
             <AlertDialogTitle>로그아웃</AlertDialogTitle>
             <AlertDialogDescription>

@@ -1,6 +1,7 @@
 'use client';
 
 import { Edit3 } from 'lucide-react';
+import Image from "next/image";
 
 const Preview = ({
   formData,
@@ -24,7 +25,7 @@ const Preview = ({
       {/* 봉사자 정보 */}
       <div className="bg-white border border-gray-200 rounded-lg p-4">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium text-gray-900">봉사자 정보</h3>
+          <h3 className="text-18-m text-gray-900">봉사자 정보</h3>
           <button
             type="button"
             onClick={() => onEdit(1)}
@@ -61,7 +62,7 @@ const Preview = ({
       {/* 강아지 정보 */}
       <div className="bg-white border border-gray-200 rounded-lg p-4">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium text-gray-900">강아지 정보</h3>
+          <h3 className="text-18-m text-gray-900">강아지 정보</h3>
           <button
             type="button"
             onClick={() => onEdit(2)}
@@ -75,8 +76,9 @@ const Preview = ({
         <div className="space-y-3">
           {photoPreview && (
             <div>
-              <span className="text-sm font-medium text-gray-600">사진:</span>
-              <img
+              <Image
+                width={200}
+                height={200}
                 src={photoPreview}
                 alt="강아지 사진"
                 className="w-32 h-32 object-cover rounded-lg border border-gray-300 mt-2"
@@ -106,7 +108,7 @@ const Preview = ({
       {/* 추가 정보 */}
       <div className="bg-white border border-gray-200 rounded-lg p-4">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium text-gray-900">추가 정보</h3>
+          <h3 className="text-18-m text-gray-900">추가 정보</h3>
           <button
             type="button"
             onClick={() => onEdit(3)}
@@ -125,7 +127,7 @@ const Preview = ({
                 href={formData.relatedPostLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-blue-600 hover:text-blue-800 mt-1 block break-all"
+                className="underline text-sm text-blue-600 hover:text-blue-800 mt-1 block break-all"
               >
                 {formData.relatedPostLink}
               </a>
@@ -143,7 +145,7 @@ const Preview = ({
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <h4 className="text-sm font-medium text-blue-900 mb-2">최종 확인</h4>
         <p className="text-sm text-blue-800">
-          위 정보가 모두 정확한지 확인해주세요. 제출 후에는 수정이 어려울 수 있습니다.
+          위 정보가 모두 정확한지 확인해주세요. 제출 후에는 수정이 어렵습니다.
         </p>
       </div>
 
@@ -160,7 +162,7 @@ const Preview = ({
           className={`w-full py-4 px-6 rounded-lg font-medium transition-colors ${
             loading
               ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              : 'bg-green-500 text-white hover:bg-green-600 active:bg-green-700'
+              : 'bg-brand-main text-black'
           }`}
         >
           {loading ? (
