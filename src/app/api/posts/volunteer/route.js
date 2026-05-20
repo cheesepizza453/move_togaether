@@ -126,7 +126,12 @@ export async function POST(request) {
       .single();
 
     if (error) {
-      console.error('volunteer post insert error:', error.code);
+      console.error('volunteer post insert error:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
       return NextResponse.json({
         success: false,
         error: '데이터 저장에 실패했습니다.'
@@ -140,7 +145,11 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('volunteer POST error:', error.name);
+    console.error('volunteer POST error:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+    });
     return NextResponse.json({
       success: false,
       error: '서버 오류가 발생했습니다.'
