@@ -1,6 +1,6 @@
 // 실종신고 API — 실종견을 목격했을 때 위치·사진·정보를 제보하는 기능
 import { NextResponse } from 'next/server';
-import { createServerSupabaseClient, createAdminSupabaseClient } from '@/lib/supabase';
+import { createServerSupabaseClient } from '@/lib/supabase';
 
 export async function POST(request) {
   try {
@@ -91,8 +91,8 @@ export async function POST(request) {
     }
 
     // DB 저장 (arrival 관련 컬럼 저장 안 함 — 실종신고는 목격 위치만 기록)
-    const adminSupabase = createAdminSupabaseClient();
-    const { data, error } = await adminSupabase
+    // 사용자 JWT로 저장해 RLS의 "게시물 작성 정책"을 그대로 적용한다.
+    const { data, error } = await supabase
       .from('posts')
       .insert([{
         user_id: userProfile.id,
