@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createServerSupabaseClient, createAdminSupabaseClient } from '@/lib/supabase';
+import { createServerSupabaseClient } from '@/lib/supabase';
 
 export async function POST(request) {
   try {
@@ -97,8 +97,8 @@ export async function POST(request) {
     }
 
     // DB 저장
-    const adminSupabase = createAdminSupabaseClient();
-    const { data, error } = await adminSupabase
+    // 사용자 JWT로 저장해 RLS의 "게시물 작성 정책"을 그대로 적용한다.
+    const { data, error } = await supabase
       .from('posts')
       .insert([{
         user_id: userProfile.id,
