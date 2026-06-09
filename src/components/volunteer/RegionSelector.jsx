@@ -1,37 +1,159 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { getSidos, getSigunguList, getDongList } from '@/lib/korea-regions';
+
+const fetchRegions = async (params, signal) => {
+  const searchParams = new URLSearchParams(params);
+  const response = await fetch(`/api/regions?${searchParams.toString()}`, { signal });
+  const result = await response.json();
+
+  if (!response.ok || !result.success) {
+    throw new Error(result.error || '지역 정보를 불러오지 못했습니다.');
+  }
+
+  return result.data || [];
+};
+
+const getAddressText = (sido, sigungu, dong) => {
+  return [
+    sido?.name,
+    sigungu?.code !== sido?.code ? sigungu?.name : null,
+    dong?.name,
+  ].filter(Boolean).join(' ');
+};
 
 // onChange({ address, sido, sigungu, dong }) 형태로 호출됩니다.
 const RegionSelector = ({ label, value, onChange, error, required }) => {
-  const [sido, setSido] = useState('');
-  const [sigungu, setSigungu] = useState('');
-  const [dong, setDong] = useState('');
+  const [sidos, setSidos] = useState([]);
+  const [sigunguList, setSigunguList] = useState([]);
+  const [dongList, setDongList] = useState([]);
+  const [sido, setSido] = useState(null);
+  const [sigungu, setSigungu] = useState(null);
+  const [dong, setDong] = useState(null);
+  const [loading, setLoading] = useState({ sido: false, sigungu: false, dong: false });
+  const [regionError, setRegionError] = useState('');
 
   const mapRef = useRef(null);
   const leafletMapRef = useRef(null);
   const polygonLayerRef = useRef(null);
+  const onChangeRef = useRef(onChange);
 
-  const sidos = getSidos();
-  const siguList = getSigunguList(sido);
-  const dongList = getDongList(sido, sigungu);
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
   // 외부 value 변경 시 (초기값 복원 등) 파싱
   useEffect(() => {
     if (!value) {
-      setSido('');
-      setSigungu('');
-      setDong('');
+      setSido(null);
+      setSigungu(null);
+      setDong(null);
+      setSigunguList([]);
+      setDongList([]);
     }
   }, [value]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const loadSidos = async () => {
+      setLoading((prev) => ({ ...prev, sido: true }));
+      setRegionError('');
+
+      try {
+        const data = await fetchRegions({ level: 'sido' }, controller.signal);
+        setSidos(data);
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('시/도 조회 오류:', err);
+          setRegionError(err.message);
+        }
+      } finally {
+        setLoading((prev) => ({ ...prev, sido: false }));
+      }
+    };
+
+    loadSidos();
+
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    if (!sido) {
+      setSigunguList([]);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const loadSigungu = async () => {
+      setLoading((prev) => ({ ...prev, sigungu: true }));
+      setRegionError('');
+
+      try {
+        const data = await fetchRegions({
+          level: 'sigungu',
+          sidoCode: sido.code,
+          sidoName: sido.name,
+        }, controller.signal);
+        setSigunguList(data);
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('시/군/구 조회 오류:', err);
+          setRegionError(err.message);
+        }
+      } finally {
+        setLoading((prev) => ({ ...prev, sigungu: false }));
+      }
+    };
+
+    loadSigungu();
+
+    return () => controller.abort();
+  }, [sido]);
+
+  useEffect(() => {
+    if (!sido || !sigungu) {
+      setDongList([]);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const loadDongs = async () => {
+      setLoading((prev) => ({ ...prev, dong: true }));
+      setRegionError('');
+
+      try {
+        const data = await fetchRegions({
+          level: 'dong',
+          sidoName: sido.name,
+          sigunguCode: sigungu.code,
+          sigunguName: sigungu.name,
+        }, controller.signal);
+        setDongList(data);
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('읍/면/동 조회 오류:', err);
+          setRegionError(err.message);
+        }
+      } finally {
+        setLoading((prev) => ({ ...prev, dong: false }));
+      }
+    };
+
+    loadDongs();
+
+    return () => controller.abort();
+  }, [sido, sigungu]);
 
   // 선택 완료 시 상위 onChange 호출 — { address, sido, sigungu, dong } 객체로 전달
   useEffect(() => {
     if (sido && sigungu && dong) {
-      onChange({ address: `${sido} ${sigungu} ${dong}`, sido, sigungu, dong });
+      const address = getAddressText(sido, sigungu, dong);
+      onChangeRef.current({ address, sido: sido.name, sigungu: sigungu.name, dong: dong.name });
     } else {
-      onChange({ address: '', sido: '', sigungu: '', dong: '' });
+      onChangeRef.current({ address: '', sido: '', sigungu: '', dong: '' });
     }
   }, [sido, sigungu, dong]);
 
@@ -76,7 +198,7 @@ const RegionSelector = ({ label, value, onChange, error, required }) => {
         leafletMapRef.current = map;
 
         // Nominatim으로 동 폴리곤 가져오기
-        const query = encodeURIComponent(`${sido} ${sigungu} ${dong}`);
+        const query = encodeURIComponent(`${sido.name} ${sigungu.name} ${dong.name}`);
         const url = `https://nominatim.openstreetmap.org/search?q=${query}&format=geojson&polygon_geojson=1&limit=1`;
 
         const res = await fetch(url, {
@@ -132,18 +254,21 @@ const RegionSelector = ({ label, value, onChange, error, required }) => {
   }, []);
 
   const handleSidoChange = (e) => {
-    setSido(e.target.value);
-    setSigungu('');
-    setDong('');
+    setSido(sidos.find((item) => item.code === e.target.value) || null);
+    setSigungu(null);
+    setDong(null);
+    setSigunguList([]);
+    setDongList([]);
   };
 
   const handleSigunguChange = (e) => {
-    setSigungu(e.target.value);
-    setDong('');
+    setSigungu(sigunguList.find((item) => item.code === e.target.value) || null);
+    setDong(null);
+    setDongList([]);
   };
 
   const handleDongChange = (e) => {
-    setDong(e.target.value);
+    setDong(dongList.find((item) => item.code === e.target.value) || null);
   };
 
   const selectClass = 'w-full h-[52px] px-[14px] border border-gray-300 rounded-[15px] text-text-800 bg-white focus:outline-none focus:ring-1 focus:ring-[#FFD044] focus:border-transparent transition-colors appearance-none cursor-pointer';
@@ -156,10 +281,15 @@ const RegionSelector = ({ label, value, onChange, error, required }) => {
 
       {/* 시/도 */}
       <div className="relative">
-        <select value={sido} onChange={handleSidoChange} className={selectClass}>
-          <option value="">시/도 선택</option>
+        <select
+          value={sido?.code || ''}
+          onChange={handleSidoChange}
+          disabled={loading.sido}
+          className={`${selectClass} ${loading.sido ? 'opacity-40 cursor-wait' : ''}`}
+        >
+          <option value="">{loading.sido ? '시/도 불러오는 중...' : '시/도 선택'}</option>
           {sidos.map((s) => (
-            <option key={s} value={s}>{s}</option>
+            <option key={s.code} value={s.code}>{s.name}</option>
           ))}
         </select>
         <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
@@ -168,14 +298,14 @@ const RegionSelector = ({ label, value, onChange, error, required }) => {
       {/* 시/군/구 */}
       <div className="relative">
         <select
-          value={sigungu}
+          value={sigungu?.code || ''}
           onChange={handleSigunguChange}
-          disabled={!sido}
-          className={`${selectClass} ${!sido ? 'opacity-40 cursor-not-allowed' : ''}`}
+          disabled={!sido || loading.sigungu}
+          className={`${selectClass} ${!sido || loading.sigungu ? 'opacity-40 cursor-not-allowed' : ''}`}
         >
-          <option value="">시/군/구 선택</option>
-          {siguList.map((s) => (
-            <option key={s} value={s}>{s}</option>
+          <option value="">{loading.sigungu ? '시/군/구 불러오는 중...' : '시/군/구 선택'}</option>
+          {sigunguList.map((s) => (
+            <option key={s.code} value={s.code}>{s.name}</option>
           ))}
         </select>
         <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
@@ -184,14 +314,14 @@ const RegionSelector = ({ label, value, onChange, error, required }) => {
       {/* 읍/면/동 */}
       <div className="relative">
         <select
-          value={dong}
+          value={dong?.code || ''}
           onChange={handleDongChange}
-          disabled={!sigungu}
-          className={`${selectClass} ${!sigungu ? 'opacity-40 cursor-not-allowed' : ''}`}
+          disabled={!sigungu || loading.dong}
+          className={`${selectClass} ${!sigungu || loading.dong ? 'opacity-40 cursor-not-allowed' : ''}`}
         >
-          <option value="">읍/면/동 선택</option>
+          <option value="">{loading.dong ? '읍/면/동 불러오는 중...' : '읍/면/동 선택'}</option>
           {dongList.map((d) => (
-            <option key={d} value={d}>{d}</option>
+            <option key={d.code} value={d.code}>{d.name}</option>
           ))}
         </select>
         <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
@@ -200,7 +330,7 @@ const RegionSelector = ({ label, value, onChange, error, required }) => {
       {/* 선택 결과 표시 */}
       {sido && sigungu && dong && (
         <p className="text-12-r text-brand-yellow-dark font-medium">
-          ✓ {sido} {sigungu} {dong}
+          ✓ {getAddressText(sido, sigungu, dong)}
         </p>
       )}
 
@@ -216,6 +346,9 @@ const RegionSelector = ({ label, value, onChange, error, required }) => {
       {/* 에러 */}
       {error && (
         <p className="text-xs text-red-500">{error}</p>
+      )}
+      {regionError && (
+        <p className="text-xs text-red-500">{regionError}</p>
       )}
     </div>
   );
