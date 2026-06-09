@@ -13,7 +13,7 @@ const banners = [
     id: 2,
     image: "/img/main_banner_2.jpg",
     alt: "무브투개더 인스타그램 팔로우",
-    link: "https://www.instagram.com/move-togaether/"
+    link: "https://www.instagram.com/move_togaether/"
   }
 ];
 

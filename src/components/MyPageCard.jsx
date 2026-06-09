@@ -89,7 +89,7 @@ const MyPageCard = ({ post, activeSubTab, tab, appliedAt }) => {
             </h3>
             <div className={'flex items-center justify-between'}>
             <p className="text-12-r text-text-800">
-              {post.post_type === 'missing'
+              {(post.post_type === 'missing' || (!post.arrival_address && !post.arrival_sido))
                 ? post.departure_address
                 : `${post.dog_name} / ${convertDogSize(post.dog_size)}`}
             </p>
