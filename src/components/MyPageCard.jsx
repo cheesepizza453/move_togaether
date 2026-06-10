@@ -49,9 +49,14 @@ const MyPageCard = ({ post, activeSubTab, tab, appliedAt }) => {
   // const statusBadge = getStatusBadge(post.status, post.deadline);
 
   const handleCardClick = () => {
-    if (activeSubTab === '완료') {
+    if (activeSubTab === '진행중' || activeSubTab === '완료') {
       router.push(`/posts/${post.id}`);
     }
+  };
+
+  const handleApplicantsClick = (event) => {
+    event.stopPropagation();
+    router.push(`/posts/${post.id}?tab=applicants`);
   };
 
   return (
@@ -130,9 +135,7 @@ const MyPageCard = ({ post, activeSubTab, tab, appliedAt }) => {
               {activeSubTab === '진행중' && (
                   <div className="mt-[12px]">
                     <button
-                        onClick={() =>
-                            router.push(`/posts/${post.id}?tab=applicants`)
-                        }
+                        onClick={handleApplicantsClick}
                         className="w-full bg-brand-main text-[#333] py-[8px] text-14-m rounded-[15px]"
                     >
                       지원자 <span className={'text-14-b'}>{post.applicant_count || 0}</span>
