@@ -5,10 +5,13 @@ import { useState, useEffect, useRef } from 'react';
 const fetchRegions = async (params, signal) => {
   const searchParams = new URLSearchParams(params);
   const response = await fetch(`/api/regions?${searchParams.toString()}`, { signal });
-  const result = await response.json();
+  const contentType = response.headers.get('content-type') || '';
+  const result = contentType.includes('application/json')
+    ? await response.json()
+    : null;
 
-  if (!response.ok || !result.success) {
-    throw new Error(result.error || '지역 정보를 불러오지 못했습니다.');
+  if (!response.ok || !result?.success) {
+    throw new Error(result?.error || '지역 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
   }
 
   return result.data || [];

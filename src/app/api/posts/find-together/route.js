@@ -2,11 +2,14 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 
+const isValidDateValue = (date) => /^\d{4}-\d{2}-\d{2}$/.test(date);
+
 export async function POST(request) {
   try {
     const requestBody = await request.json();
     const {
       title,
+      missingDate,
       departureAddress,
       departureSido,
       departureSigungu,
@@ -21,9 +24,16 @@ export async function POST(request) {
       dogDescription,
     } = requestBody;
 
-    if (!title || !departureAddress) {
+    if (!title || !missingDate || !departureAddress) {
       return NextResponse.json(
         { success: false, error: '필수 정보가 누락되었습니다.' },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidDateValue(missingDate)) {
+      return NextResponse.json(
+        { success: false, error: '잃어버린 날짜 형식이 올바르지 않습니다.' },
         { status: 400 }
       );
     }
@@ -98,6 +108,7 @@ export async function POST(request) {
         user_id: userProfile.id,
         title,
         description: description || '',
+        missing_date: missingDate,
         departure_address: departureAddress,
         departure_sido: departureSido || null,
         departure_sigungu: departureSigungu || null,

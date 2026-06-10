@@ -302,6 +302,7 @@ export default function PostDetailPage() {
         ...postData,
         dogSize: convertDogSize(postData.dog_size),
         deadline: formatDeadline(postData.deadline),
+        missing_date: postData.missing_date ? moment(postData.missing_date).format('YYYY.MM.DD') : null,
         created_at: formatDeadline(postData.created_at), // 작성일 포맷팅
         dday: moment(postData.deadline).diff(moment(), 'days'),
         isUrgent: moment(postData.deadline).diff(moment(), 'days') <= 1
@@ -705,11 +706,15 @@ export default function PostDetailPage() {
                     </div>
                   </div>
                   <h1 className="flex text-18-b mb-[10px]">{post.title}</h1>
+                  {post.post_type === 'missing' && post.missing_date && (
+                    <p className="mb-[8px] text-14-r text-text-800">
+                      잃어버린 날짜 {post.missing_date}
+                    </p>
+                  )}
                   <div className={'flex gap-x-[4px] text-14-r'}>
                     {post.dog_name && <p>{post.dog_name}</p>}
                     {post.dog_size && <p className={' text-text-800'}>{convertDogSize(post.dog_size)}</p>}
                     {post.dog_breed && <p className={' text-text-800'}>{post.dog_breed}</p>}
-                    <p className={'text-text-800'}>{post.dog_breed || ''}</p>
                   </div>
                 </div>
 

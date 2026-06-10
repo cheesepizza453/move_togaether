@@ -12,6 +12,11 @@ const Preview = ({
   submitLabel = '이동 봉사 등록하기',
   dogSectionLabel = '동행견 정보',
 }) => {
+  const formatDate = (date) => {
+    if (!date) return '';
+    return date.replaceAll('-', '.');
+  };
+
   const getSizeLabel = (size) => {
     const sizeMap = {
       small: '소형견 (5kg 이하)',
@@ -44,15 +49,24 @@ const Preview = ({
             <p className="text-sm text-gray-900 mt-1">{formData.title}</p>
           </div>
 
+          {formData.missingDate && (
+            <div>
+              <span className="text-sm font-medium text-gray-600">잃어버린 날짜:</span>
+              <p className="text-sm text-gray-900 mt-1">{formatDate(formData.missingDate)}</p>
+            </div>
+          )}
+
           <div>
-            <span className="text-sm font-medium text-gray-600">출발지:</span>
+            <span className="text-sm font-medium text-gray-600">{formData.missingDate ? '실종 위치:' : '출발지:'}</span>
             <p className="text-sm text-gray-900 mt-1">{formData.departureAddress}</p>
           </div>
 
-          <div>
-            <span className="text-sm font-medium text-gray-600">도착지:</span>
-            <p className="text-sm text-gray-900 mt-1">{formData.arrivalAddress}</p>
-          </div>
+          {formData.arrivalAddress && (
+            <div>
+              <span className="text-sm font-medium text-gray-600">도착지:</span>
+              <p className="text-sm text-gray-900 mt-1">{formData.arrivalAddress}</p>
+            </div>
+          )}
 
           <div>
             <span className="text-sm font-medium text-gray-600">설명:</span>
