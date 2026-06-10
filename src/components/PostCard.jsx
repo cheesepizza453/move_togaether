@@ -19,6 +19,7 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
   const {
     id,
     title,
+    description,
     postType = 'volunteer',
     dogName,
     dogSize,
@@ -35,6 +36,7 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
   const createdAt = post.created_at ?? post.createdAt ?? null;
   const formattedCreatedDateForTimeline = createdAt ? moment(createdAt).format('YYYY/MM/DD') : '';
   const formattedCreatedDateForCard = createdAt ? moment(createdAt).format('YY/MM/DD') : '';
+  const showDdayBadge = status === 'active' && dday >= 0;
 
 
   const toggleFavorite = async (e) => {
@@ -160,7 +162,7 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
               </h3>
               <p className="ml-[5px] text-10-r text-text-800">
                 {postType === 'missing'
-                  ? post.departureAddress
+                  ? (post.description || post.departureAddress)
                   : `${post.dogName} / ${convertDogSize(post.dogSize)}`}
               </p>
             </div>
@@ -214,11 +216,13 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
       {/* 상단 영역: D-day 배지와 찜 버튼 */}
       <div className="flex justify-end items-start">
         {/* D-day 배지 - border 위에 겹쳐서 표시 */}
-        <div className="absolute -top-3 left-[-5px] z-10">
-          <span className={`flex items-center justify-center px-[13px] h-[24px] rounded-[7px] text-12-b font-bold ${getDdayColor(dday)}`}>
-            {dday=== 0 ? '오늘마감!' :`D-${dday}`}
-          </span>
-        </div>
+        {showDdayBadge && (
+          <div className="absolute -top-3 left-[-5px] z-10">
+            <span className={`flex items-center justify-center px-[13px] h-[24px] rounded-[7px] text-12-b font-bold ${getDdayColor(dday)}`}>
+              {dday === 0 ? '오늘마감!' : `D-${dday}`}
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="flex space-x-[30px]">
@@ -269,7 +273,7 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
           <div className="flex justify-between items-end text-text-800 mb-[6px]">
             <div className="text-name-breed text-12-r">
               {postType === 'missing'
-                ? (departureAddress || '위치 미지정')
+                ? (description || departureAddress || '위치 미지정')
                 : `${dogName} / ${dogSize}`}
             </div>
             <div className="text-post-date text-text-600 text-9-r font-light">

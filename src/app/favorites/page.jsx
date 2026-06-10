@@ -66,11 +66,11 @@ export default function FavoritesPage() {
         setAllFavorites(formattedPosts);
 
         const active = formattedPosts.filter(
-            (post) => post.status === 'active' && post.dday >= 0
+            (post) => post.status === 'active'
         );
 
         const completed = formattedPosts.filter(
-            (post) => post.status !== 'active' || post.dday < 0
+            (post) => post.status !== 'active'
         );
 
         setActiveFavorites(active);
