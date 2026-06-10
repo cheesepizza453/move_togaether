@@ -3,6 +3,12 @@
 import RegionSelector from './RegionSelector';
 import React from 'react';
 
+const getTodayDateValue = () => {
+  const now = new Date();
+  const offsetMs = now.getTimezoneOffset() * 60 * 1000;
+  return new Date(now.getTime() - offsetMs).toISOString().split('T')[0];
+};
+
 const Step1 = ({
   title,
   formData,
@@ -10,6 +16,8 @@ const Step1 = ({
   onFormDataChange,
   showArrival = true,
   departureLabel = '출발지',
+  dateFieldName = null,
+  dateLabel = '',
   descriptionHint = '희망 일정, 동행견 설명, 켄넬 지원 여부, 공격성, 질병, 봉사자님께 전하는 말 등',
   descriptionPlaceholder = '이동 봉사에 대한 상세한 설명을 입력해주세요.\n(희망 일정, 동행견 설명, 켄넬 지원 여부, 공격성, 질병, 봉사자님께 전하는 말 등)',
 }) => {
@@ -59,6 +67,27 @@ const Step1 = ({
           </p>
         </div>
       </div>
+
+      {dateFieldName && (
+        <div>
+          <label htmlFor={dateFieldName} className="block text-16-m mb-[12px]">
+            {dateLabel}<span className={'text-[#E17364] text-16-m'}>*</span>
+          </label>
+          <input
+            id={dateFieldName}
+            type="date"
+            value={formData[dateFieldName] || ''}
+            max={getTodayDateValue()}
+            onChange={(e) => onFormDataChange(dateFieldName, e.target.value)}
+            className={`w-full h-[52px] px-[18px] border rounded-[15px] text-text-800 focus:text-brand-yellow-dark focus:bg-brand-sub focus:outline-none focus:ring-1 focus:ring-[#FFD044] focus:border-transparent transition-colors ${
+              errors[dateFieldName] ? 'border-red-500' : 'border-gray-300'
+            }`}
+          />
+          {errors[dateFieldName] && (
+            <p className="text-xs text-red-500 mt-1">{errors[dateFieldName]}</p>
+          )}
+        </div>
+      )}
 
       {/* 이동 경로 / 위치 */}
       <div className="space-y-6">
