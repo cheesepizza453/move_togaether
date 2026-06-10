@@ -36,9 +36,6 @@ const RegionSelector = ({ label, value, onChange, error, required }) => {
   const [loading, setLoading] = useState({ sido: false, sigungu: false, dong: false });
   const [regionError, setRegionError] = useState('');
 
-  const mapRef = useRef(null);
-  const leafletMapRef = useRef(null);
-  const polygonLayerRef = useRef(null);
   const onChangeRef = useRef(onChange);
 
   useEffect(() => {
@@ -160,102 +157,6 @@ const RegionSelector = ({ label, value, onChange, error, required }) => {
     }
   }, [sido, sigungu, dong]);
 
-  // Leaflet 지도 초기화 (동이 선택됐을 때만)
-  useEffect(() => {
-    if (!dong || !mapRef.current) return;
-
-    let mounted = true;
-
-    const initMap = async () => {
-      try {
-        const L = await import('leaflet');
-
-        // Leaflet 기본 아이콘 CSS 링크 추가
-        if (!document.getElementById('leaflet-css')) {
-          const link = document.createElement('link');
-          link.id = 'leaflet-css';
-          link.rel = 'stylesheet';
-          link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-          document.head.appendChild(link);
-        }
-
-        if (!mounted) return;
-
-        // 기존 지도 제거
-        if (leafletMapRef.current) {
-          leafletMapRef.current.remove();
-          leafletMapRef.current = null;
-        }
-
-        const map = L.default.map(mapRef.current, {
-          zoomControl: true,
-          maxZoom: 14,   // 동 수준으로 줌 제한 (건물/도로 식별 불가)
-          minZoom: 10,
-        });
-
-        L.default.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '© OpenStreetMap contributors',
-          maxZoom: 14,
-        }).addTo(map);
-
-        leafletMapRef.current = map;
-
-        // Nominatim으로 동 폴리곤 가져오기
-        const query = encodeURIComponent(`${sido.name} ${sigungu.name} ${dong.name}`);
-        const url = `https://nominatim.openstreetmap.org/search?q=${query}&format=geojson&polygon_geojson=1&limit=1`;
-
-        const res = await fetch(url, {
-          headers: { 'Accept-Language': 'ko' },
-        });
-        const data = await res.json();
-
-        if (!mounted) return;
-
-        if (data.features && data.features.length > 0) {
-          const feature = data.features[0];
-
-          if (polygonLayerRef.current) {
-            polygonLayerRef.current.remove();
-          }
-
-          const layer = L.default.geoJSON(feature, {
-            style: {
-              color: '#FFD044',
-              weight: 2,
-              fillColor: '#FFD044',
-              fillOpacity: 0.25,
-              dashArray: null,
-            },
-          }).addTo(map);
-
-          polygonLayerRef.current = layer;
-          map.fitBounds(layer.getBounds(), { maxZoom: 14 });
-        } else {
-          // 폴리곤 없을 때 기본 위치로 이동 (대한민국 중심)
-          map.setView([36.5, 127.5], 10);
-        }
-      } catch (err) {
-        console.error('지도 로드 오류:', err);
-      }
-    };
-
-    initMap();
-
-    return () => {
-      mounted = false;
-    };
-  }, [sido, sigungu, dong]);
-
-  // 지도 컨테이너 언마운트 시 정리
-  useEffect(() => {
-    return () => {
-      if (leafletMapRef.current) {
-        leafletMapRef.current.remove();
-        leafletMapRef.current = null;
-      }
-    };
-  }, []);
-
   const handleSidoChange = (e) => {
     setSido(sidos.find((item) => item.code === e.target.value) || null);
     setSigungu(null);
@@ -335,15 +236,6 @@ const RegionSelector = ({ label, value, onChange, error, required }) => {
         <p className="text-12-r text-brand-yellow-dark font-medium">
           ✓ {getAddressText(sido, sigungu, dong)}
         </p>
-      )}
-
-      {/* 동 경계 지도 */}
-      {dong && (
-        <div
-          ref={mapRef}
-          className="w-full rounded-[15px] overflow-hidden border border-gray-200"
-          style={{ height: '200px' }}
-        />
       )}
 
       {/* 에러 */}
