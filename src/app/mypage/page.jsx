@@ -96,7 +96,7 @@ const MyPage = () => {
 
   // 활성 탭 변경 시 데이터 조회
   useEffect(() => {
-    if (!loading && user && profile && activeTab) {
+    if (!loading && user && activeTab) {
       if (activeTab === '작성') {
         fetchTabData(activeTab, activeSubTab);
       } else {
