@@ -4,10 +4,7 @@ const supabase = createAdminSupabaseClient();
 
 export async function GET() {
   try {
-    // 현재 날짜
-    const currentDate = new Date().toISOString().split('T')[0];
-
-    // 출발지 좌표가 있고, status가 active이며, deadline이 지나지 않은 게시물 조회
+    // 출발지 좌표/지역/주소가 있고, status가 active인 게시물 조회
     const { data, error } = await supabase
       .from('posts')
       .select(`
@@ -39,7 +36,6 @@ export async function GET() {
       .or('departure_lat.not.is.null,departure_sido.not.is.null,departure_address.not.is.null')
       .eq('status', 'active')
       .eq('is_deleted', false)
-      .gte('deadline', currentDate)
       .order('created_at', { ascending: false });
 
     if (error) {

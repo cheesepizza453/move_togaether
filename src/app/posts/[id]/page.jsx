@@ -735,12 +735,11 @@ export default function PostDetailPage() {
                 <div className="px-[28px] py-[20px] bg-white">
                   <div className={`flex items-center justify-between mb-[8px]`}>
                     <div>
-                      {post.dday < 0 ?
-                          <p className={'text-14-m'}>마감되었습니다</p>
-                          :
+                      {post.dday >= 0 && (
                           <p className={'text-brand-point text-14-m'}><strong
                               className={'text-16-b'}>{post.dday}</strong>일
-                            남았어요!</p>}
+                            남았어요!</p>
+                      )}
                     </div>
                     <div className="flex items-center gap-x-[5px] text-sm text-gray-600">
                       <p className="text-12-r text-[#8a8a8a]">
