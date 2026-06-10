@@ -37,6 +37,19 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
   const formattedCreatedDateForTimeline = createdAt ? moment(createdAt).format('YYYY/MM/DD') : '';
   const formattedCreatedDateForCard = createdAt ? moment(createdAt).format('YY/MM/DD') : '';
   const showDdayBadge = status === 'active' && dday >= 0;
+  const getDisplayRegion = (address) => {
+    const structuredRegion = [
+      post.departureSido || post.departure_sido,
+      post.departureSigungu || post.departure_sigungu,
+    ].filter(Boolean).join(' ');
+
+    if (structuredRegion) return structuredRegion;
+    if (!address) return '위치 미지정';
+
+    const parts = address.trim().split(/\s+/);
+    return parts.length > 2 ? parts.slice(0, 2).join(' ') : address;
+  };
+  const displayDepartureRegion = getDisplayRegion(departureAddress || post.departureAddress);
 
 
   const toggleFavorite = async (e) => {
@@ -162,7 +175,7 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
               </h3>
               <p className="ml-[5px] text-10-r text-text-800">
                 {postType === 'missing'
-                  ? (post.description || post.departureAddress)
+                  ? displayDepartureRegion
                   : `${post.dogName} / ${convertDogSize(post.dogSize)}`}
               </p>
             </div>
@@ -273,7 +286,7 @@ const PostCard = ({ post, isFavorite = false, onFavoriteToggle, onPostClick, sho
           <div className="flex justify-between items-end text-text-800 mb-[6px]">
             <div className="text-name-breed text-12-r">
               {postType === 'missing'
-                ? (description || departureAddress || '위치 미지정')
+                ? displayDepartureRegion
                 : `${dogName} / ${dogSize}`}
             </div>
             <div className="text-post-date text-text-600 text-9-r font-light">

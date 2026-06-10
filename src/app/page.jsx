@@ -175,6 +175,8 @@ export default function Home() {
         dogBreed: post.breed || post.dog_breed, // 강아지 견종
         is_favorite: post.is_favorite || false, // 찜 상태
         departureAddress: post.departure_address,
+        departureSido: post.departure_sido,
+        departureSigungu: post.departure_sigungu,
         arrivalAddress: post.arrival_address,
         deadline: formatDeadline(post.deadline),
         images: post.images || [],
@@ -497,6 +499,8 @@ export default function Home() {
         dogSize: convertDogSize(post.dog_size),
         dogBreed: post.dog_breed,
         departureAddress: post.departure_address,
+        departureSido: post.departure_sido,
+        departureSigungu: post.departure_sigungu,
         arrivalAddress: post.arrival_address,
         deadline: formatDeadline(post.deadline),
         images: post.images || [],
