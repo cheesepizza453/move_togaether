@@ -12,6 +12,8 @@ const Preview = ({
   submitLabel = '이동 봉사 등록하기',
   dogSectionLabel = '동행견 정보',
 }) => {
+  const isMissingPost = Boolean(formData.missingDate);
+
   const formatDate = (date) => {
     if (!date) return '';
     return date.replaceAll('-', '.');
@@ -68,10 +70,12 @@ const Preview = ({
             </div>
           )}
 
-          <div>
-            <span className="text-sm font-medium text-gray-600">설명:</span>
-            <p className="text-sm text-gray-900 mt-1 whitespace-pre-wrap">{formData.description}</p>
-          </div>
+          {!isMissingPost && (
+            <div>
+              <span className="text-sm font-medium text-gray-600">설명:</span>
+              <p className="text-sm text-gray-900 mt-1 whitespace-pre-wrap">{formData.description}</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -116,6 +120,15 @@ const Preview = ({
             <div>
               <span className="text-sm font-medium text-gray-600">견종:</span>
               <p className="text-sm text-gray-900 mt-1">{formData.breed}</p>
+            </div>
+          )}
+
+          {formData.dogDescription && (
+            <div>
+              <span className="text-sm font-medium text-gray-600">
+                {isMissingPost ? '실종견 및 상황 설명:' : '설명:'}
+              </span>
+              <p className="text-sm text-gray-900 mt-1 whitespace-pre-wrap">{formData.dogDescription}</p>
             </div>
           )}
         </div>

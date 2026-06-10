@@ -22,7 +22,6 @@ export async function GET(request, { params }) {
       `)
       .eq('id', id)
       .eq('is_deleted', false)
-      .eq('status', 'active')
       .single()
 
     if (error) {

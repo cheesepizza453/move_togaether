@@ -2,7 +2,7 @@
 
 import PhotoUpload from './PhotoUpload';
 
-// 실종신고 탭 전용 Step2 — 이름 없음, 사진·사이즈 선택사항, 실종견 설명 추가
+// 실종신고 탭 전용 Step2 — 이름 없음, 사진·사이즈 선택사항, 실종견 및 상황 설명 추가
 const Step2FindTogether = ({
   title,
   formData,
@@ -86,17 +86,17 @@ const Step2FindTogether = ({
         </div>
       </div>
 
-      {/* 실종견 설명 (선택사항) */}
+      {/* 실종견 및 상황 설명 */}
       <div>
         <label htmlFor="dog-description" className="block text-16-m mb-[6px]">
-          실종견 설명<span className="text-[#E17364] text-16-m">*</span>
+          실종견 및 상황 설명<span className="text-[#E17364] text-16-m">*</span>
         </label>
         <textarea
           id="dog-description"
-          maxLength={400}
+          maxLength={800}
           value={formData.dogDescription}
           onChange={(e) => onFormDataChange('dogDescription', e.target.value)}
-          placeholder="외형 특징, 행동 특징 등"
+          placeholder="외형 특징, 행동 특징, 실종 당시 상황, 이동 방향, 보호 중 여부 등을 입력해주세요."
           rows={3}
           className={`w-full px-[18px] border border-gray-300 rounded-[15px] text-text-800 focus:text-brand-yellow-dark focus:bg-brand-sub focus:outline-none focus:ring-1 focus:ring-[#FFD044] focus:border-transparent transition-colors resize-none py-[14px] min-h-[100px]`}
         />
@@ -105,7 +105,7 @@ const Step2FindTogether = ({
             <p className="text-xs text-red-500 mt-1">{errors.dogDescription}</p>
           )}
           <p className="absolute right-[5px] text-text-800 text-12-l">
-            {formData.dogDescription?.length ?? 0}/400
+            {formData.dogDescription?.length ?? 0}/800
           </p>
         </div>
       </div>

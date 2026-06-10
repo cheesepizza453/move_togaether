@@ -618,6 +618,7 @@ const ShelterMapPage = () => {
                                 if (dday <= 14) return 'bg-brand-main text-white';
                                 return 'bg-[#FFE889] text-brand-yellow-dark';
                               };
+                              if (diffDays < 0) return null;
                               return (
                                   <span
                                       className={`flex items-center justify-center px-[7px] h-[20px] rounded-[7px] text-12-b font-bold ${getDdayColor(diffDays)}`}
@@ -675,6 +676,7 @@ const ShelterMapPage = () => {
                               if (dday <= 14) return 'bg-brand-main text-white';
                               return 'bg-[#FFE889] text-brand-yellow-dark';
                             };
+                            if (diffDays < 0) return null;
                             return (
                                 <span className={`flex items-center justify-center px-[9px] h-[22px] rounded-[7px] text-14-b font-bold ${getDdayColor(diffDays)}`}>
                           {diffDays > 0 ? 'D-' + diffDays : '오늘마감!'}

@@ -143,7 +143,7 @@ const FavoriteCard = ({ post, isCompleted = false,   isApplied = false, isMyPost
             </div>
 
             {/* D-day 배지 - 모집중일 때만 표시 */}
-            {!isCompleted && (
+            {!isCompleted && dday >= 0 && (
               <div className={`absolute -top-3 -right-2 px-2 py-1 rounded-full text-xs font-bold text-white ${getDdayColor(dday)}`}>
                 {getDdayText(dday)}
               </div>

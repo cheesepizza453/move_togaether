@@ -168,12 +168,15 @@ export default function Home() {
       const formattedPosts = posts.map(post => ({
         id: post.id,
         title: post.title,
+        description: post.description,
         postType: post.post_type || 'volunteer',
         dogName: post.name || post.dog_name, // 강아지 이름
         dogSize: convertDogSize(post.size || post.dog_size), // 강아지 크기 변환
         dogBreed: post.breed || post.dog_breed, // 강아지 견종
         is_favorite: post.is_favorite || false, // 찜 상태
         departureAddress: post.departure_address,
+        departureSido: post.departure_sido,
+        departureSigungu: post.departure_sigungu,
         arrivalAddress: post.arrival_address,
         deadline: formatDeadline(post.deadline),
         images: post.images || [],
@@ -490,10 +493,14 @@ export default function Home() {
       const formattedPosts = distancePosts.map(post => ({
         id: post.id,
         title: post.title,
+        description: post.description,
+        postType: post.post_type || 'volunteer',
         dogName: post.dog_name,
         dogSize: convertDogSize(post.dog_size),
         dogBreed: post.dog_breed,
         departureAddress: post.departure_address,
+        departureSido: post.departure_sido,
+        departureSigungu: post.departure_sigungu,
         arrivalAddress: post.arrival_address,
         deadline: formatDeadline(post.deadline),
         images: post.images || [],

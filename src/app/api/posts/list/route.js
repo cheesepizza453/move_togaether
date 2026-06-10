@@ -92,7 +92,6 @@ export async function GET(request) {
             .select('*', { count: 'exact' })
             .eq('is_deleted', false)
             .eq('status', 'active')
-            .gte('deadline', moment().toISOString())
             .order(orderConfig.column, { ascending: orderConfig.ascending })
             .range(from, to)
           if (postType === 'missing') {
@@ -225,8 +224,7 @@ export async function GET(request) {
           .range(from, to)
 
         if (status === 'active') {
-          const now = moment().toISOString()
-          query = query.eq('posts.status', 'active').gte('posts.deadline', now)
+          query = query.eq('posts.status', 'active')
         } else if (status === 'completed') {
           query = query.or('posts.status.neq.active,posts.deadline.lt.' + moment().toISOString())
         }

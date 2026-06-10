@@ -102,12 +102,13 @@ export async function POST(request) {
 
     // DB 저장 (arrival 관련 컬럼 저장 안 함 — 실종신고는 목격 위치만 기록)
     // 사용자 JWT로 저장해 RLS의 "게시물 작성 정책"을 그대로 적용한다.
+    const missingDescription = description || dogDescription || '';
     const { data, error } = await supabase
       .from('posts')
       .insert([{
         user_id: userProfile.id,
         title,
-        description: description || '',
+        description: missingDescription,
         missing_date: missingDate,
         departure_address: departureAddress,
         departure_sido: departureSido || null,

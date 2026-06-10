@@ -76,6 +76,7 @@ export default function PostDetailPage() {
   const [hasApplied, setHasApplied] = useState(false);
   const [myApplication, setMyApplication] = useState(null);
   const [showApplicationModal, setShowApplicationModal] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // URL 쿼리 파라미터 변경 시 탭 업데이트
   useEffect(() => {
@@ -310,6 +311,7 @@ export default function PostDetailPage() {
 
       console.log('게시물 데이터 설정 완료:', formattedPost);
       setPost(formattedPost);
+      setIsRecruitmentComplete(postData.status !== 'active');
       setLoading(false); // 데이터 로드 성공 시 로딩 상태 해제
 
       console.log('포스트 데이터:', {
@@ -471,6 +473,52 @@ export default function PostDetailPage() {
         onConfirm: confirmRecruitmentComplete
       }
     );
+  };
+
+  const handleDeletePost = () => {
+    dialog.showConfirm(
+      '삭제한 게시물은 목록에서 사라지며 복구할 수 없습니다.\n정말 삭제하시겠습니까?',
+      '게시물 삭제',
+      {
+        confirmText: '삭제',
+        cancelText: '취소',
+        onConfirm: confirmDeletePost,
+      }
+    );
+  };
+
+  const confirmDeletePost = async () => {
+    if (deleteLoading) return;
+    try {
+      setDeleteLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error('로그인이 필요합니다.');
+        return;
+      }
+
+      const response = await fetch(`/api/posts/${postId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || '게시물 삭제에 실패했습니다.');
+      }
+
+      dialog.closeDialog();
+      toast.success('게시물이 삭제되었습니다.');
+      router.push('/mypage');
+    } catch (error) {
+      console.error('게시물 삭제 오류:', error);
+      toast.error(error.message || '게시물 삭제 중 오류가 발생했습니다.');
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const confirmRecruitmentComplete = async () => {
@@ -687,12 +735,11 @@ export default function PostDetailPage() {
                 <div className="px-[28px] py-[20px] bg-white">
                   <div className={`flex items-center justify-between mb-[8px]`}>
                     <div>
-                      {post.dday < 0 ?
-                          <p className={'text-14-m'}>마감되었습니다</p>
-                          :
+                      {post.dday >= 0 && (
                           <p className={'text-brand-point text-14-m'}><strong
                               className={'text-16-b'}>{post.dday}</strong>일
-                            남았어요!</p>}
+                            남았어요!</p>
+                      )}
                     </div>
                     <div className="flex items-center gap-x-[5px] text-sm text-gray-600">
                       <p className="text-12-r text-[#8a8a8a]">
@@ -756,7 +803,7 @@ export default function PostDetailPage() {
                   </div>
 
                   {/* 설명글 섹션 */}
-                  {post.description && (
+                  {post.post_type !== 'missing' && post.description && (
                       <div>
                         <h3 className="text-16-b mb-[10px]">상세 설명</h3>
                         <div
@@ -898,6 +945,13 @@ export default function PostDetailPage() {
                 <div className="sticky bottom-4 z-50 px-4">
                   <div className="w-full mx-auto">
                     <div className="flex gap-3">
+                      <Button
+                          onClick={handleDeletePost}
+                          disabled={deleteLoading}
+                          className="rounded-[15px] text-16-m h-[54px] flex-1 bg-brand-point text-white"
+                      >
+                        {deleteLoading ? '삭제 중...' : '삭제하기'}
+                      </Button>
                       <Button
                           onClick={handleRecruitmentComplete}
                           disabled={isRecruitmentComplete}

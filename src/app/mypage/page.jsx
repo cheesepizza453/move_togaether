@@ -17,7 +17,8 @@ const MyPage = () => {
   const [activeSubTab, setActiveSubTab] = useState('진행중'); // 작성 탭의 하위 탭
   const [myPosts, setMyPosts] = useState([]);
   const [appliedPosts, setAppliedPosts] = useState([]);
-  const subTabs = ['진행중', '종료', '완료'];
+  // 종료 탭 숨김!
+  const subTabs = ['진행중', '완료'];
 
   // 날짜 포맷팅 함수
   const formatDate = (dateString) => {
@@ -96,7 +97,7 @@ const MyPage = () => {
 
   // 활성 탭 변경 시 데이터 조회
   useEffect(() => {
-    if (!loading && user && profile && activeTab) {
+    if (!loading && user && activeTab) {
       if (activeTab === '작성') {
         fetchTabData(activeTab, activeSubTab);
       } else {
@@ -128,6 +129,7 @@ const MyPage = () => {
 
   // 하위 탭 변경 핸들러
   const handleSubTabChange = (subTab) => {
+    if (!subTabs.includes(subTab)) return;
     setActiveSubTab(subTab);
     setError(null);
 

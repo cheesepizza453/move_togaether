@@ -270,12 +270,11 @@ const VolunteerCreate = () => {
       if (!findTogetherData.title.trim()) newErrors.title = '제목을 입력해주세요.';
       else if (findTogetherData.title.length > 100) newErrors.title = '제목은 100자 이하로 입력해주세요.';
       if (!findTogetherData.missingDate) newErrors.missingDate = '잃어버린 날짜를 선택해주세요.';
-      if (!findTogetherData.description.trim()) newErrors.description = '설명을 입력해주세요.';
-      else if (findTogetherData.description.length > 800) newErrors.description = '설명은 800자 이하로 입력해주세요.';
       if (!findTogetherData.departureDong) newErrors.departureAddress = '위치를 시/도 → 시/군/구 → 읍/면/동 순으로 선택해주세요.';
     } else if (findTogetherStep === 2) {
       if (!findTogetherData.size) newErrors.size = '크기를 선택해주세요.';
-      if (!findTogetherData.dogDescription.trim()) newErrors.dogDescription = '실종견 설명을 입력해주세요.';
+      if (!findTogetherData.dogDescription.trim()) newErrors.dogDescription = '실종견 및 상황 설명을 입력해주세요.';
+      else if (findTogetherData.dogDescription.length > 800) newErrors.dogDescription = '실종견 및 상황 설명은 800자 이하로 입력해주세요.';
     } else if (findTogetherStep === 3) {
       if (findTogetherData.relatedPostLink.trim()) {
         const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w .\-?=&%#]*)*\/?$/;
@@ -299,7 +298,10 @@ const VolunteerCreate = () => {
       const response = await fetch('/api/posts/find-together', {
         method: 'POST',
         headers,
-        body: JSON.stringify(findTogetherData),
+        body: JSON.stringify({
+          ...findTogetherData,
+          description: findTogetherData.dogDescription,
+        }),
       });
       if (!response.ok) {
         const errorText = await response.text();
@@ -318,7 +320,7 @@ const VolunteerCreate = () => {
   };
 
   const isFindTogetherNextDisabled = () => {
-    if (findTogetherStep === 1) return !findTogetherData.title.trim() || !findTogetherData.missingDate || !findTogetherData.departureDong || !findTogetherData.description.trim();
+    if (findTogetherStep === 1) return !findTogetherData.title.trim() || !findTogetherData.missingDate || !findTogetherData.departureDong;
     if (findTogetherStep === 2) return !findTogetherData.size || !findTogetherData.dogDescription.trim();
     return false;
   };
@@ -417,8 +419,7 @@ const VolunteerCreate = () => {
             departureLabel="실종 위치"
             dateFieldName="missingDate"
             dateLabel="잃어버린 날짜"
-            descriptionHint="목격 일시, 장소, 외형 특징, 이동 방향, 보호 중 여부, 남기고 싶은 말 등"
-            descriptionPlaceholder={`실종신고에 대한 상세한 설명을 입력해 주세요.\n(목격 일시, 장소, 외형 특징, 이동 방향, 보호 중 여부, 남기고 싶은 말 등)`}
+            showDescription={false}
           />
         )}
         {findTogetherStep === 2 && (

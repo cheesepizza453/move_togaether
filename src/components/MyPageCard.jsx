@@ -48,10 +48,24 @@ const MyPageCard = ({ post, activeSubTab, tab, appliedAt }) => {
   const dday = getDday(post.deadline);
   // const statusBadge = getStatusBadge(post.status, post.deadline);
 
+  const handleCardClick = () => {
+    if (activeSubTab === '진행중' || activeSubTab === '완료') {
+      router.push(`/posts/${post.id}`);
+    }
+  };
+
+  const handleApplicantsClick = (event) => {
+    event.stopPropagation();
+    router.push(`/posts/${post.id}?tab=applicants`);
+  };
+
   return (
 
       //
-      <div className={`${activeSubTab === '완료' ? 'bg-text-100' : 'bg-white shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]' } rounded-[15px] px-[22px] py-[18px] cursor-pointer relative`}>
+      <div
+          onClick={handleCardClick}
+          className={`${activeSubTab === '완료' ? 'bg-text-100' : 'bg-white shadow-[0_0_15px_0px_rgba(0,0,0,0.1)]' } rounded-[15px] px-[22px] py-[18px] cursor-pointer relative`}
+      >
         {/* 진행중 탭에서만 D-day 표시 */}
         {activeSubTab === '진행중' && (
             <div className="absolute -top-3 left-[-5px] z-10">
@@ -121,9 +135,7 @@ const MyPageCard = ({ post, activeSubTab, tab, appliedAt }) => {
               {activeSubTab === '진행중' && (
                   <div className="mt-[12px]">
                     <button
-                        onClick={() =>
-                            router.push(`/posts/${post.id}?tab=applicants`)
-                        }
+                        onClick={handleApplicantsClick}
                         className="w-full bg-brand-main text-[#333] py-[8px] text-14-m rounded-[15px]"
                     >
                       지원자 <span className={'text-14-b'}>{post.applicant_count || 0}</span>
