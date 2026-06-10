@@ -12,12 +12,23 @@ const LEGACY_AUTH_CACHE_KEYS = [
   'supabase.auth.cacheTime',
   'supabase.auth.profileCacheTime',
 ];
+const AUTH_TIMEOUT_MS = 3000;
+const PROFILE_TIMEOUT_MS = 4000;
 
 const clearLegacyAuthCache = () => {
   LEGACY_AUTH_CACHE_KEYS.forEach((key) => {
     localStorage.removeItem(key);
   });
 };
+
+const withTimeout = (promise, timeoutMs, label) => (
+  Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(`${label} timeout`)), timeoutMs);
+    }),
+  ])
+);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -40,20 +51,28 @@ export const AuthProvider = ({ children }) => {
         clearLegacyAuthCache();
 
         console.log('서버에서 사용자 정보 조회');
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await withTimeout(
+          supabase.auth.getSession(),
+          AUTH_TIMEOUT_MS,
+          'getSession'
+        );
         if (session?.user) {
           setUser(session.user);
-          await fetchProfile(session.user.id);
           setLoading(false);
+          fetchProfile(session.user.id);
           return;
         }
 
         // 세션에 사용자가 없으면 getUser로 재확인
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await withTimeout(
+          supabase.auth.getUser(),
+          AUTH_TIMEOUT_MS,
+          'getUser'
+        );
         setUser(user);
 
         if (user) {
-          await fetchProfile(user.id);
+          fetchProfile(user.id);
         } else {
           setProfile(null);
         }
@@ -86,12 +105,13 @@ export const AuthProvider = ({ children }) => {
           if (event === 'INITIAL_SESSION' && session?.user) {
             console.log('초기 세션에서 사용자 발견:', session.user.id);
             setUser(session.user);
-            await fetchProfile(session.user.id);
             setLoading(false);
+            fetchProfile(session.user.id);
             return;
           }
 
           setUser(session?.user ?? null);
+          setLoading(false);
 
           if (session?.user) {
             console.log('사용자 세션 확인:', {
@@ -102,7 +122,7 @@ export const AuthProvider = ({ children }) => {
             });
 
             // 프로필 정보 가져오기
-            await fetchProfile(session.user.id);
+            fetchProfile(session.user.id);
 
             // 이메일 인증 완료 후 프로필 생성 (SIGNED_IN 이벤트에서만)
             if (event === 'SIGNED_IN' && session.user.email_confirmed_at) {
@@ -116,15 +136,13 @@ export const AuthProvider = ({ children }) => {
 
             // 프로필 정보 조회
             try {
-              await fetchProfile(session.user.id);
+              fetchProfile(session.user.id);
             } catch (error) {
               console.error('onAuthStateChange에서 프로필 조회 오류:', error);
             }
           } else {
             setProfile(null);
           }
-
-          setLoading(false);
         }
     );
 
@@ -219,12 +237,16 @@ export const AuthProvider = ({ children }) => {
       console.log('프로필 조회 시작:', { userId });
 
       console.log('서버에서 프로필 조회');
-      const { data, error } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('auth_user_id', userId)
-          .eq('is_deleted', false)
-          .maybeSingle();
+      const { data, error } = await withTimeout(
+        supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('auth_user_id', userId)
+            .eq('is_deleted', false)
+            .maybeSingle(),
+        PROFILE_TIMEOUT_MS,
+        'fetchProfile'
+      );
 
       if (error) {
         if (error.code === 'PGRST116') {
