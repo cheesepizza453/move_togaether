@@ -18,6 +18,7 @@ const Step1 = ({
   departureLabel = '출발지',
   dateFieldName = null,
   dateLabel = '',
+  showDescription = true,
   descriptionHint = '희망 일정, 동행견 설명, 켄넬 지원 여부, 공격성, 질병, 봉사자님께 전하는 말 등',
   descriptionPlaceholder = '이동 봉사에 대한 상세한 설명을 입력해주세요.\n(희망 일정, 동행견 설명, 켄넬 지원 여부, 공격성, 질병, 봉사자님께 전하는 말 등)',
 }) => {
@@ -116,34 +117,35 @@ const Step1 = ({
         )}
       </div>
 
-      {/* 설명 */}
-      <div>
-        <label htmlFor={'description'} className="block text-16-m mb-[6px]">
-          설명<span className={'text-[#E17364] text-16-m'}>*</span>
-        </label>
-        <p className="text-12-r text-text-800 mb-[12px]">
-          {descriptionHint}
-        </p>
-        <textarea
-          maxLength={800}
-          id={'description'}
-          value={formData.description}
-          onChange={(e) => onFormDataChange('description', e.target.value)}
-          placeholder={descriptionPlaceholder}
-          rows={4}
-          className={`w-full h-[52px] px-[18px] border rounded-[15px] text-text-800 focus:text-brand-yellow-dark focus:bg-brand-sub focus:outline-none focus:ring-1 focus:ring-[#FFD044] focus:border-transparent transition-colors resize-none py-[14px] min-h-[140px] ${
-            errors.description ? 'border-red-500' : 'border-gray-300'
-          }`}
-        />
-        <div className={'relative'}>
-          {errors.description && (
-            <p className="text-xs text-red-500 mt-1">{errors.description}</p>
-          )}
-          <p className="absolute right-[5px] text-text-800 text-12-l">
-            {formData.description?.length || 0}/800
+      {showDescription && (
+        <div>
+          <label htmlFor={'description'} className="block text-16-m mb-[6px]">
+            설명<span className={'text-[#E17364] text-16-m'}>*</span>
+          </label>
+          <p className="text-12-r text-text-800 mb-[12px]">
+            {descriptionHint}
           </p>
+          <textarea
+            maxLength={800}
+            id={'description'}
+            value={formData.description}
+            onChange={(e) => onFormDataChange('description', e.target.value)}
+            placeholder={descriptionPlaceholder}
+            rows={4}
+            className={`w-full h-[52px] px-[18px] border rounded-[15px] text-text-800 focus:text-brand-yellow-dark focus:bg-brand-sub focus:outline-none focus:ring-1 focus:ring-[#FFD044] focus:border-transparent transition-colors resize-none py-[14px] min-h-[140px] ${
+              errors.description ? 'border-red-500' : 'border-gray-300'
+            }`}
+          />
+          <div className={'relative'}>
+            {errors.description && (
+              <p className="text-xs text-red-500 mt-1">{errors.description}</p>
+            )}
+            <p className="absolute right-[5px] text-text-800 text-12-l">
+              {formData.description?.length || 0}/800
+            </p>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

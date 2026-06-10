@@ -168,6 +168,7 @@ export default function Home() {
       const formattedPosts = posts.map(post => ({
         id: post.id,
         title: post.title,
+        description: post.description,
         postType: post.post_type || 'volunteer',
         dogName: post.name || post.dog_name, // 강아지 이름
         dogSize: convertDogSize(post.size || post.dog_size), // 강아지 크기 변환
@@ -490,6 +491,8 @@ export default function Home() {
       const formattedPosts = distancePosts.map(post => ({
         id: post.id,
         title: post.title,
+        description: post.description,
+        postType: post.post_type || 'volunteer',
         dogName: post.dog_name,
         dogSize: convertDogSize(post.dog_size),
         dogBreed: post.dog_breed,

@@ -756,7 +756,7 @@ export default function PostDetailPage() {
                   </div>
 
                   {/* 설명글 섹션 */}
-                  {post.description && (
+                  {post.post_type !== 'missing' && post.description && (
                       <div>
                         <h3 className="text-16-b mb-[10px]">상세 설명</h3>
                         <div
