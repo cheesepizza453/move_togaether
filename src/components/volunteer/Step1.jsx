@@ -19,6 +19,7 @@ const Step1 = ({
   dateFieldName = null,
   dateLabel = '',
   showDescription = true,
+  allowPartialRegion = false,
   descriptionHint = '희망 일정, 동행견 설명, 켄넬 지원 여부, 공격성, 질병, 봉사자님께 전하는 말 등',
   descriptionPlaceholder = '이동 봉사에 대한 상세한 설명을 입력해주세요.\n(희망 일정, 동행견 설명, 켄넬 지원 여부, 공격성, 질병, 봉사자님께 전하는 말 등)',
 }) => {
@@ -103,6 +104,7 @@ const Step1 = ({
           value={formData.departureAddress}
           onChange={handleDepartureChange}
           error={errors.departureAddress}
+          allowPartialRegion={allowPartialRegion}
           required
         />
 
@@ -112,6 +114,8 @@ const Step1 = ({
             value={formData.arrivalAddress}
             onChange={handleArrivalChange}
             error={errors.arrivalAddress}
+            allowOverseas
+            allowPartialRegion={allowPartialRegion}
             required
           />
         )}

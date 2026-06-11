@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 
+const OVERSEAS_REGION = { code: 'OVERSEAS', name: '해외', fullName: '해외' };
+
 const fetchRegions = async (params, signal) => {
   const searchParams = new URLSearchParams(params);
   const response = await fetch(`/api/regions?${searchParams.toString()}`, { signal });
@@ -18,6 +20,8 @@ const fetchRegions = async (params, signal) => {
 };
 
 const getAddressText = (sido, sigungu, dong) => {
+  if (sido?.code === OVERSEAS_REGION.code) return OVERSEAS_REGION.name;
+
   return [
     sido?.name,
     sigungu?.code !== sido?.code ? sigungu?.name : null,
@@ -26,7 +30,15 @@ const getAddressText = (sido, sigungu, dong) => {
 };
 
 // onChange({ address, sido, sigungu, dong }) 형태로 호출됩니다.
-const RegionSelector = ({ label, value, onChange, error, required }) => {
+const RegionSelector = ({
+  label,
+  value,
+  onChange,
+  error,
+  required,
+  allowOverseas = false,
+  allowPartialRegion = false,
+}) => {
   const [sidos, setSidos] = useState([]);
   const [sigunguList, setSigunguList] = useState([]);
   const [dongList, setDongList] = useState([]);
@@ -62,7 +74,7 @@ const RegionSelector = ({ label, value, onChange, error, required }) => {
 
       try {
         const data = await fetchRegions({ level: 'sido' }, controller.signal);
-        setSidos(data);
+        setSidos(allowOverseas ? [...data, OVERSEAS_REGION] : data);
       } catch (err) {
         if (err.name !== 'AbortError') {
           console.error('시/도 조회 오류:', err);
@@ -76,11 +88,19 @@ const RegionSelector = ({ label, value, onChange, error, required }) => {
     loadSidos();
 
     return () => controller.abort();
-  }, []);
+  }, [allowOverseas]);
 
   useEffect(() => {
     if (!sido) {
       setSigunguList([]);
+      return;
+    }
+
+    if (sido.code === OVERSEAS_REGION.code) {
+      setSigungu(OVERSEAS_REGION);
+      setDong(OVERSEAS_REGION);
+      setSigunguList([]);
+      setDongList([]);
       return;
     }
 
@@ -114,6 +134,12 @@ const RegionSelector = ({ label, value, onChange, error, required }) => {
 
   useEffect(() => {
     if (!sido || !sigungu) {
+      setDongList([]);
+      return;
+    }
+
+    if (sido.code === OVERSEAS_REGION.code) {
+      setDong(OVERSEAS_REGION);
       setDongList([]);
       return;
     }
@@ -152,13 +178,31 @@ const RegionSelector = ({ label, value, onChange, error, required }) => {
     if (sido && sigungu && dong) {
       const address = getAddressText(sido, sigungu, dong);
       onChangeRef.current({ address, sido: sido.name, sigungu: sigungu.name, dong: dong.name });
+    } else if (allowPartialRegion && sido) {
+      const address = getAddressText(sido, sigungu, dong);
+      onChangeRef.current({
+        address,
+        sido: sido.name,
+        sigungu: sigungu?.name || '',
+        dong: dong?.name || '',
+      });
     } else {
       onChangeRef.current({ address: '', sido: '', sigungu: '', dong: '' });
     }
-  }, [sido, sigungu, dong]);
+  }, [sido, sigungu, dong, allowPartialRegion]);
 
   const handleSidoChange = (e) => {
-    setSido(sidos.find((item) => item.code === e.target.value) || null);
+    const selectedSido = sidos.find((item) => item.code === e.target.value) || null;
+    setSido(selectedSido);
+
+    if (selectedSido?.code === OVERSEAS_REGION.code) {
+      setSigungu(OVERSEAS_REGION);
+      setDong(OVERSEAS_REGION);
+      setSigunguList([]);
+      setDongList([]);
+      return;
+    }
+
     setSigungu(null);
     setDong(null);
     setSigunguList([]);
@@ -176,6 +220,11 @@ const RegionSelector = ({ label, value, onChange, error, required }) => {
   };
 
   const selectClass = 'w-full h-[52px] px-[14px] border border-gray-300 rounded-[15px] text-text-800 bg-white focus:outline-none focus:ring-1 focus:ring-[#FFD044] focus:border-transparent transition-colors appearance-none cursor-pointer';
+  const isOverseas = sido?.code === OVERSEAS_REGION.code;
+  const selectedAddress = getAddressText(sido, sigungu, dong);
+  const hasSelectedAddress = Boolean(selectedAddress) && (
+    allowPartialRegion || (sido && sigungu && dong)
+  );
 
   return (
     <div className="space-y-3">
@@ -199,42 +248,46 @@ const RegionSelector = ({ label, value, onChange, error, required }) => {
         <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
       </div>
 
-      {/* 시/군/구 */}
-      <div className="relative">
-        <select
-          value={sigungu?.code || ''}
-          onChange={handleSigunguChange}
-          disabled={!sido || loading.sigungu}
-          className={`${selectClass} ${!sido || loading.sigungu ? 'opacity-40 cursor-not-allowed' : ''}`}
-        >
-          <option value="">{loading.sigungu ? '시/군/구 불러오는 중...' : '시/군/구 선택'}</option>
-          {sigunguList.map((s) => (
-            <option key={s.code} value={s.code}>{s.name}</option>
-          ))}
-        </select>
-        <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
-      </div>
+      {!isOverseas && (
+        <>
+          {/* 시/군/구 */}
+          <div className="relative">
+            <select
+              value={sigungu?.code || ''}
+              onChange={handleSigunguChange}
+              disabled={!sido || loading.sigungu}
+              className={`${selectClass} ${!sido || loading.sigungu ? 'opacity-40 cursor-not-allowed' : ''}`}
+            >
+              <option value="">{loading.sigungu ? '시/군/구 불러오는 중...' : '시/군/구 선택'}</option>
+              {sigunguList.map((s) => (
+                <option key={s.code} value={s.code}>{s.name}</option>
+              ))}
+            </select>
+            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+          </div>
 
-      {/* 읍/면/동 */}
-      <div className="relative">
-        <select
-          value={dong?.code || ''}
-          onChange={handleDongChange}
-          disabled={!sigungu || loading.dong}
-          className={`${selectClass} ${!sigungu || loading.dong ? 'opacity-40 cursor-not-allowed' : ''}`}
-        >
-          <option value="">{loading.dong ? '읍/면/동 불러오는 중...' : '읍/면/동 선택'}</option>
-          {dongList.map((d) => (
-            <option key={d.code} value={d.code}>{d.name}</option>
-          ))}
-        </select>
-        <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
-      </div>
+          {/* 읍/면/동 */}
+          <div className="relative">
+            <select
+              value={dong?.code || ''}
+              onChange={handleDongChange}
+              disabled={!sigungu || loading.dong}
+              className={`${selectClass} ${!sigungu || loading.dong ? 'opacity-40 cursor-not-allowed' : ''}`}
+            >
+              <option value="">{loading.dong ? '읍/면/동 불러오는 중...' : '읍/면/동 선택'}</option>
+              {dongList.map((d) => (
+                <option key={d.code} value={d.code}>{d.name}</option>
+              ))}
+            </select>
+            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+          </div>
+        </>
+      )}
 
       {/* 선택 결과 표시 */}
-      {sido && sigungu && dong && (
+      {hasSelectedAddress && (
         <p className="text-12-r text-brand-yellow-dark font-medium">
-          ✓ {getAddressText(sido, sigungu, dong)}
+          ✓ {selectedAddress}
         </p>
       )}
 
