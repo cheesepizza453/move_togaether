@@ -14,6 +14,15 @@ import Preview from '@/components/volunteer/Preview';
 
 const STEP_INPUT_STYLE = 'h-[52px] px-[18px] border rounded-[15px] text-text-800 focus:text-brand-yellow-dark focus:bg-brand-sub focus:outline-none focus:ring-1 focus:ring-[#FFD044] focus:border-transparent transition-colors';
 
+const isValidRelatedUrl = (url) => {
+  try {
+    const parsedUrl = new URL(url.startsWith('http') ? url : `https://${url}`);
+    return ['http:', 'https:'].includes(parsedUrl.protocol) && parsedUrl.hostname.includes('.');
+  } catch {
+    return false;
+  }
+};
+
 const INITIAL_MOVE_DATA = {
   title: '',
   departureAddress: '',
@@ -196,8 +205,7 @@ const VolunteerCreate = () => {
         newErrors.relatedPostLink = '봉사자 직접 연락을 받지 않으려면 관련 게시글 링크를 입력해주세요.';
       }
       if (moveData.relatedPostLink.trim()) {
-        const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w .\-?=&%#]*)*\/?$/;
-        if (!urlPattern.test(moveData.relatedPostLink)) newErrors.relatedPostLink = '올바른 URL 형식이 아닙니다.';
+        if (!isValidRelatedUrl(moveData.relatedPostLink.trim())) newErrors.relatedPostLink = '올바른 URL 형식이 아닙니다.';
       }
     }
     setMoveErrors(newErrors);
@@ -283,8 +291,7 @@ const VolunteerCreate = () => {
         newErrors.relatedPostLink = '봉사자 직접 연락을 받지 않으려면 관련 게시글 링크를 입력해주세요.';
       }
       if (findTogetherData.relatedPostLink.trim()) {
-        const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w .\-?=&%#]*)*\/?$/;
-        if (!urlPattern.test(findTogetherData.relatedPostLink)) newErrors.relatedPostLink = '올바른 URL 형식이 아닙니다.';
+        if (!isValidRelatedUrl(findTogetherData.relatedPostLink.trim())) newErrors.relatedPostLink = '올바른 URL 형식이 아닙니다.';
       }
     }
     setFindTogetherErrors(newErrors);
