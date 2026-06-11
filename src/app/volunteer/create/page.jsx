@@ -192,6 +192,9 @@ const VolunteerCreate = () => {
       else if (moveData.name.length > 20) newErrors.name = '이름은 20자 이하로 입력해주세요.';
       if (!moveData.size) newErrors.size = '크기를 선택해주세요.';
     } else if (moveStep === 3) {
+      if (moveData.isOriginal === false && !moveData.relatedPostLink.trim()) {
+        newErrors.relatedPostLink = '봉사자 직접 연락을 받지 않으려면 관련 게시글 링크를 입력해주세요.';
+      }
       if (moveData.relatedPostLink.trim()) {
         const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w .\-?=&%#]*)*\/?$/;
         if (!urlPattern.test(moveData.relatedPostLink)) newErrors.relatedPostLink = '올바른 URL 형식이 아닙니다.';
@@ -276,6 +279,9 @@ const VolunteerCreate = () => {
       if (!findTogetherData.dogDescription.trim()) newErrors.dogDescription = '실종견 및 상황 설명을 입력해주세요.';
       else if (findTogetherData.dogDescription.length > 800) newErrors.dogDescription = '실종견 및 상황 설명은 800자 이하로 입력해주세요.';
     } else if (findTogetherStep === 3) {
+      if (findTogetherData.isOriginal === false && !findTogetherData.relatedPostLink.trim()) {
+        newErrors.relatedPostLink = '봉사자 직접 연락을 받지 않으려면 관련 게시글 링크를 입력해주세요.';
+      }
       if (findTogetherData.relatedPostLink.trim()) {
         const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w .\-?=&%#]*)*\/?$/;
         if (!urlPattern.test(findTogetherData.relatedPostLink)) newErrors.relatedPostLink = '올바른 URL 형식이 아닙니다.';

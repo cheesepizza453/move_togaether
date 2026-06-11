@@ -149,6 +149,15 @@ const Preview = ({
         </div>
 
         <div className="space-y-3">
+          <div>
+            <span className="text-sm font-medium text-gray-600">지원 방식:</span>
+            <p className="text-sm text-gray-900 mt-1">
+              {formData.isOriginal === false
+                ? '관련 게시물 링크에서 지원'
+                : '무브투게더에서 직접 연락 받기'}
+            </p>
+          </div>
+
           {formData.relatedPostLink ? (
             <div>
               <span className="text-sm font-medium text-gray-600">관련 게시글:</span>
