@@ -40,7 +40,6 @@ const Preview = ({
             onClick={() => onEdit(1)}
             className="flex items-center text-yellow-600 hover:text-yellow-700 transition-colors"
           >
-            <Edit3 size={16} className="mr-1" />
             <span className="text-sm">수정</span>
           </button>
         </div>
@@ -88,7 +87,6 @@ const Preview = ({
             onClick={() => onEdit(2)}
             className="flex items-center text-yellow-600 hover:text-yellow-700 transition-colors"
           >
-            <Edit3 size={16} className="mr-1" />
             <span className="text-sm">수정</span>
           </button>
         </div>
@@ -143,7 +141,6 @@ const Preview = ({
             onClick={() => onEdit(3)}
             className="flex items-center text-yellow-600 hover:text-yellow-700 transition-colors"
           >
-            <Edit3 size={16} className="mr-1" />
             <span className="text-sm">수정</span>
           </button>
         </div>
@@ -180,8 +177,7 @@ const Preview = ({
       </div>
 
       {/* 최종 확인 메시지 */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h4 className="text-sm font-medium text-blue-900 mb-2">최종 확인</h4>
+      <div className="bg-blue-50 rounded-lg p-4">
         <p className="text-sm text-blue-800">
           위 정보가 모두 정확한지 확인해주세요. 제출 후에는 수정이 어렵습니다.
         </p>
