@@ -31,6 +31,13 @@ export async function POST(request) {
       );
     }
 
+    if (isOriginal === false && !relatedPostLink) {
+      return NextResponse.json(
+        { success: false, error: '봉사자 직접 연락을 받지 않으려면 관련 게시글 링크가 필요합니다.' },
+        { status: 400 }
+      );
+    }
+
     if (!isValidDateValue(missingDate)) {
       return NextResponse.json(
         { success: false, error: '잃어버린 날짜 형식이 올바르지 않습니다.' },

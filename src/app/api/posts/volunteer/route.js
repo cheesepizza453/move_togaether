@@ -32,6 +32,13 @@ export async function POST(request) {
       }, { status: 400 });
     }
 
+    if (isOriginal === false && !relatedPostLink) {
+      return NextResponse.json({
+        success: false,
+        error: '봉사자 직접 연락을 받지 않으려면 관련 게시글 링크가 필요합니다.'
+      }, { status: 400 });
+    }
+
     // JWT 인증만 허용 (X-User-ID 헤더 우회 제거)
     const authHeader = request.headers.get('authorization');
     const apikeyHeader = request.headers.get('apikey');

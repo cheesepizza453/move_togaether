@@ -40,7 +40,6 @@ const Preview = ({
             onClick={() => onEdit(1)}
             className="flex items-center text-yellow-600 hover:text-yellow-700 transition-colors"
           >
-            <Edit3 size={16} className="mr-1" />
             <span className="text-sm">수정</span>
           </button>
         </div>
@@ -88,7 +87,6 @@ const Preview = ({
             onClick={() => onEdit(2)}
             className="flex items-center text-yellow-600 hover:text-yellow-700 transition-colors"
           >
-            <Edit3 size={16} className="mr-1" />
             <span className="text-sm">수정</span>
           </button>
         </div>
@@ -143,12 +141,20 @@ const Preview = ({
             onClick={() => onEdit(3)}
             className="flex items-center text-yellow-600 hover:text-yellow-700 transition-colors"
           >
-            <Edit3 size={16} className="mr-1" />
             <span className="text-sm">수정</span>
           </button>
         </div>
 
         <div className="space-y-3">
+          <div>
+            <span className="text-sm font-medium text-gray-600">지원 방식:</span>
+            <p className="text-sm text-gray-900 mt-1">
+              {formData.isOriginal === false
+                ? '관련 게시물 링크에서 지원'
+                : '무브투게더에서 직접 연락 받기'}
+            </p>
+          </div>
+
           {formData.relatedPostLink ? (
             <div>
               <span className="text-sm font-medium text-gray-600">관련 게시글:</span>
@@ -171,8 +177,7 @@ const Preview = ({
       </div>
 
       {/* 최종 확인 메시지 */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h4 className="text-sm font-medium text-blue-900 mb-2">최종 확인</h4>
+      <div className="bg-blue-50 rounded-lg p-4">
         <p className="text-sm text-blue-800">
           위 정보가 모두 정확한지 확인해주세요. 제출 후에는 수정이 어렵습니다.
         </p>

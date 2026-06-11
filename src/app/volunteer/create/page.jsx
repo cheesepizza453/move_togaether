@@ -14,6 +14,15 @@ import Preview from '@/components/volunteer/Preview';
 
 const STEP_INPUT_STYLE = 'h-[52px] px-[18px] border rounded-[15px] text-text-800 focus:text-brand-yellow-dark focus:bg-brand-sub focus:outline-none focus:ring-1 focus:ring-[#FFD044] focus:border-transparent transition-colors';
 
+const isValidRelatedUrl = (url) => {
+  try {
+    const parsedUrl = new URL(url.startsWith('http') ? url : `https://${url}`);
+    return ['http:', 'https:'].includes(parsedUrl.protocol) && parsedUrl.hostname.includes('.');
+  } catch {
+    return false;
+  }
+};
+
 const INITIAL_MOVE_DATA = {
   title: '',
   departureAddress: '',
@@ -185,16 +194,18 @@ const VolunteerCreate = () => {
       else if (moveData.title.length > 100) newErrors.title = '제목은 100자 이하로 입력해주세요.';
       if (!moveData.description.trim()) newErrors.description = '설명을 입력해주세요.';
       else if (moveData.description.length > 800) newErrors.description = '설명은 800자 이하로 입력해주세요.';
-      if (!moveData.departureDong) newErrors.departureAddress = '출발지를 시/도 → 시/군/구 → 읍/면/동 순으로 선택해주세요.';
-      if (!moveData.arrivalDong) newErrors.arrivalAddress = '도착지를 시/도 → 시/군/구 → 읍/면/동 순으로 선택해주세요.';
+      if (!moveData.departureAddress) newErrors.departureAddress = '출발지를 시/도 이상 선택해주세요.';
+      if (!moveData.arrivalAddress) newErrors.arrivalAddress = '도착지를 시/도 이상 선택해주세요.';
     } else if (moveStep === 2) {
       if (!moveData.name.trim()) newErrors.name = '이름을 입력해주세요.';
       else if (moveData.name.length > 20) newErrors.name = '이름은 20자 이하로 입력해주세요.';
       if (!moveData.size) newErrors.size = '크기를 선택해주세요.';
     } else if (moveStep === 3) {
+      if (moveData.isOriginal === false && !moveData.relatedPostLink.trim()) {
+        newErrors.relatedPostLink = '봉사자 직접 연락을 받지 않으려면 관련 게시글 링크를 입력해주세요.';
+      }
       if (moveData.relatedPostLink.trim()) {
-        const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w .\-?=&%#]*)*\/?$/;
-        if (!urlPattern.test(moveData.relatedPostLink)) newErrors.relatedPostLink = '올바른 URL 형식이 아닙니다.';
+        if (!isValidRelatedUrl(moveData.relatedPostLink.trim())) newErrors.relatedPostLink = '올바른 URL 형식이 아닙니다.';
       }
     }
     setMoveErrors(newErrors);
@@ -239,7 +250,7 @@ const VolunteerCreate = () => {
   };
 
   const isMoveNextDisabled = () => {
-    if (moveStep === 1) return !moveData.title.trim() || !moveData.departureDong || !moveData.arrivalDong || !moveData.description.trim();
+    if (moveStep === 1) return !moveData.title.trim() || !moveData.departureAddress || !moveData.arrivalAddress || !moveData.description.trim();
     if (moveStep === 2) return !moveData.name.trim() || !moveData.size;
     return false;
   };
@@ -276,9 +287,11 @@ const VolunteerCreate = () => {
       if (!findTogetherData.dogDescription.trim()) newErrors.dogDescription = '실종견 및 상황 설명을 입력해주세요.';
       else if (findTogetherData.dogDescription.length > 800) newErrors.dogDescription = '실종견 및 상황 설명은 800자 이하로 입력해주세요.';
     } else if (findTogetherStep === 3) {
+      if (findTogetherData.isOriginal === false && !findTogetherData.relatedPostLink.trim()) {
+        newErrors.relatedPostLink = '봉사자 직접 연락을 받지 않으려면 관련 게시글 링크를 입력해주세요.';
+      }
       if (findTogetherData.relatedPostLink.trim()) {
-        const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w .\-?=&%#]*)*\/?$/;
-        if (!urlPattern.test(findTogetherData.relatedPostLink)) newErrors.relatedPostLink = '올바른 URL 형식이 아닙니다.';
+        if (!isValidRelatedUrl(findTogetherData.relatedPostLink.trim())) newErrors.relatedPostLink = '올바른 URL 형식이 아닙니다.';
       }
     }
     setFindTogetherErrors(newErrors);
@@ -473,6 +486,7 @@ const VolunteerCreate = () => {
           formData={moveData}
           errors={moveErrors}
           onFormDataChange={updateMoveData}
+          allowPartialRegion
         />
       )}
       {moveStep === 2 && (

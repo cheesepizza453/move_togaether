@@ -2,6 +2,11 @@ import { createAdminSupabaseClient } from '@/lib/supabase';
 
 const supabase = createAdminSupabaseClient();
 
+const formatRegionAddress = (sido, sigungu, dong, fallbackAddress) => {
+  const regionAddress = [sido, sigungu, dong].filter(Boolean).join(' ');
+  return regionAddress || fallbackAddress || '';
+};
+
 export async function GET() {
   try {
     // 출발지 좌표/지역/주소가 있고, status가 active인 게시물 조회
@@ -49,9 +54,12 @@ export async function GET() {
       title: post.title,
       description: post.description,
       departure: {
-        address: post.departure_sido
-          ? `${post.departure_sido} ${post.departure_sigungu} ${post.departure_dong}`
-          : post.departure_address,
+        address: formatRegionAddress(
+          post.departure_sido,
+          post.departure_sigungu,
+          post.departure_dong,
+          post.departure_address
+        ),
         sido: post.departure_sido || null,
         sigungu: post.departure_sigungu || null,
         dong: post.departure_dong || null,
@@ -59,9 +67,12 @@ export async function GET() {
         lng: post.departure_lng ? parseFloat(post.departure_lng) : null,
       },
       arrival: {
-        address: post.arrival_sido
-          ? `${post.arrival_sido} ${post.arrival_sigungu} ${post.arrival_dong}`
-          : post.arrival_address,
+        address: formatRegionAddress(
+          post.arrival_sido,
+          post.arrival_sigungu,
+          post.arrival_dong,
+          post.arrival_address
+        ),
         sido: post.arrival_sido || null,
         sigungu: post.arrival_sigungu || null,
         dong: post.arrival_dong || null,
