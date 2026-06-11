@@ -185,8 +185,8 @@ const VolunteerCreate = () => {
       else if (moveData.title.length > 100) newErrors.title = '제목은 100자 이하로 입력해주세요.';
       if (!moveData.description.trim()) newErrors.description = '설명을 입력해주세요.';
       else if (moveData.description.length > 800) newErrors.description = '설명은 800자 이하로 입력해주세요.';
-      if (!moveData.departureDong) newErrors.departureAddress = '출발지를 시/도 → 시/군/구 → 읍/면/동 순으로 선택해주세요.';
-      if (!moveData.arrivalDong) newErrors.arrivalAddress = '도착지를 시/도 → 시/군/구 → 읍/면/동 순으로 선택해주세요.';
+      if (!moveData.departureAddress) newErrors.departureAddress = '출발지를 시/도 이상 선택해주세요.';
+      if (!moveData.arrivalAddress) newErrors.arrivalAddress = '도착지를 시/도 이상 선택해주세요.';
     } else if (moveStep === 2) {
       if (!moveData.name.trim()) newErrors.name = '이름을 입력해주세요.';
       else if (moveData.name.length > 20) newErrors.name = '이름은 20자 이하로 입력해주세요.';
@@ -239,7 +239,7 @@ const VolunteerCreate = () => {
   };
 
   const isMoveNextDisabled = () => {
-    if (moveStep === 1) return !moveData.title.trim() || !moveData.departureDong || !moveData.arrivalDong || !moveData.description.trim();
+    if (moveStep === 1) return !moveData.title.trim() || !moveData.departureAddress || !moveData.arrivalAddress || !moveData.description.trim();
     if (moveStep === 2) return !moveData.name.trim() || !moveData.size;
     return false;
   };
@@ -473,6 +473,7 @@ const VolunteerCreate = () => {
           formData={moveData}
           errors={moveErrors}
           onFormDataChange={updateMoveData}
+          allowPartialRegion
         />
       )}
       {moveStep === 2 && (
