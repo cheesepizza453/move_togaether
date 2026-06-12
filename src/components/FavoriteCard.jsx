@@ -53,6 +53,16 @@ const FavoriteCard = ({ post, isCompleted = false,   isApplied = false, isMyPost
 
   // 상태에 따른 버튼 텍스트와 스타일 결정
   const getButtonInfo = () => {
+    // 1) 모집 종료 탭일 때
+    if (isCompleted) {
+      return {
+        hide: true,
+        text: '',
+        className: '',
+        disabled: true,
+      };
+    }
+
     // 1) 내가 올린 무브인 경우 (모집중/종료 상관 없이)
     if (isMyPost) {
       return {
@@ -61,27 +71,6 @@ const FavoriteCard = ({ post, isCompleted = false,   isApplied = false, isMyPost
             'w-full bg-brand-main text-[#333] py-[10px] rounded-[20px] text-14-m',
         disabled: true,
       };
-    }
-
-    // 2) 모집 종료 탭일 때
-    if (isCompleted) {
-      if (status !== 'active') {
-        // 이미 완료 처리된 게시글 (입양 완료 등)
-        return {
-          text: '입양 완료',
-          className:
-              'w-full bg-text-300 text-text-800 py-[10px] rounded-[20px] text-14-m cursor-not-allowed',
-          disabled: true,
-        };
-      } else {
-        // status는 active인데 마감일 지난 경우
-        return {
-          text: '아직 못 갔어요 🥺',
-          className:
-              'w-full bg-brand-main text-[#333] py-[10px] rounded-[20px] text-14-m',
-          disabled: false,
-        };
-      }
     }
 
     // 3) 모집중 탭인데 이미 내가 지원함
@@ -152,8 +141,8 @@ const FavoriteCard = ({ post, isCompleted = false,   isApplied = false, isMyPost
         </div>
 
         {/* 하단 버튼 영역 */}
-        <div className="mt-4">
-          {!buttonInfo.hide && (
+        {!buttonInfo.hide && (
+            <div className="mt-4">
               <button
                   onClick={handleCardClick}
                   className={buttonInfo.className}
@@ -161,8 +150,8 @@ const FavoriteCard = ({ post, isCompleted = false,   isApplied = false, isMyPost
               >
                 {buttonInfo.text}
               </button>
-          )}
-        </div>
+            </div>
+        )}
 
         {/* 찜 버튼 */}
         {/* <button

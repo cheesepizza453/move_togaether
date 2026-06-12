@@ -33,7 +33,7 @@ export default function FavoritesPage() {
       setError(null);
 
       // 1) 찜한 목록 가져오기
-      const response = await favoritesAPI.getList();
+      const response = await favoritesAPI.getList({ status: 'all' });
       const posts = response.posts || [];
 
       if (!posts || posts.length === 0) {
@@ -70,7 +70,7 @@ export default function FavoritesPage() {
         );
 
         const completed = formattedPosts.filter(
-            (post) => post.status !== 'active'
+            (post) => post.status === 'completed'
         );
 
         setActiveFavorites(active);
@@ -175,7 +175,7 @@ export default function FavoritesPage() {
                 }`}
                 aria-selected={activeTab === 'active'}
             >
-              모집중
+              진행중
             </button>
             <button
                 onClick={() => handleTabChange('completed')}
@@ -186,7 +186,7 @@ export default function FavoritesPage() {
                 }`}
                 aria-selected={activeTab === 'completed'}
             >
-              모집종료
+              종료
             </button>
           </div>
 

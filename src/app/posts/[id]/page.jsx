@@ -269,9 +269,18 @@ export default function PostDetailPage() {
       isFetchingRef.current = true;
       setLoading(true);
 
+      const { data: { session } } = await supabase.auth.getSession();
+      const authHeaders = session?.access_token
+        ? {
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+        }
+        : {};
+
       // API를 통해 게시물 정보 가져오기 - 브라우저 뒤로가기 대응을 위한 캐시 방지
       const response = await fetch(`/api/posts/${postId}?_t=${Date.now()}`, {
         headers: {
+          ...authHeaders,
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
           'Expires': '0'

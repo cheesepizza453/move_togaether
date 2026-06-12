@@ -5,8 +5,12 @@ import { createServerSupabaseClient } from '@/lib/supabase'
 export async function GET(request, { params }) {
   try {
     const { id } = await params
+    const authHeader = request.headers.get('authorization')
+    const accessToken = authHeader?.startsWith('Bearer ')
+      ? authHeader.substring(7)
+      : null
 
-    const supabase = createServerSupabaseClient()
+    const supabase = createServerSupabaseClient(accessToken)
     const { data: post, error } = await supabase
       .from('posts')
       .select(`

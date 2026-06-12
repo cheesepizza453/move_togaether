@@ -291,7 +291,7 @@ const MyPage = () => {
       {/* 탭 콘텐츠 */}
       <div className="px-[23px] pb-6">
         {activeTab === '알림' && (
-          <div className="space-y-[10px]">
+          <div className="space-y-[20px]">
             {dataLoading ? (
                 <div className={'w-full flex justify-center pt-[20vh]'}>
                   <IconLoading/>
@@ -337,7 +337,7 @@ const MyPage = () => {
                             key={notification.id}
                             href={`/posts/${notification.post_id}?tab=applicants`}
                             onClick={() => handleNotificationClick(notification.id)}
-                            className={`relative block py-[18px] pl-[18px] pr-[54px] bg-white rounded-[15px] shadow-[0_0_12px_0px_rgba(0,0,0,0.1)] ${
+                            className={`relative block px-[18px] pt-[26px] pb-[18px] bg-white rounded-[15px] shadow-[0_0_12px_0px_rgba(0,0,0,0.1)] ${
                                 isUnread ? 'border border-brand-main' : 'border border-transparent'
                             }`}
                         >
@@ -352,7 +352,7 @@ const MyPage = () => {
                           </p>
                           <button
                               onClick={(event) => handleDeleteNotification(event, notification.id)}
-                              className="absolute right-[16px] top-[18px] text-12-r text-text-800 underline"
+                              className="absolute right-[14px] top-[8px] text-12-r text-text-800 underline"
                               aria-label="알림 삭제"
                           >
                             삭제
