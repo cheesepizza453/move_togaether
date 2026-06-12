@@ -158,6 +158,7 @@ export async function GET(request) {
       .select(`
         *,
         user_profiles!applications_user_id_fkey (
+          id,
           display_name,
           phone,
           profile_image
