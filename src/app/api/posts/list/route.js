@@ -145,7 +145,7 @@ export async function GET(request) {
             const now = moment().toISOString()
             query = query.eq('status', 'active').gte('deadline', now)
           } else if (status === 'completed') {
-            query = query.or('status.neq.active,deadline.lt.' + moment().toISOString())
+            query = query.eq('status', 'completed')
           } else {
             query = query.eq('status', status)
           }
