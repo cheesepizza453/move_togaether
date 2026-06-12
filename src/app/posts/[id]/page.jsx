@@ -649,6 +649,9 @@ export default function PostDetailPage() {
     );
   }
 
+  const postDescription = post.description || post.dog_description;
+  const descriptionTitle = post.post_type === 'missing' ? '설명' : '상세 설명';
+
   return (
       <div className={`min-h-screen ${isOwner && activeTab === 'applicants' && 'bg-brand-bg'}`}>
         {/* 헤더 */}
@@ -803,12 +806,12 @@ export default function PostDetailPage() {
                   </div>
 
                   {/* 설명글 섹션 */}
-                  {post.post_type !== 'missing' && post.description && (
+                  {postDescription && (
                       <div>
-                        <h3 className="text-16-b mb-[10px]">상세 설명</h3>
+                        <h3 className="text-16-b mb-[10px]">{descriptionTitle}</h3>
                         <div
                             className={'flex flex-col p-[18px] min-h-[115px] bg-white rounded-[15px] shadow-[0_0_12px_0px_rgba(0,0,0,0.1)]'}>
-                          <p className="text-text-800 text-16-r whitespace-pre-wrap leading-[1.25]">{post.description}</p>
+                          <p className="text-text-800 text-16-r whitespace-pre-wrap leading-[1.25]">{postDescription}</p>
                         </div>
                       </div>
                   )}
