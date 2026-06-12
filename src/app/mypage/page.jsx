@@ -5,11 +5,19 @@ import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import moment from 'moment';
 import ProfileImage from '@/components/common/ProfileImage';
-import { myPageAPI, handleAPIError } from '@/lib/api-client';
+import { myPageAPI, applicationsAPI, handleAPIError } from '@/lib/api-client';
 import MyPageCard from '@/components/MyPageCard';
 import IconLoading from "../../../public/img/icon/IconLoading";
 import Image from "next/image";
 import Header from "@/components/common/Header";
+import {
+  deleteNotification,
+  getNotificationState,
+  getUnreadNotificationCount,
+  getVisibleNotifications,
+  markNotificationAsRead,
+  markNotificationsAsRead,
+} from '@/lib/notifications';
 
 const MyPage = () => {
   const { user, profile, loading, signOut } = useAuth();
@@ -17,6 +25,8 @@ const MyPage = () => {
   const [activeSubTab, setActiveSubTab] = useState('진행중'); // 작성 탭의 하위 탭
   const [myPosts, setMyPosts] = useState([]);
   const [appliedPosts, setAppliedPosts] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [, setNotificationStateVersion] = useState(0);
   // 종료 탭 숨김!
   const subTabs = ['진행중', '완료'];
 
@@ -25,6 +35,14 @@ const MyPage = () => {
     if (!dateString) return '';
     return moment(dateString).format('YYYY.MM.DD');
   };
+
+  const truncateTitle = (title) => {
+    if (!title) return '게시물';
+    return title.length > 20 ? `${title.slice(0, 19)}...` : title;
+  };
+  const visibleNotifications = getVisibleNotifications(notifications, profile?.id);
+  const unreadNotificationCount = getUnreadNotificationCount(notifications, profile?.id);
+  const readNotificationIds = new Set(getNotificationState(profile?.id).readIds);
   const [dataLoading, setDataLoading] = useState(false);
   const [error, setError] = useState(null);
   const [loadedTabs, setLoadedTabs] = useState(new Set());
@@ -49,7 +67,10 @@ const MyPage = () => {
       setError(null);
 
       let posts;
-      if (tabType === '지원') {
+      if (tabType === '알림') {
+        const result = await applicationsAPI.getReceivedApplications();
+        posts = result.applications;
+      } else if (tabType === '지원') {
         const result = await myPageAPI.getAppliedPosts();
         posts = result.posts;
       } else {
@@ -70,7 +91,9 @@ const MyPage = () => {
       }
 
       // 데이터 설정 전에 현재 탭이 여전히 활성 상태인지 확인
-      if (tabType === '지원') {
+      if (tabType === '알림') {
+        setNotifications(posts || []);
+      } else if (tabType === '지원') {
         setAppliedPosts(posts || []);
       } else {
         setMyPosts(posts || []);
@@ -85,7 +108,9 @@ const MyPage = () => {
       setError(errorInfo.message);
 
       // 에러 발생 시 해당 탭의 데이터 초기화
-      if (tabType === '지원') {
+      if (tabType === '알림') {
+        setNotifications([]);
+      } else if (tabType === '지원') {
         setAppliedPosts([]);
       } else {
         setMyPosts([]);
@@ -106,13 +131,30 @@ const MyPage = () => {
     }
   }, [activeTab, activeSubTab, user, profile, loading, fetchTabData]);
 
+  useEffect(() => {
+    const fetchNotificationSummary = async () => {
+      if (loading || !user || !profile?.id || activeTab === '알림') return;
+
+      try {
+        const result = await applicationsAPI.getReceivedApplications();
+        setNotifications(result.applications || []);
+      } catch (err) {
+        console.error('알림 요약 조회 오류:', err);
+      }
+    };
+
+    fetchNotificationSummary();
+  }, [activeTab, loading, user, profile?.id]);
+
   // 탭 변경 핸들러
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setError(null); // 탭 변경 시 에러 초기화
 
     // 탭 변경 시 데이터 초기화
-    if (tab === '지원') {
+    if (tab === '알림') {
+      setNotifications([]);
+    } else if (tab === '지원') {
       setAppliedPosts([]);
     } else {
       setMyPosts([]);
@@ -137,6 +179,23 @@ const MyPage = () => {
     setMyPosts([]);
 
     fetchTabData('작성', subTab, true); // 강제 새로고침
+  };
+
+  const handleNotificationClick = (notificationId) => {
+    markNotificationAsRead(profile?.id, notificationId);
+    setNotificationStateVersion((version) => version + 1);
+  };
+
+  const handleReadAllNotifications = () => {
+    markNotificationsAsRead(profile?.id, visibleNotifications);
+    setNotificationStateVersion((version) => version + 1);
+  };
+
+  const handleDeleteNotification = (event, notificationId) => {
+    event.preventDefault();
+    event.stopPropagation();
+    deleteNotification(profile?.id, notificationId);
+    setNotificationStateVersion((version) => version + 1);
   };
 
 
@@ -192,6 +251,21 @@ const MyPage = () => {
       <div className="mt-[24px] mb-[6px] mx-[23px] pb-[12px] border-b border-text-300">
         <div className="flex gap-x-[16px]">
           <button
+            onClick={() => handleTabChange('알림')}
+            className={` ${
+              activeTab === '알림'
+                ? 'text-16-b text-black'
+                : 'text-16-m text-text-800'
+            }`}
+          >
+            알림
+            {unreadNotificationCount > 0 && (
+                <span className="ml-[4px] inline-flex min-w-[16px] h-[16px] px-[4px] items-center justify-center rounded-full bg-brand-point text-white text-[10px] leading-none">
+                  {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
+                </span>
+            )}
+          </button>
+          <button
             onClick={() => handleTabChange('지원')}
             className={` ${
               activeTab === '지원'
@@ -216,6 +290,81 @@ const MyPage = () => {
 
       {/* 탭 콘텐츠 */}
       <div className="px-[23px] pb-6">
+        {activeTab === '알림' && (
+          <div className="space-y-[20px]">
+            {dataLoading ? (
+                <div className={'w-full flex justify-center pt-[20vh]'}>
+                  <IconLoading/>
+                </div>
+            ) : error ? (
+                <div className="pt-[60px] flex flex-col items-center justify-center py-8">
+                  <div className="text-black text-16-m mb-[16px]">{error}</div>
+                  <button
+                      onClick={() => fetchTabData(activeTab)}
+                      className="inline-block text-14-m bg-brand-main py-[10px] px-[20px] rounded-[15px]"
+                  >
+                    다시 시도
+                  </button>
+                </div>
+            ) : visibleNotifications.length === 0 ? (
+                <div className="pt-[60px] bg-white text-center">
+                  <div className="text-gray-500 mb-[16px]">
+                    <figure className={'flex justify-center mb-[10px]'}>
+                      <Image src={'img/empty_icon.png'} alt={''} width={120} height={120}/>
+                    </figure>
+                    <p className="text-16-m text-black mb-[10px]">새 알림이 없습니다</p>
+                    <p className="text-12-r">게시물에 지원자가 등록되면 알려드릴게요</p>
+                  </div>
+                </div>
+            ) : (
+                <>
+                  <div className="flex justify-end pb-[2px]">
+                    <button
+                        onClick={handleReadAllNotifications}
+                        className="text-12-r text-text-800 underline disabled:text-text-500"
+                        disabled={unreadNotificationCount === 0}
+                    >
+                      모두 읽음
+                    </button>
+                  </div>
+                  {visibleNotifications.map((notification) => {
+                    const postTitle = truncateTitle(notification.posts?.title);
+                    const applicantName = notification.user_profiles?.display_name || '지원자';
+                    const isUnread = !readNotificationIds.has(String(notification.id));
+
+                    return (
+                        <Link
+                            key={notification.id}
+                            href={`/posts/${notification.post_id}?tab=applicants`}
+                            onClick={() => handleNotificationClick(notification.id)}
+                            className={`relative block px-[18px] pt-[26px] pb-[18px] bg-white rounded-[15px] shadow-[0_0_12px_0px_rgba(0,0,0,0.1)] ${
+                                isUnread ? 'border border-brand-main' : 'border border-transparent'
+                            }`}
+                        >
+                          {isUnread && (
+                              <span className="absolute left-[8px] top-[18px] w-[6px] h-[6px] rounded-full bg-brand-point" />
+                          )}
+                          <p className={`text-14-m leading-[1.4] ${isUnread ? 'text-black' : 'text-text-800'}`}>
+                            <span className="text-brand-yellow-dark">{postTitle}</span> 게시물에 {applicantName}님이 지원했어요.
+                          </p>
+                          <p className="mt-[6px] text-12-r text-text-800">
+                            {formatDate(notification.created_at)}
+                          </p>
+                          <button
+                              onClick={(event) => handleDeleteNotification(event, notification.id)}
+                              className="absolute right-[14px] top-[8px] text-12-r text-text-800 underline"
+                              aria-label="알림 삭제"
+                          >
+                            삭제
+                          </button>
+                        </Link>
+                    );
+                  })}
+                </>
+            )}
+          </div>
+        )}
+
         {activeTab === '지원' && (
           <div className="space-y-[24px]">
             {dataLoading ? (

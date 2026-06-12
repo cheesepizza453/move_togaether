@@ -4,10 +4,43 @@ import Link from 'next/link';
 import {useAuth} from "@/hooks/useAuth";
 import {Loader2} from "lucide-react";
 import IconHeart from "../../../public/img/icon/IconHeart";
-import React from "react";
+import React, {useEffect, useState} from "react";
+import {applicationsAPI} from '@/lib/api-client';
+import {
+    getUnreadNotificationCount,
+    NOTIFICATION_STATE_CHANGE_EVENT,
+} from '@/lib/notifications';
 
 const Header = (props) => {
     const { user, profile, loading, signOut } = useAuth();
+    const [notificationCount, setNotificationCount] = useState(0);
+
+    useEffect(() => {
+        const updateNotificationCount = async () => {
+            if (loading || !user || !profile?.id) {
+                setNotificationCount(0);
+                return;
+            }
+
+            try {
+                const result = await applicationsAPI.getReceivedApplications();
+                setNotificationCount(getUnreadNotificationCount(result.applications || [], profile.id));
+            } catch (error) {
+                console.error('알림 개수 조회 오류:', error);
+                setNotificationCount(0);
+            }
+        };
+
+        updateNotificationCount();
+
+        window.addEventListener(NOTIFICATION_STATE_CHANGE_EVENT, updateNotificationCount);
+        window.addEventListener('storage', updateNotificationCount);
+
+        return () => {
+            window.removeEventListener(NOTIFICATION_STATE_CHANGE_EVENT, updateNotificationCount);
+            window.removeEventListener('storage', updateNotificationCount);
+        };
+    }, [loading, user, profile?.id]);
 
     if (loading) return null;
 
@@ -45,12 +78,19 @@ const Header = (props) => {
 
                         {/* 로그인 + 프로필 있음 → 프로필 이미지 */}
                         {isLoggedIn && hasProfile && (
-                            <Link href="/mypage" className={'relative block w-[40px] h-[40px] rounded-full overflow-hidden'}>
-                               <img
-                                    src={profile.profile_image || '/img/default_profile.jpg'}
-                                    alt="프로필"
-                                    className="absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover"
-                                />
+                            <Link href="/mypage" className={'relative block w-[40px] h-[40px]'}>
+                                <span className="relative block w-[40px] h-[40px] rounded-full overflow-hidden">
+                                   <img
+                                        src={profile.profile_image || '/img/default_profile.jpg'}
+                                        alt="프로필"
+                                        className="absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover"
+                                    />
+                                </span>
+                                {notificationCount > 0 && (
+                                    <span className="absolute -right-[6px] -top-[5px] flex min-w-[17px] h-[17px] px-[4px] items-center justify-center rounded-full bg-brand-point text-white text-[10px] leading-none">
+                                        {notificationCount > 99 ? '99+' : notificationCount}
+                                    </span>
+                                )}
                             </Link>
                         )}
                     </div>

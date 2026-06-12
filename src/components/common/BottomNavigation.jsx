@@ -6,6 +6,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSplash } from '../SplashProvider';
 import {IconMenuBarHome, IconMenuBarMap, IconMenuBarHeart, IconMenuBarMy, IconMenuBarPlus} from "@/components/icon/IconMenuBar";
 import { useLoginDialog } from '@/components/LoginDialog';
+import { applicationsAPI } from '@/lib/api-client';
+import {
+  getUnreadNotificationCount,
+  NOTIFICATION_STATE_CHANGE_EVENT,
+} from '@/lib/notifications';
 
 const getActiveTabFromPath = (pathname) => {
   if (!pathname || pathname === '/') {
@@ -37,11 +42,39 @@ const BottomNavigation = () => {
   const { showLoginDialog } = useLoginDialog();
   const { showSplash } = useSplash();
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
+  const [notificationCount, setNotificationCount] = useState(0);
 
   useEffect(() => {
     setPendingTab(null);
   }, [pathname]);
+
+  useEffect(() => {
+    const updateNotificationCount = async () => {
+      if (authLoading || !user || !profile?.id) {
+        setNotificationCount(0);
+        return;
+      }
+
+      try {
+        const result = await applicationsAPI.getReceivedApplications();
+        setNotificationCount(getUnreadNotificationCount(result.applications || [], profile.id));
+      } catch (error) {
+        console.error('알림 개수 조회 오류:', error);
+        setNotificationCount(0);
+      }
+    };
+
+    updateNotificationCount();
+
+    window.addEventListener(NOTIFICATION_STATE_CHANGE_EVENT, updateNotificationCount);
+    window.addEventListener('storage', updateNotificationCount);
+
+    return () => {
+      window.removeEventListener(NOTIFICATION_STATE_CHANGE_EVENT, updateNotificationCount);
+      window.removeEventListener('storage', updateNotificationCount);
+    };
+  }, [authLoading, user, profile?.id]);
 
   const derivedActiveTab = getActiveTabFromPath(pathname);
   const activeTab = pendingTab ?? derivedActiveTab;
@@ -143,6 +176,11 @@ const BottomNavigation = () => {
                 <figure className={isCircle ? 'w-[22px] h-[22px]':'w-[30px] h-[30px]'}>
                   <Icon fill={isActive ? '#FFD044' : '#B6B6B6'} />
                 </figure>
+                {tab.id === 'mypage' && notificationCount > 0 && (
+                    <span className="absolute -right-[7px] -top-[6px] flex min-w-[17px] h-[17px] px-[4px] items-center justify-center rounded-full bg-brand-point text-white text-[10px] leading-none">
+                      {notificationCount > 99 ? '99+' : notificationCount}
+                    </span>
+                )}
               </div>
 
               {/* 라벨 텍스트 */}

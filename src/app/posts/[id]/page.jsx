@@ -269,9 +269,18 @@ export default function PostDetailPage() {
       isFetchingRef.current = true;
       setLoading(true);
 
+      const { data: { session } } = await supabase.auth.getSession();
+      const authHeaders = session?.access_token
+        ? {
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+        }
+        : {};
+
       // API를 통해 게시물 정보 가져오기 - 브라우저 뒤로가기 대응을 위한 캐시 방지
       const response = await fetch(`/api/posts/${postId}?_t=${Date.now()}`, {
         headers: {
+          ...authHeaders,
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
           'Expires': '0'
@@ -649,6 +658,9 @@ export default function PostDetailPage() {
     );
   }
 
+  const postDescription = post.description || post.dog_description;
+  const descriptionTitle = post.post_type === 'missing' ? '설명' : '상세 설명';
+
   return (
       <div className={`min-h-screen ${isOwner && activeTab === 'applicants' && 'bg-brand-bg'}`}>
         {/* 헤더 */}
@@ -803,12 +815,12 @@ export default function PostDetailPage() {
                   </div>
 
                   {/* 설명글 섹션 */}
-                  {post.post_type !== 'missing' && post.description && (
+                  {postDescription && (
                       <div>
-                        <h3 className="text-16-b mb-[10px]">상세 설명</h3>
+                        <h3 className="text-16-b mb-[10px]">{descriptionTitle}</h3>
                         <div
                             className={'flex flex-col p-[18px] min-h-[115px] bg-white rounded-[15px] shadow-[0_0_12px_0px_rgba(0,0,0,0.1)]'}>
-                          <p className="text-text-800 text-16-r whitespace-pre-wrap leading-[1.25]">{post.description}</p>
+                          <p className="text-text-800 text-16-r whitespace-pre-wrap leading-[1.25]">{postDescription}</p>
                         </div>
                       </div>
                   )}
@@ -848,13 +860,23 @@ export default function PostDetailPage() {
                     </div>
                 ) : (
                     <div className="space-y-[10px] pb-[80px]">
-                      {applicants.map((applicant) => (
+                      {applicants.map((applicant) => {
+                        const applicantProfileId = applicant.user_profiles?.id || applicant.user_id;
+                        const applicantProfileHref = applicantProfileId ? `/authors/${applicantProfileId}` : null;
+
+                        return (
                           <div key={applicant.id}
                                className="py-[30px] px-[24px] bg-white rounded-[15px] shadow-[0_0_12px_0px_rgba(0,0,0,0.1)]">
                             <div className="mb-[12px] flex items-start justify-between">
                               <div className="flex flex-col">
                                 <div className={'mb-[4px] flex items-center text-[#535353] gap-x-[5px]'}>
-                                  <p className="text-18-b">{applicant.user_profiles?.display_name || '익명'}</p>
+                                  {applicantProfileHref ? (
+                                      <Link href={applicantProfileHref} className="text-18-b hover:underline">
+                                        {applicant.user_profiles?.display_name || '익명'}
+                                      </Link>
+                                  ) : (
+                                      <p className="text-18-b">{applicant.user_profiles?.display_name || '익명'}</p>
+                                  )}
                                 </div>
                                 <p className="text-12-r text-[#8a8a8a]">
                                   {moment(applicant.created_at).tz('Asia/Seoul').format('YY.MM.DD HH:mm')}
@@ -867,11 +889,21 @@ export default function PostDetailPage() {
                                   {applicant.message}
                                 </p>
                                 <div className="bg-gray-200 rounded-full flex items-center justify-center">
-                                  <ProfileImage
-                                    profileImage={applicant.user_profiles?.profile_image}
-                                    size={54}
-                                    alt="프로필 이미지"
-                                  />
+                                  {applicantProfileHref ? (
+                                      <Link href={applicantProfileHref} aria-label={`${applicant.user_profiles?.display_name || '익명'} 마이페이지로 이동`}>
+                                        <ProfileImage
+                                          profileImage={applicant.user_profiles?.profile_image}
+                                          size={54}
+                                          alt="프로필 이미지"
+                                        />
+                                      </Link>
+                                  ) : (
+                                      <ProfileImage
+                                        profileImage={applicant.user_profiles?.profile_image}
+                                        size={54}
+                                        alt="프로필 이미지"
+                                      />
+                                  )}
                                 </div>
                               </div>
                               <div className={'mt-[10px] pb-[16px] border-b border-[#d9d9d9]'}>
@@ -898,7 +930,8 @@ export default function PostDetailPage() {
                               </button>
                             </div>
                           </div>
-                      ))}
+                        );
+                      })}
                     </div>
                 )}
               </div>
