@@ -52,7 +52,7 @@ const ShelterMapPage = () => {
   };
 
   // 마커 이미지 설정 함수
-  const getMarkerImage = useCallback((deadline, isSelected = false) => {
+  const getMarkerImage = useCallback((deadline, isSelected = false, createdAt = null) => {
     if (!deadline) {
       const size = isSelected ? 60 : 50;
       return new window.kakao.maps.MarkerImage('/img/marker1.png', new window.kakao.maps.Size(size, size), { offset: new window.kakao.maps.Point(size/2, size) });
@@ -61,11 +61,14 @@ const ShelterMapPage = () => {
     const today = moment();
     const deadlineDate = moment(deadline);
     const diffDays = deadlineDate.diff(today, 'days');
+    const daysSinceCreated = createdAt ? today.diff(moment(createdAt), 'days') : null;
 
     let imageSrc;
     const size = isSelected ? 60 : 50;
 
-    if (diffDays <= 7) {
+    if (daysSinceCreated >= 30 || diffDays < 0) {
+      imageSrc = '/img/marker1.png';
+    } else if (diffDays <= 7) {
       imageSrc = '/img/marker3.png';
     } else if (diffDays <= 14) {
       imageSrc = '/img/marker2.png';
@@ -174,7 +177,7 @@ const ShelterMapPage = () => {
     // 특정 위치의 포스트들에 대한 마커를 생성하고 클러스터러에 추가
     const createAndAddMarkers = (postsAtPos) => {
       const firstPost = postsAtPos[0];
-      const markerImage = getMarkerImage(firstPost.deadline, false);
+      const markerImage = getMarkerImage(firstPost.deadline, false, firstPost.createdAt);
 
       const marker = new window.kakao.maps.Marker({
         position: new window.kakao.maps.LatLng(
@@ -192,13 +195,17 @@ const ShelterMapPage = () => {
             const baseDeadline = Array.isArray(prevSelected.posts)
                 ? prevSelected.posts[0]?.deadline
                 : prevSelected.post?.deadline;
+            const baseCreatedAt = Array.isArray(prevSelected.posts)
+                ? prevSelected.posts[0]?.createdAt
+                : prevSelected.post?.createdAt;
 
-            const originalImage = getMarkerImage(baseDeadline, false);
+            const originalImage = getMarkerImage(baseDeadline, false, baseCreatedAt);
             prevSelected.marker.setImage(originalImage);
           }
 
           const baseDeadlineNow = postsAtPos[0]?.deadline;
-          const selectedImage = getMarkerImage(baseDeadlineNow, true);
+          const baseCreatedAtNow = postsAtPos[0]?.createdAt;
+          const selectedImage = getMarkerImage(baseDeadlineNow, true, baseCreatedAtNow);
           marker.setImage(selectedImage);
 
           return { marker, posts: postsAtPos };
@@ -343,8 +350,11 @@ const ShelterMapPage = () => {
             const baseDeadline = Array.isArray(prevSelected.posts)
                 ? prevSelected.posts[0]?.deadline
                 : prevSelected.post?.deadline;
+            const baseCreatedAt = Array.isArray(prevSelected.posts)
+                ? prevSelected.posts[0]?.createdAt
+                : prevSelected.post?.createdAt;
 
-            const originalImage = getMarkerImage(baseDeadline, false);
+            const originalImage = getMarkerImage(baseDeadline, false, baseCreatedAt);
             prevSelected.marker.setImage(originalImage);
           }
           return null;
