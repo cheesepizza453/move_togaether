@@ -81,7 +81,7 @@ const Step1 = ({
             value={formData[dateFieldName] || ''}
             max={getTodayDateValue()}
             onChange={(e) => onFormDataChange(dateFieldName, e.target.value)}
-            className={`w-full h-[52px] px-[18px] border rounded-[15px] text-text-800 focus:text-brand-yellow-dark focus:bg-brand-sub focus:outline-none focus:ring-1 focus:ring-[#FFD044] focus:border-transparent transition-colors ${
+            className={`appearance-none [-webkit-appearance:none] w-full h-[52px] px-[18px] border rounded-[15px] text-text-800 focus:text-brand-yellow-dark focus:bg-brand-sub focus:outline-none focus:ring-1 focus:ring-[#FFD044] focus:border-transparent transition-colors ${
               errors[dateFieldName] ? 'border-red-500' : 'border-gray-300'
             }`}
           />
